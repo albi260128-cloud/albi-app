@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 성공 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes checkmark {
+      0% { transform: scale(0) rotate(0deg); }
+      50% { transform: scale(1.2) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
+    .checkmark-animation { animation: checkmark 0.8s ease-in-out; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto min-h-screen p-4 flex flex-col justify-center">
+    <!-- 성공 아이콘 -->
+    <div class="text-center mb-8">
+      <div class="text-8xl mb-4 checkmark-animation">✅</div>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">결제 완료!</h1>
+      <p class="text-gray-600">채용 성공 수수료가 정상적으로 결제되었습니다.</p>
+    </div>
+
+    <!-- 결제 정보 카드 -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h2 class="text-lg font-bold mb-4 flex items-center">
+        <span class="mr-2">📋</span>
+        결제 상세 정보
+      </h2>
+      
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">주문번호</span>
+          <span class="font-mono text-xs" id="orderId">-</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">결제금액</span>
+          <span class="font-bold text-blue-600">39,000원</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">결제수단</span>
+          <span class="font-bold" id="paymentMethod">-</span>
+        </div>
+        <div class="flex justify-between py-2">
+          <span class="text-gray-600">결제일시</span>
+          <span class="font-bold" id="paymentTime">-</span>
+        </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-green-50 rounded-lg">
+        <p class="text-xs text-green-800">
+          💚 <strong>축하합니다!</strong><br>
+          이메일로 영수증이 발송되었습니다.<br>
+          7일 이내 환불 요청이 가능합니다.
+        </p>
+      </div>
+    </div>
+
+    <!-- 다음 단계 안내 -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h3 class="text-lg font-bold mb-4 flex items-center">
+        <span class="mr-2">👉</span>
+        다음 단계
+      </h3>
+      
+      <div class="space-y-3 text-sm">
+        <div class="flex items-start space-x-3">
+          <span class="text-2xl">1️⃣</span>
+          <div>
+            <strong>근로계약서 작성</strong>
+            <p class="text-gray-600 mt-1">구직자와 함께 근로계약서를 작성하세요</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <span class="text-2xl">2️⃣</span>
+          <div>
+            <strong>근무 시작일 확정</strong>
+            <p class="text-gray-600 mt-1">첫 출근 날짜와 시간을 정하세요</p>
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <span class="text-2xl">3️⃣</span>
+          <div>
+            <strong>알비 리뷰 남기기</strong>
+            <p class="text-gray-600 mt-1">채용 경험을 다른 사용자와 공유하세요</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="space-y-3">
+      <a href="/" 
+         class="block w-full py-4 text-center rounded-xl text-lg font-bold bg-blue-500 text-white hover:bg-blue-600 shadow-lg transition">
+        메인으로 돌아가기
+      </a>
+      
+      <button onclick="window.print()"
+              class="w-full py-3 text-center rounded-xl font-bold bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50 transition">
+        📄 영수증 출력하기
+      </button>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      // URL 파라미터에서 주문 정보 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('orderId');
+      const paymentKey = urlParams.get('paymentKey');
+      const amount = urlParams.get('amount');
+
+      // 주문번호 표시
+      if (orderId) {
+        document.getElementById('orderId').textContent = orderId;
+      }
+
+      // 결제수단 표시
+      document.getElementById('paymentMethod').textContent = '신용카드';
+
+      // 현재 시간 표시
+      const now = new Date();
+      const timeString = now.toLocaleDateString('ko-KR') + ' ' + 
+                        now.toLocaleTimeString('ko-KR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        });
+      document.getElementById('paymentTime').textContent = timeString;
+
+      // 결제 승인 API 호출 (실제 서비스에서는 백엔드에서 처리)
+      if (paymentKey && orderId && amount) {
+        console.log('✅ 결제 승인 정보:', { paymentKey, orderId, amount });
+        // TODO: 백엔드 API로 결제 승인 요청
+        // fetch('/api/payment/confirm', { ... })
+      }
+
+      // 로컬스토리지에서 포인트 가져오기
+      const points = parseInt(localStorage.getItem('albi_points') || '0');
+      // 결제 완료 보너스 포인트 추가 (100P)
+      localStorage.setItem('albi_points', (points + 100).toString());
+
+      console.log('💳 결제 성공 페이지 로드 완료');
+      console.log('🎁 보너스 포인트 100P 지급');
+    };
+  </script>
+</body>
+</html>

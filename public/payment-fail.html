@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 실패 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+      20%, 40%, 60%, 80% { transform: translateX(10px); }
+    }
+    .shake-animation { animation: shake 0.8s ease-in-out; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto min-h-screen p-4 flex flex-col justify-center">
+    <!-- 실패 아이콘 -->
+    <div class="text-center mb-8">
+      <div class="text-8xl mb-4 shake-animation">❌</div>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">결제 실패</h1>
+      <p class="text-gray-600">결제 처리 중 문제가 발생했습니다.</p>
+    </div>
+
+    <!-- 오류 정보 카드 -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h2 class="text-lg font-bold mb-4 flex items-center">
+        <span class="mr-2">⚠️</span>
+        오류 정보
+      </h2>
+      
+      <div class="p-4 bg-red-50 rounded-lg mb-4">
+        <p class="text-sm text-red-800" id="errorMessage">
+          결제가 취소되었거나 처리 중 오류가 발생했습니다.
+        </p>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">오류 코드</span>
+          <span class="font-mono text-xs text-red-600" id="errorCode">UNKNOWN</span>
+        </div>
+        <div class="flex justify-between py-2">
+          <span class="text-gray-600">발생 시간</span>
+          <span class="font-bold" id="errorTime">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 해결 방법 안내 -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h3 class="text-lg font-bold mb-4 flex items-center">
+        <span class="mr-2">💡</span>
+        해결 방법
+      </h3>
+      
+      <div class="space-y-3 text-sm text-gray-700">
+        <div class="flex items-start space-x-2">
+          <span>•</span>
+          <span>카드 한도 및 잔액을 확인해주세요</span>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span>•</span>
+          <span>카드 정보가 정확한지 확인해주세요</span>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span>•</span>
+          <span>다른 결제 수단을 시도해주세요</span>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span>•</span>
+          <span>인터넷 연결 상태를 확인해주세요</span>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span>•</span>
+          <span>문제가 계속되면 고객센터(1588-0000)로 문의하세요</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="space-y-3">
+      <button onclick="retryPayment()"
+              class="w-full py-4 rounded-xl text-lg font-bold bg-blue-500 text-white hover:bg-blue-600 shadow-lg transition">
+        다시 결제하기
+      </button>
+      
+      <a href="/" 
+         class="block w-full py-3 text-center rounded-xl font-bold bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50 transition">
+        메인으로 돌아가기
+      </a>
+    </div>
+
+    <!-- 고객센터 안내 -->
+    <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+      <p class="text-xs text-center text-gray-600">
+        🆘 <strong>도움이 필요하신가요?</strong><br>
+        고객센터: 1588-0000 (평일 09:00-18:00)<br>
+        이메일: support@albi.co.kr
+      </p>
+    </div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      // URL 파라미터에서 오류 정보 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      const errorCode = urlParams.get('code');
+      const errorMessage = urlParams.get('message');
+
+      // 오류 코드 표시
+      if (errorCode) {
+        document.getElementById('errorCode').textContent = errorCode;
+      }
+
+      // 오류 메시지 표시
+      if (errorMessage) {
+        document.getElementById('errorMessage').textContent = decodeURIComponent(errorMessage);
+      } else {
+        // 기본 오류 메시지
+        const defaultMessages = {
+          'INVALID_CARD': '유효하지 않은 카드입니다. 카드 정보를 확인해주세요.',
+          'INSUFFICIENT_BALANCE': '잔액이 부족합니다. 한도를 확인해주세요.',
+          'CARD_EXPIRED': '카드 유효기간이 만료되었습니다.',
+          'NETWORK_ERROR': '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.',
+          'USER_CANCEL': '사용자가 결제를 취소했습니다.',
+          'UNKNOWN': '알 수 없는 오류가 발생했습니다. 다시 시도해주세요.'
+        };
+        
+        const message = defaultMessages[errorCode] || defaultMessages['UNKNOWN'];
+        document.getElementById('errorMessage').textContent = message;
+      }
+
+      // 현재 시간 표시
+      const now = new Date();
+      const timeString = now.toLocaleDateString('ko-KR') + ' ' + 
+                        now.toLocaleTimeString('ko-KR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        });
+      document.getElementById('errorTime').textContent = timeString;
+
+      console.log('❌ 결제 실패 페이지 로드');
+      console.log('오류 코드:', errorCode || 'UNKNOWN');
+      console.log('오류 메시지:', errorMessage || '알 수 없음');
+    };
+
+    // 다시 결제하기
+    function retryPayment() {
+      // 이전 페이지로 돌아가기
+      if (document.referrer && document.referrer.includes('/payment')) {
+        window.location.href = document.referrer;
+      } else {
+        window.location.href = '/payment';
+      }
+    }
+  </script>
+</body>
+</html>

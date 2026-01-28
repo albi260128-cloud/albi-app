@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://js.tosspayments.com/v1/payment"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto min-h-screen p-4">
+    <!-- 헤더 -->
+    <div class="text-center mb-8 pt-8">
+      <div class="text-6xl mb-4">💳</div>
+      <h1 class="text-2xl font-bold mb-2">채용 성공 수수료</h1>
+      <p class="text-gray-600">알비를 통한 성공적인 채용을 축하합니다!</p>
+    </div>
+
+    <!-- 결제 정보 카드 -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h2 class="text-lg font-bold mb-4 flex items-center">
+        <span class="mr-2">💳</span>
+        결제 정보
+      </h2>
+      
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">직무</span>
+          <span class="font-bold" id="jobTitle">홍대 카페 알바</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">구인자</span>
+          <span class="font-bold" id="employerName">이사장</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-100">
+          <span class="text-gray-600">서비스 수수료</span>
+          <span class="font-bold text-blue-600" id="amount">39,000원</span>
+        </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+        <p class="text-xs text-blue-800">
+          💡 <strong>수수료 안내:</strong><br>
+          • 채용 성공시에만 결제<br>
+          • 7일 이내 환불 가능<br>
+          • VAT 포함 금액
+        </p>
+      </div>
+    </div>
+
+    <!-- 약관 동의 -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <h3 class="text-lg font-bold mb-4 flex items-center">
+        <span class="mr-2">🛡️</span>
+        약관 동의
+      </h3>
+      
+      <div class="space-y-4">
+        <label class="flex items-start space-x-3 cursor-pointer group">
+          <input type="checkbox" id="agreeTerms"
+                 class="mt-1 w-5 h-5 text-orange-500 rounded focus:ring-orange-500">
+          <span class="text-sm group-hover:text-orange-600">
+            <strong class="text-red-500">[필수]</strong> 알비 서비스 이용약관에 동의합니다
+            <a href="/terms" class="ml-2 text-blue-500 underline text-xs">보기</a>
+          </span>
+        </label>
+
+        <label class="flex items-start space-x-3 cursor-pointer group">
+          <input type="checkbox" id="agreeFee"
+                 class="mt-1 w-5 h-5 text-orange-500 rounded focus:ring-orange-500">
+          <span class="text-sm group-hover:text-orange-600">
+            <strong class="text-red-500">[필수]</strong> 수수료 정책에 동의합니다
+            <a href="#" onclick="showFeePolicy(); return false;" class="ml-2 text-blue-500 underline text-xs">보기</a>
+          </span>
+        </label>
+
+        <label class="flex items-start space-x-3 cursor-pointer group">
+          <input type="checkbox" id="agreePayment"
+                 class="mt-1 w-5 h-5 text-orange-500 rounded focus:ring-orange-500">
+          <span class="text-sm group-hover:text-orange-600">
+            <strong class="text-red-500">[필수]</strong> 전자금융거래 이용약관에 동의합니다
+            <a href="#" onclick="showPaymentTerms(); return false;" class="ml-2 text-blue-500 underline text-xs">보기</a>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 결제 버튼 -->
+    <button onclick="requestPayment()" id="payButton"
+            class="w-full py-4 rounded-xl text-lg font-bold bg-gray-300 text-gray-500 cursor-not-allowed transition">
+      모든 약관에 동의해주세요
+    </button>
+
+    <p class="text-center text-xs text-gray-500 mt-4">
+      🔒 안전한 결제를 위해 토스페이먼츠를 사용합니다
+    </p>
+
+    <!-- 뒤로가기 버튼 -->
+    <div class="text-center mt-6">
+      <a href="/" class="text-gray-500 text-sm hover:text-gray-700">
+        ← 메인으로 돌아가기
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // 토스페이먼츠 테스트 클라이언트 키
+    const clientKey = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
+    const amount = 39000;
+    let tossPayments;
+
+    // 토스페이먼츠 초기화
+    async function initTossPayments() {
+      try {
+        tossPayments = TossPayments(clientKey);
+        console.log('✅ 토스페이먼츠 초기화 완료');
+      } catch (error) {
+        console.error('❌ 토스페이먼츠 초기화 실패:', error);
+        alert('결제 시스템 초기화에 실패했습니다. 페이지를 새로고침해주세요.');
+      }
+    }
+
+    // 약관 동의 체크
+    function checkAgreements() {
+      const terms = document.getElementById('agreeTerms').checked;
+      const fee = document.getElementById('agreeFee').checked;
+      const payment = document.getElementById('agreePayment').checked;
+      
+      const allChecked = terms && fee && payment;
+      const button = document.getElementById('payButton');
+      
+      if (allChecked) {
+        button.className = 'w-full py-4 rounded-xl text-lg font-bold bg-blue-500 text-white hover:bg-blue-600 shadow-lg transition cursor-pointer';
+        button.textContent = '39,000원 결제하기';
+      } else {
+        button.className = 'w-full py-4 rounded-xl text-lg font-bold bg-gray-300 text-gray-500 cursor-not-allowed transition';
+        button.textContent = '모든 약관에 동의해주세요';
+      }
+      
+      return allChecked;
+    }
+
+    // 결제 요청
+    async function requestPayment() {
+      if (!checkAgreements()) {
+        alert('모든 약관에 동의해주세요.');
+        return;
+      }
+
+      if (!tossPayments) {
+        alert('결제 시스템이 초기화되지 않았습니다. 페이지를 새로고침해주세요.');
+        return;
+      }
+
+      // 고유한 주문 ID 생성
+      const orderId = `ALBI_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const jobTitle = document.getElementById('jobTitle').textContent;
+      const employerName = document.getElementById('employerName').textContent;
+
+      console.log('📝 결제 요청:', {
+        orderId,
+        amount,
+        jobTitle,
+        employerName
+      });
+
+      try {
+        // 토스페이먼츠 결제 요청
+        await tossPayments.requestPayment('카드', {
+          amount: amount,
+          orderId: orderId,
+          orderName: `알비 채용 수수료 - ${jobTitle}`,
+          customerName: employerName,
+          successUrl: `${window.location.origin}/payment-success?orderId=${orderId}`,
+          failUrl: `${window.location.origin}/payment-fail`,
+        });
+      } catch (error) {
+        console.error('❌ 결제 오류:', error);
+        
+        if (error.code === 'USER_CANCEL') {
+          alert('결제를 취소하셨습니다.');
+        } else if (error.code === 'INVALID_CARD_COMPANY') {
+          alert('유효하지 않은 카드입니다. 다른 카드를 사용해주세요.');
+        } else {
+          alert('결제 중 오류가 발생했습니다.\n오류: ' + (error.message || '알 수 없는 오류'));
+        }
+      }
+    }
+
+    // 수수료 정책 보기
+    function showFeePolicy() {
+      alert(`📋 수수료 정책
+
+• 채용 성공 수수료: 39,000원 (VAT 포함)
+• 결제 시점: 구인자가 구직자를 최종 선택한 시점
+• 환불 정책: 7일 이내 100% 환불 가능
+• 취소 수수료: 없음
+
+알비는 성공적인 채용이 이루어졌을 때만 수수료를 받습니다.
+1시간 체험 진행에는 수수료가 없습니다.`);
+    }
+
+    // 전자금융거래 약관 보기
+    function showPaymentTerms() {
+      alert(`📋 전자금융거래 이용약관 (요약)
+
+제1조 (목적)
+본 약관은 알비가 제공하는 전자금융거래 서비스에 관한 사항을 규정합니다.
+
+제2조 (거래 지시의 철회)
+결제 완료 전까지 거래 지시를 철회할 수 있습니다.
+
+제3조 (오류의 정정)
+서비스 이용 중 오류가 있는 경우 즉시 정정을 요청할 수 있습니다.
+
+제4조 (개인정보 보호)
+결제 정보는 안전하게 암호화되어 처리됩니다.
+
+전체 약관은 결제 완료 후 이메일로 발송됩니다.`);
+    }
+
+    // 체크박스 이벤트 리스너
+    document.getElementById('agreeTerms').addEventListener('change', checkAgreements);
+    document.getElementById('agreeFee').addEventListener('change', checkAgreements);
+    document.getElementById('agreePayment').addEventListener('change', checkAgreements);
+
+    // 페이지 로드 시 초기화
+    window.onload = function() {
+      // 토스페이먼츠 초기화
+      initTossPayments();
+      
+      // URL 파라미터에서 정보 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      const job = urlParams.get('job');
+      const employer = urlParams.get('employer');
+      
+      if (job) {
+        document.getElementById('jobTitle').textContent = decodeURIComponent(job);
+      }
+      if (employer) {
+        document.getElementById('employerName').textContent = decodeURIComponent(employer);
+      }
+
+      console.log('💳 결제 페이지 로드 완료');
+      console.log('📍 직무:', document.getElementById('jobTitle').textContent);
+      console.log('📍 구인자:', document.getElementById('employerName').textContent);
+    };
+
+    // 페이지 이탈 방지 (약관 동의 후)
+    window.addEventListener('beforeunload', function(e) {
+      const allChecked = checkAgreements();
+      if (allChecked) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '결제를 진행하지 않으시겠습니까?';
+      }
+    });
+  </script>
+</body>
+</html>
