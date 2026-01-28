@@ -25,6 +25,17 @@
       50% { transform: translateY(-10px); }
     }
     
+    @keyframes floatSlow {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(10px, -10px) rotate(5deg); }
+      66% { transform: translate(-10px, 10px) rotate(-5deg); }
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
     .hero-gradient {
       background: linear-gradient(-45deg, #FF6B35, #FF8B5F, #FFB627, #FFC947);
       background-size: 400% 400%;
@@ -56,6 +67,21 @@
     .job-category-icon:hover {
       animation: bounce 0.6s ease;
     }
+    
+    /* Floating Icons */
+    .floating-icon {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.15;
+      animation: floatSlow 8s ease-in-out infinite;
+    }
+    
+    .floating-icon:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+    .floating-icon:nth-child(2) { top: 20%; right: 8%; animation-delay: 1s; }
+    .floating-icon:nth-child(3) { top: 40%; left: 10%; animation-delay: 2s; }
+    .floating-icon:nth-child(4) { top: 60%; right: 12%; animation-delay: 3s; }
+    .floating-icon:nth-child(5) { top: 80%; left: 8%; animation-delay: 4s; }
+    .floating-icon:nth-child(6) { bottom: 15%; right: 10%; animation-delay: 5s; }
     
     /* Counter Animation */
     @keyframes countUp {
@@ -100,21 +126,21 @@
           <span style="font-size: 1.5rem; font-weight: 700;">알비</span>
         </a>
         
-        <!-- Center: Categories -->
+        <!-- Center: Categories (Horizontal) -->
         <div class="hidden md:flex items-center gap-8">
-          <a href="/jobs" class="nav-item">
+          <a href="/jobs" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
             <i class="fas fa-briefcase"></i>
             <span>알바찾기</span>
           </a>
-          <a href="/community.html" class="nav-item">
+          <a href="/community.html" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
             <i class="fas fa-comments"></i>
             <span>커뮤니티</span>
           </a>
-          <a href="/chat.html" class="nav-item">
+          <a href="/chat.html" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
             <i class="fas fa-robot"></i>
             <span>AI 면접</span>
           </a>
-          <a href="/calculator.html" class="nav-item">
+          <a href="/calculator.html" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
             <i class="fas fa-calculator"></i>
             <span>급여계산</span>
           </a>
@@ -139,6 +165,14 @@
     <!-- Hero Section -->
     <section class="hero-gradient text-white relative overflow-hidden section-spacing">
       <div class="absolute inset-0 bg-black/5"></div>
+      
+      <!-- Floating Background Icons -->
+      <div class="floating-icon">🏪</div>
+      <div class="floating-icon">☕</div>
+      <div class="floating-icon">🍕</div>
+      <div class="floating-icon">👕</div>
+      <div class="floating-icon">🍜</div>
+      <div class="floating-icon">🎵</div>
       
       <div class="container container-md relative z-10 text-center">
         <div class="mascot-float mb-5">
@@ -166,12 +200,15 @@
         </div>
         
         <!-- Job Category Icons with Motion -->
-        <div class="flex justify-center items-center gap-6 mb-5">
+        <div class="flex flex-wrap justify-center items-center gap-4 mb-5">
           <div class="job-category-icon" title="편의점">🏪</div>
-          <div class="job-category-icon" title="중국집">🍜</div>
           <div class="job-category-icon" title="카페">☕</div>
+          <div class="job-category-icon" title="음식점">🍕</div>
+          <div class="job-category-icon" title="패스트푸드">🍔</div>
+          <div class="job-category-icon" title="중국집">🍜</div>
           <div class="job-category-icon" title="옷가게">👕</div>
-          <div class="job-category-icon" title="음식점">🍽️</div>
+          <div class="job-category-icon" title="배달">🛵</div>
+          <div class="job-category-icon" title="마트">🛒</div>
         </div>
         
         <div class="albi-points albi-points-lg mx-auto" style="max-width: fit-content;">
@@ -195,9 +232,9 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Feature 1: 1시간 시각체험 -->
-          <div class="feature-card card relative" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);">
-            <div class="card-body">
-              <div style="font-size: 3rem; margin-bottom: var(--space-md);">👀</div>
+          <div class="feature-card card relative" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 2px solid #3B82F6;">
+            <div class="card-body text-center">
+              <div style="font-size: 3.5rem; margin-bottom: var(--space-md);">👀</div>
               <h3 class="text-xl font-bold mb-3">1시간 시각체험</h3>
               <p class="text-gray-700 mb-4" style="line-height: 1.6;">
                 일하지 않고 관찰만! 직장 분위기를 미리 확인하고 마음에 들면 바로 시작하세요.
@@ -220,9 +257,9 @@
           </div>
 
           <!-- Feature 2: AI 면접 -->
-          <div class="feature-card card relative" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);">
-            <div class="card-body">
-              <div style="font-size: 3rem; margin-bottom: var(--space-md);">🤖</div>
+          <div class="feature-card card relative" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%); border: 2px solid #8B5CF6;">
+            <div class="card-body text-center">
+              <div style="font-size: 3.5rem; margin-bottom: var(--space-md);">🤖</div>
               <h3 class="text-xl font-bold mb-3">AI 면접 완료</h3>
               <p class="text-gray-700 mb-4" style="line-height: 1.6;">
                 알비 AI가 미리 심층 면접을 진행합니다. 사장님은 검증된 사람만 만나보세요.
@@ -245,9 +282,9 @@
           </div>
 
           <!-- Feature 3: 알비포인트 -->
-          <div class="feature-card card relative" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);">
-            <div class="card-body">
-              <div style="font-size: 3rem; margin-bottom: var(--space-md);">🪙</div>
+          <div class="feature-card card relative" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border: 2px solid #F59E0B;">
+            <div class="card-body text-center">
+              <div style="font-size: 3.5rem; margin-bottom: var(--space-md);">🪙</div>
               <h3 class="text-xl font-bold mb-3">알비포인트 적립</h3>
               <p class="text-gray-700 mb-4" style="line-height: 1.6;">
                 체험하고, 일하고, 미션 달성하면 알비포인트가 쌓여요. 기프티콘으로 교환!
@@ -273,29 +310,44 @@
     </section>
 
     <!-- Stats Section with Counter -->
-    <section class="section-spacing bg-orange text-white">
-      <div class="container" style="max-width: 1200px;">
-        <h2 class="text-3xl font-bold text-center mb-5">알비와 함께한 성과</h2>
+    <section class="section-spacing" style="background: linear-gradient(135deg, #FF6B35 0%, #FFB627 100%); position: relative; overflow: hidden;">
+      <div class="container" style="max-width: 1200px; position: relative; z-index: 10;">
+        <div class="text-center mb-5">
+          <h2 class="text-3xl font-bold text-white mb-2">알비와 함께한 성과</h2>
+          <p class="text-white opacity-90">실시간으로 증가하는 알비의 기록</p>
+        </div>
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div class="stat-number">
-            <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-experiences">0</div>
-            <div class="text-base md:text-lg opacity-90">누적 체험 건수</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center" style="border: 2px solid rgba(255,255,255,0.3);">
+            <div class="text-white">
+              <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-experiences">0</div>
+              <div class="text-sm md:text-base opacity-90">누적 체험 건수</div>
+            </div>
           </div>
-          <div class="stat-number" style="animation-delay: 0.1s;">
-            <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-salary">0</div>
-            <div class="text-base md:text-lg opacity-90">창출 임금</div>
+          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center" style="animation-delay: 0.1s; border: 2px solid rgba(255,255,255,0.3);">
+            <div class="text-white">
+              <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-salary">0</div>
+              <div class="text-sm md:text-base opacity-90">창출 임금</div>
+            </div>
           </div>
-          <div class="stat-number" style="animation-delay: 0.2s;">
-            <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-hires">0</div>
-            <div class="text-base md:text-lg opacity-90">채용 성공</div>
+          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center" style="animation-delay: 0.2s; border: 2px solid rgba(255,255,255,0.3);">
+            <div class="text-white">
+              <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-hires">0</div>
+              <div class="text-sm md:text-base opacity-90">채용 성공</div>
+            </div>
           </div>
-          <div class="stat-number" style="animation-delay: 0.3s;">
-            <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-rating">0</div>
-            <div class="text-base md:text-lg opacity-90">평균 평점</div>
+          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-6 text-center" style="animation-delay: 0.3s; border: 2px solid rgba(255,255,255,0.3);">
+            <div class="text-white">
+              <div class="text-4xl md:text-5xl font-bold mb-2" id="stat-rating">0</div>
+              <div class="text-sm md:text-base opacity-90">평균 평점</div>
+            </div>
           </div>
         </div>
       </div>
+      
+      <!-- Background Pattern -->
+      <div style="position: absolute; top: 0; right: 0; font-size: 15rem; opacity: 0.1; transform: rotate(-15deg);">📊</div>
+      <div style="position: absolute; bottom: 0; left: 0; font-size: 10rem; opacity: 0.1; transform: rotate(15deg);">🎯</div>
     </section>
     
     <script>
@@ -320,7 +372,7 @@
       }
       
       // Intersection Observer for triggering counter
-      const statsSection = document.querySelector('.section-spacing.bg-orange');
+      const statsSection = document.querySelector('section[style*="linear-gradient(135deg, #FF6B35"]');
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -476,8 +528,8 @@
 
     <!-- Footer -->
     <footer style="background: var(--gray-900); color: white; padding: var(--space-2xl) 0;">
-      <div class="container">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div class="container" style="max-width: 1200px;">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-4">
           <div>
             <div class="flex items-center gap-2 mb-3">
               <img src="/albi-mascot.svg" alt="알비" class="albi-mascot">
@@ -501,11 +553,13 @@
           
           <div>
             <h4 class="font-bold mb-3">법적 정보</h4>
-            <ul class="flex flex-col gap-2 text-sm" style="color: var(--gray-500);">
-              <li><a href="/terms.html" class="hover:text-white">이용약관</a></li>
-              <li><a href="/privacy.html" class="hover:text-white">개인정보처리방침</a></li>
-              <li><a href="/contract.html" class="hover:text-white">전자계약서</a></li>
-            </ul>
+            <div class="flex flex-wrap gap-3 text-sm" style="color: var(--gray-500);">
+              <a href="/terms.html" class="hover:text-white">이용약관</a>
+              <span style="color: var(--gray-700);">|</span>
+              <a href="/privacy.html" class="hover:text-white">개인정보처리방침</a>
+              <span style="color: var(--gray-700);">|</span>
+              <a href="/contract.html" class="hover:text-white">전자계약서</a>
+            </div>
           </div>
           
           <div>
