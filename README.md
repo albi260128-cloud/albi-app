@@ -11,8 +11,11 @@
 ### 핵심 특징
 
 - **🎯 1시간 시각체험**: 일하지 않고 관찰만! 직장 분위기를 미리 확인
+- **📍 위치 기반 검색**: 내 주변 3km 반경 구인공고 실시간 검색
+- **🗺️ 지도 연동**: Kakao Maps로 공고 위치 시각화 및 직관적 탐색
 - **🤖 AI 면접**: Cloudflare Workers AI를 활용한 자동 면접 시스템
 - **💰 급여계산기**: 주휴수당 자동 계산 기능
+- **🎁 친구 초대**: 친구 초대 시 최대 30P 보너스 (추천인 10P + 피추천인 20P)
 - **📊 D1 데이터베이스**: Cloudflare D1 SQLite 기반 데이터 관리
 - **⚡ 엣지 배포**: 전세계 어디서나 빠른 응답 속도
 
@@ -24,33 +27,52 @@
    - 메인 랜딩 페이지 (`/`)
    - AI 챗봇 페이지 (`/chat.html`)
    - 급여계산기 페이지 (`/calculator.html`)
+   - 구인공고 목록 페이지 (`/jobs.html`) - 지도/리스트 뷰 토글
+   - 구인공고 등록 페이지 (`/post-job.html`) - 주소 검색 및 지오코딩
+   - 구인공고 상세 페이지 (`/job-detail.html`)
+   - 친구 초대 페이지 (`/referral.html`)
+   - 회원가입 페이지 (`/signup.html`) - 추천 코드 자동 적용
 
 2. **백엔드 API**
    - ✅ AI 챗봇 API (`POST /api/chat`)
    - ✅ 급여 계산 API (`POST /api/calculator/wage`)
    - ✅ 사용자 목록 조회 (`GET /api/users`)
    - ✅ 구인 공고 목록 조회 (`GET /api/jobs`)
+   - ✅ 위치 기반 공고 검색 (`GET /api/jobs/nearby`) - 3km 반경, Haversine 공식
+   - ✅ 구인 공고 상세 조회 (`GET /api/jobs/:jobId`)
+   - ✅ 구인 공고 등록 (`POST /api/jobs`)
    - ✅ 체험 예약 API (`POST /api/experiences`)
+   - ✅ 친구 추천 코드 조회 (`GET /api/referral/my-code/:userId`)
+   - ✅ 친구 추천 등록 (`POST /api/referral/register`) - 20P 지급
+   - ✅ 추천인 보상 지급 (`POST /api/referral/reward`) - 10P 지급
+   - ✅ 추천 통계 조회 (`GET /api/referral/stats/:userId`)
    - ✅ 헬스체크 (`GET /api/health`)
 
 3. **데이터베이스**
    - ✅ D1 SQLite 스키마 설계
+   - ✅ 위치 기반 검색 인덱스 (latitude, longitude)
+   - ✅ 카테고리 및 상태 인덱스
+   - ✅ 추천 시스템 테이블 (referrals)
    - ✅ 샘플 데이터 생성
    - ✅ 인덱스 최적화
 
 ### 🚧 추가 개발 예정
 
-- 사용자 인증 시스템
-- 체험 예약 관리 시스템
+- 사용자 인증 시스템 (로그인/회원가입)
+- 카카오톡/구글 소셜 로그인
+- 실시간 알림 시스템
 - 리뷰 및 평점 시스템
-- 알비포인트 적립/사용 시스템
+- 알비포인트 결제 시스템
 - 관리자 대시보드
+- 채팅 기능 (구직자-구인자 직접 소통)
 
 ## 🛠️ 기술 스택
 
 ### 프론트엔드
 - **HTML5 + TailwindCSS**: 반응형 UI
 - **Vanilla JavaScript**: 순수 자바스크립트 (프레임워크 없음)
+- **Kakao Maps API**: 지도 및 위치 검색
+- **Daum 주소 검색**: 주소 입력 및 지오코딩
 
 ### 백엔드
 - **Hono**: 초고속 웹 프레임워크
@@ -67,23 +89,28 @@
 
 ## 📦 프로젝트 구조
 
-\`\`\`
-albi-app/
+```
+webapp/
 ├── functions/
 │   └── api/
 │       └── [[path]].ts          # 모든 API 라우트
 ├── public/
 │   ├── index.html               # 메인 페이지
 │   ├── chat.html                # AI 챗봇
-│   └── calculator.html          # 급여계산기
+│   ├── calculator.html          # 급여계산기
+│   ├── jobs.html                # 구인공고 목록 (지도/리스트 뷰)
+│   ├── post-job.html            # 구인공고 등록
+│   ├── job-detail.html          # 구인공고 상세
+│   ├── referral.html            # 친구 초대
+│   └── signup.html              # 회원가입 (추천 코드 지원)
 ├── src/
 │   ├── types.ts                 # TypeScript 타입 정의
 │   └── utils.ts                 # 유틸리티 함수
 ├── schema.sql                   # D1 데이터베이스 스키마
-├── wrangler.toml                # Cloudflare 설정
+├── wrangler.jsonc               # Cloudflare 설정
 ├── package.json                 # 의존성 관리
 └── tsconfig.json                # TypeScript 설정
-\`\`\`
+```
 
 ## 🚀 빠른 시작
 
@@ -126,10 +153,21 @@ curl http://localhost:3000/api/users
 
 현재 개발 서버는 다음 URL에서 접근 가능합니다:
 
+### 메인 페이지 & 핵심 기능
 - **메인 페이지**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai
+- **구인공고 목록 (지도/리스트 뷰)**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/jobs
+- **구인공고 등록**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/post-job
+- **구인공고 상세**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/job-detail?id=job001
+
+### 유틸리티 페이지
 - **AI 챗봇**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/chat.html
 - **급여계산기**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/calculator.html
+- **친구 초대**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/referral
+- **회원가입 (추천 코드 예시)**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/signup?ref=ALBIA1B2C3
+
+### API 엔드포인트
 - **API 헬스체크**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/api/health
+- **위치 기반 검색**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai/api/jobs/nearby?lat=37.5563&lng=126.9236&radius=3
 
 ## 📚 API 문서
 
@@ -212,11 +250,19 @@ curl http://localhost:3000/api/users
 
 ### 주요 테이블
 
-- **users**: 사용자 정보
-- **jobs**: 구인 공고
+- **users**: 사용자 정보 (구직자/구인자, 알비포인트, 추천 코드)
+- **jobs**: 구인 공고 (위치 정보, 카테고리, 시급, 근무 조건)
 - **experiences**: 1시간 체험 예약
+- **referrals**: 친구 추천 관계 및 보상 내역
 - **point_transactions**: 알비포인트 거래 내역
 - **ai_interviews**: AI 면접 기록
+- **conversation_history**: 챗봇 대화 기록
+
+### 위치 기반 검색 최적화
+
+- **Haversine 공식**: 정확한 거리 계산 (km 단위)
+- **Bounding Box 필터링**: 1차 필터링으로 성능 최적화
+- **인덱스**: `idx_jobs_location (latitude, longitude)` 복합 인덱스
 
 상세 스키마는 `schema.sql` 파일 참조
 
