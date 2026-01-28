@@ -7,7 +7,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env, ApiResponse, WageCalculation } from '../../src/types';
 
-const app = new Hono<{ Bindings: Env }>();
+// Hono 앱 생성 (basePath 설정)
+const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
 // ========================================
 // 미들웨어 설정
@@ -370,4 +371,6 @@ app.onError((err, c) => {
 });
 
 // Cloudflare Pages Functions 형식으로 export
-export const onRequest = app.fetch;
+export const onRequest = async (context: any) => {
+  return app.fetch(context.request, context.env, context);
+};

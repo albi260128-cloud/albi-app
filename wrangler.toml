@@ -3,11 +3,12 @@ compatibility_date = "2024-01-01"
 pages_build_output_dir = "public"
 
 # D1 데이터베이스 설정
-# 주의: database_id는 'wrangler d1 create albi-production' 실행 후 설정해야 합니다
+# 로컬 개발: database_id는 로컬 모드에서는 자동 생성됩니다
+# 프로덕션: 'wrangler d1 create albi-production' 실행 후 실제 ID로 교체 필요
 [[d1_databases]]
 binding = "DB"
 database_name = "albi-production"
-database_id = ""  # TODO: wrangler d1 create 후 실제 ID로 교체
+database_id = "00000000-0000-0000-0000-000000000000"  # 임시 ID (로컬 개발용)
 
 # Workers AI 바인딩
 [ai]
