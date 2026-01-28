@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1시간 체험 진행 중 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .pulse-animation { animation: pulse 2s infinite; }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateY(-100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .slide-in { animation: slideIn 0.5s ease-out; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto min-h-screen p-4">
+    <!-- 긴급 중단 버튼 -->
+    <div class="fixed top-4 right-4 z-50">
+      <button onclick="emergencyStop()" 
+              class="bg-red-500 text-white px-4 py-2 rounded-full font-bold shadow-lg hover:bg-red-600 flex items-center space-x-1">
+        <span>⚠️</span>
+        <span>긴급중단</span>
+      </button>
+    </div>
+
+    <!-- 헤더 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <span>📍</span>
+        <span class="font-bold text-gray-800" id="jobTitle">홍대 ○○카페</span>
+      </div>
+      <div class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-bold flex items-center space-x-1">
+        <span>🏆</span>
+        <span id="pointsDisplay">0 P</span>
+      </div>
+    </div>
+
+    <!-- 안전 경고 -->
+    <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-6">
+      <div class="flex items-center space-x-2 mb-2">
+        <span class="text-yellow-600">⚠️</span>
+        <span class="font-bold text-yellow-800">No-Touch Rule</span>
+      </div>
+      <p class="text-sm text-yellow-700">
+        1시간 동안 <strong>절대 일하지 않고</strong> 관찰과 질문만 해주세요.<br>
+        빗자루, 계산, 서빙 등 모든 업무는 <strong class="text-red-600">금지</strong>입니다.
+      </p>
+    </div>
+
+    <!-- 타이머 -->
+    <div class="text-center mb-8">
+      <div id="timer" class="text-6xl font-mono font-bold text-gray-800 mb-4">60:00</div>
+      <button onclick="toggleTimer()" id="timerButton"
+              class="px-8 py-3 rounded-full font-bold text-white bg-orange-500 hover:bg-orange-600 transition">
+        체험 시작
+      </button>
+    </div>
+
+    <!-- 현재 미션 카드 -->
+    <div id="missionCard" class="bg-blue-50 border-2 border-blue-200 p-6 rounded-2xl shadow-lg mb-6">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-1" id="missionTitle">🔍 환경 관찰 미션</h3>
+          <p class="text-sm text-gray-600" id="missionTime">0~20분</p>
+        </div>
+        <div class="bg-white px-3 py-1 rounded-full text-sm font-bold text-orange-600" id="missionReward">
+          +15P
+        </div>
+      </div>
+      
+      <p class="text-gray-700 mb-4" id="missionDescription">
+        매장의 청결도와 분위기를 관찰하세요. 안전한 곳에서 지켜보기만 하면 됩니다.
+      </p>
+      
+      <div class="space-y-2 mb-4" id="missionTasks">
+        <div class="flex items-center space-x-2 text-sm">
+          <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+          <span>매장 청결도 5점 척도로 평가</span>
+        </div>
+        <div class="flex items-center space-x-2 text-sm">
+          <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+          <span>고객이 많이 찾는 상품 3가지 확인</span>
+        </div>
+        <div class="flex items-center space-x-2 text-sm">
+          <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+          <span>비상구 위치 파악</span>
+        </div>
+      </div>
+
+      <button onclick="completeMission()" id="missionButton"
+              class="w-full py-3 rounded-lg font-bold bg-white text-gray-800 hover:bg-gray-100 border-2 border-gray-200 transition">
+        미션 완료하고 +15P 받기
+      </button>
+    </div>
+
+    <!-- 진행 상황 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm">
+      <h4 class="font-bold mb-3">전체 진행 상황</h4>
+      <div class="space-y-2" id="progressList">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-500">⬜ 🔍 환경 관찰 미션</span>
+          <span class="text-orange-500 font-bold">15P</span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-500">⬜ 👀 업무 관찰 미션</span>
+          <span class="text-orange-500 font-bold">15P</span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-500">⬜ 💬 소통 미션</span>
+          <span class="text-orange-500 font-bold">20P</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 전역 변수
+    let timeLeft = 3600; // 60분
+    let isActive = false;
+    let currentPhase = 0;
+    let points = 0;
+    let completedMissions = [];
+    let timerInterval;
+
+    const missions = [
+      {
+        phase: 0,
+        timeRange: "0~20분",
+        title: "🔍 환경 관찰 미션",
+        description: "매장의 청결도와 분위기를 관찰하세요. 안전한 곳에서 지켜보기만 하면 됩니다.",
+        tasks: [
+          "매장 청결도 5점 척도로 평가",
+          "고객이 많이 찾는 상품 3가지 확인",
+          "비상구 위치 파악"
+        ],
+        reward: 15,
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200"
+      },
+      {
+        phase: 1,
+        timeRange: "20~40분",
+        title: "👀 업무 관찰 미션",
+        description: "직원들의 업무를 관찰하세요. 절대 도와드리려 하지 마세요!",
+        tasks: [
+          "가장 자주 하는 업무 3가지 관찰",
+          "바쁜 시간대와 한가한 시간 파악",
+          "업무 난이도 체크 (쉬움/보통/어려움)"
+        ],
+        reward: 15,
+        bgColor: "bg-purple-50",
+        borderColor: "border-purple-200"
+      },
+      {
+        phase: 2,
+        timeRange: "40~60분",
+        title: "💬 소통 미션",
+        description: "사장님이나 직원분께 궁금한 점을 질문하세요.",
+        tasks: [
+          "가장 바쁜 시간대 질문하기",
+          "직원 복지나 혜택 문의",
+          "일하면서 힘든 점 질문"
+        ],
+        reward: 20,
+        bgColor: "bg-green-50",
+        borderColor: "border-green-200"
+      }
+    ];
+
+    // 타이머 토글
+    function toggleTimer() {
+      isActive = !isActive;
+      const button = document.getElementById('timerButton');
+      
+      if (isActive) {
+        button.textContent = '일시정지';
+        button.className = 'px-8 py-3 rounded-full font-bold text-white bg-gray-400 transition';
+        startTimer();
+      } else {
+        button.textContent = '체험 재개';
+        button.className = 'px-8 py-3 rounded-full font-bold text-white bg-orange-500 hover:bg-orange-600 transition';
+        stopTimer();
+      }
+    }
+
+    // 타이머 시작
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateTimer();
+          checkPhaseChange();
+        } else {
+          completeExperience();
+        }
+      }, 1000);
+    }
+
+    // 타이머 정지
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    // 타이머 업데이트
+    function updateTimer() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      document.getElementById('timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // 페이즈 변경 체크
+    function checkPhaseChange() {
+      const elapsed = 3600 - timeLeft;
+      let newPhase = currentPhase;
+      
+      if (elapsed >= 2400) newPhase = 2; // 40분 경과
+      else if (elapsed >= 1200) newPhase = 1; // 20분 경과
+      else newPhase = 0;
+      
+      if (newPhase !== currentPhase && !completedMissions.includes(newPhase)) {
+        currentPhase = newPhase;
+        updateMissionCard();
+        showPhaseChangeNotification();
+      }
+    }
+
+    // 페이즈 변경 알림
+    function showPhaseChangeNotification() {
+      const mission = missions[currentPhase];
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-white p-4 rounded-xl shadow-2xl z-50 slide-in';
+      notification.innerHTML = `
+        <div class="text-center">
+          <div class="text-3xl mb-2">${mission.title.split(' ')[0]}</div>
+          <div class="font-bold text-gray-800">${mission.title}</div>
+          <div class="text-sm text-gray-600">${mission.timeRange}</div>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // 미션 카드 업데이트
+    function updateMissionCard() {
+      const mission = missions[currentPhase];
+      const card = document.getElementById('missionCard');
+      
+      card.className = `${mission.bgColor} ${mission.borderColor} border-2 p-6 rounded-2xl shadow-lg mb-6`;
+      document.getElementById('missionTitle').textContent = mission.title;
+      document.getElementById('missionTime').textContent = mission.timeRange;
+      document.getElementById('missionDescription').textContent = mission.description;
+      document.getElementById('missionReward').textContent = `+${mission.reward}P`;
+      
+      // 태스크 업데이트
+      const tasksHtml = mission.tasks.map(task => `
+        <div class="flex items-center space-x-2 text-sm">
+          <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+          <span>${task}</span>
+        </div>
+      `).join('');
+      document.getElementById('missionTasks').innerHTML = tasksHtml;
+      
+      // 버튼 상태
+      const button = document.getElementById('missionButton');
+      if (completedMissions.includes(currentPhase)) {
+        button.textContent = '✅ 완료!';
+        button.className = 'w-full py-3 rounded-lg font-bold bg-green-500 text-white cursor-default';
+        button.disabled = true;
+      } else {
+        button.textContent = `미션 완료하고 +${mission.reward}P 받기`;
+        button.className = 'w-full py-3 rounded-lg font-bold bg-white text-gray-800 hover:bg-gray-100 border-2 border-gray-200 transition';
+        button.disabled = false;
+      }
+    }
+
+    // 미션 완료
+    function completeMission() {
+      if (completedMissions.includes(currentPhase)) return;
+      
+      const mission = missions[currentPhase];
+      points += mission.reward;
+      completedMissions.push(currentPhase);
+      
+      // 포인트 표시 업데이트
+      document.getElementById('pointsDisplay').textContent = `${points} P`;
+      
+      // 포인트 획득 애니메이션
+      showPointAnimation(`+${mission.reward}P`);
+      
+      // 진행 상황 업데이트
+      updateProgress();
+      
+      // 버튼 상태 업데이트
+      updateMissionCard();
+    }
+
+    // 포인트 애니메이션
+    function showPointAnimation(text) {
+      const animation = document.createElement('div');
+      animation.textContent = text;
+      animation.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-orange-500 z-50 pulse-animation';
+      document.body.appendChild(animation);
+      
+      setTimeout(() => {
+        animation.remove();
+      }, 2000);
+    }
+
+    // 진행 상황 업데이트
+    function updateProgress() {
+      const progressHtml = missions.map((mission, index) => {
+        const isCompleted = completedMissions.includes(index);
+        return `
+          <div class="flex items-center justify-between text-sm">
+            <span class="${isCompleted ? 'text-green-600' : 'text-gray-500'}">
+              ${isCompleted ? '✅' : '⬜'} ${mission.title}
+            </span>
+            <span class="text-orange-500 font-bold">${mission.reward}P</span>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('progressList').innerHTML = progressHtml;
+    }
+
+    // 긴급 중단
+    function emergencyStop() {
+      if (confirm("⚠️ 정말 체험을 중단하시겠습니까?\n\n중단 사유:\n- 안전 문제\n- 업무 강요\n- 불편한 상황\n\n획득한 포인트는 유지됩니다.")) {
+        isActive = false;
+        stopTimer();
+        
+        if (confirm("🚨 긴급 상황인가요?\n24시간 상담원 연결을 원하시면 '확인'을 눌러주세요.")) {
+          window.location.href = 'tel:1588-0000';
+        } else {
+          // 메인 페이지로 이동
+          window.location.href = '/';
+        }
+      }
+    }
+
+    // 체험 완료
+    function completeExperience() {
+      stopTimer();
+      alert(`🎉 체험 완료!\n\n총 획득 포인트: ${points} P\n\n이제 이 직장에서 일하고 싶은지 결정해주세요!`);
+      
+      // 포인트 저장
+      const savedPoints = parseInt(localStorage.getItem('albi_points') || '0');
+      localStorage.setItem('albi_points', (savedPoints + points).toString());
+      
+      // 결정 페이지로 이동 (임시로 메인 페이지)
+      window.location.href = '/';
+    }
+
+    // 페이지 로드 시 초기화
+    window.onload = function() {
+      updateMissionCard();
+      updateProgress();
+      
+      // URL 파라미터에서 직장 정보 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      const jobTitle = urlParams.get('job') || '홍대 ○○카페';
+      document.getElementById('jobTitle').textContent = jobTitle;
+    };
+
+    // 페이지 이탈 방지 (타이머 진행 중)
+    window.addEventListener('beforeunload', function(e) {
+      if (isActive) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '타이머가 진행 중입니다. 정말 나가시겠습니까?';
+      }
+    });
+  </script>
+</body>
+</html>
