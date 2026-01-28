@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>알비와 함께 시작하기 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-fade-in {
+      animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .bounce-animation {
+      animation: bounce 2s infinite;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 min-h-screen flex flex-col">
+  <!-- 헤더 -->
+  <div class="bg-white/10 backdrop-blur-sm p-4 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="text-4xl bounce-animation">🐜</div>
+      <div class="text-white">
+        <h1 class="text-xl font-bold">알비와 함께 시작하기</h1>
+        <p class="text-sm opacity-90">AI 면접관이 도와드릴게요</p>
+      </div>
+    </div>
+    <button onclick="skipOnboarding()" class="text-white/70 hover:text-white text-sm">
+      건너뛰기 →
+    </button>
+  </div>
+
+  <!-- 진행 상태 바 -->
+  <div class="bg-white/10 backdrop-blur-sm px-4 py-2">
+    <div class="max-w-md mx-auto">
+      <div class="flex items-center justify-between text-white text-xs mb-2">
+        <span>진행 상황</span>
+        <span id="progressText">0/5</span>
+      </div>
+      <div class="w-full bg-white/20 rounded-full h-2">
+        <div id="progressBar" class="bg-white rounded-full h-2 transition-all duration-500" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 채팅 영역 -->
+  <div class="flex-1 overflow-y-auto p-4">
+    <div class="max-w-md mx-auto space-y-4" id="chatMessages">
+      <!-- 초기 메시지 -->
+      <div class="flex items-start space-x-3 message-fade-in">
+        <div class="w-10 h-10 rounded-full bg-white text-orange-500 flex items-center justify-center flex-shrink-0">
+          🐜
+        </div>
+        <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-lg max-w-[80%]">
+          <div>안녕하세요! 저는 알비예요 🐜<br><br>알바하는 <strong>벌개미</strong>처럼 열심히 여러분의 일자리 찾기를 도와드릴게요!<br><br>먼저 <strong class="text-orange-600">성함</strong>을 알려주세요!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 입력 영역 -->
+  <div class="bg-white/10 backdrop-blur-sm p-4">
+    <div class="max-w-md mx-auto">
+      <div id="inputArea" class="flex space-x-3">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="메시지를 입력하세요..."
+          class="flex-1 bg-white/20 backdrop-blur-sm text-white placeholder-white/70 border-2 border-white/30 rounded-full px-6 py-3 focus:outline-none focus:border-white transition"
+          autocomplete="off"
+        />
+        <button
+          id="sendButton"
+          onclick="sendMessage()"
+          class="bg-white text-orange-500 px-6 py-3 rounded-full hover:bg-gray-100 transition shadow-lg font-bold"
+        >
+          전송
+        </button>
+      </div>
+      
+      <!-- 빠른 응답 버튼 (동적 생성) -->
+      <div id="quickReplies" class="mt-3 flex flex-wrap gap-2 hidden"></div>
+      
+      <!-- 완료 버튼 (처음엔 숨김) -->
+      <button
+        id="completeButton"
+        onclick="completeOnboarding()"
+        class="w-full bg-white text-orange-500 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg mt-4 hidden"
+      >
+        회원가입 완료하고 20P 받기 🎉
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 0;
+    let userInfo = {
+      name: '',
+      userType: '',
+      interests: '',
+      experience: '',
+      location: ''
+    };
+    let isLoading = false;
+
+    const onboardingFlow = [
+      {
+        step: 0,
+        expectsInput: 'name',
+        quickReplies: null,
+        nextMessage: (name) => `반가워요 <strong class="text-orange-600">${name}님</strong>! 🎉<br><br>알비는 <strong>1시간 직장체험 서비스</strong>예요. 실제로 일하지 않고 관찰만 해서 직장을 미리 체험할 수 있어요.<br><br>${name}님은 일자리를 찾고 계신가요, 아니면 직원을 구하고 계신가요?`
+      },
+      {
+        step: 1,
+        expectsInput: 'userType',
+        quickReplies: [
+          { text: '🔍 일자리 찾기 (구직자)', value: 'jobseeker' },
+          { text: '👔 직원 구하기 (구인자)', value: 'employer' }
+        ],
+        nextMessage: {
+          jobseeker: "좋아요! 어떤 종류의 알바에 관심이 있으신가요? 🤔<br><br>자유롭게 말씀해주세요!",
+          employer: "사장님이시군요! 👔<br><br>어떤 업종이신가요?<br><br>자유롭게 말씀해주세요!"
+        }
+      },
+      {
+        step: 2,
+        expectsInput: 'interests',
+        quickReplies: null,
+        nextMessage: {
+          jobseeker: "훌륭한 선택이에요! 😊<br><br>혹시 관련 경험이 있으신가요?",
+          employer: "멋진 사업이시네요! 💪<br><br>어떤 직원분을 찾고 계신가요?"
+        }
+      },
+      {
+        step: 3,
+        expectsInput: 'experience',
+        quickReplies: null,
+        nextMessage: "마지막 질문이에요! 🎯<br><br>어느 지역에서 일하고 싶으신가요?<br>(또는 사업장이 어디에 있으신가요?)<br><br>예: 홍대, 강남, 신촌, 건대 등"
+      },
+      {
+        step: 4,
+        expectsInput: 'location',
+        quickReplies: null,
+        isComplete: true
+      }
+    ];
+
+    function updateProgress() {
+      const progress = ((currentStep + 1) / onboardingFlow.length) * 100;
+      document.getElementById('progressBar').style.width = `${progress}%`;
+      document.getElementById('progressText').textContent = `${currentStep + 1}/${onboardingFlow.length}`;
+    }
+
+    function addMessage(type, content, isHTML = false) {
+      const messagesDiv = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message-fade-in';
+      
+      if (type === 'user') {
+        messageDiv.className += ' flex items-start space-x-3 flex-row-reverse space-x-reverse';
+        messageDiv.innerHTML = `
+          <div class="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center flex-shrink-0">
+            👤
+          </div>
+          <div class="bg-white/20 backdrop-blur-sm text-white p-4 rounded-2xl rounded-tr-none shadow-lg max-w-[80%]">
+            <div>${content}</div>
+          </div>
+        `;
+      } else {
+        messageDiv.className += ' flex items-start space-x-3';
+        const formattedContent = isHTML ? content : content.replace(/\n/g, '<br>');
+        messageDiv.innerHTML = `
+          <div class="w-10 h-10 rounded-full bg-white text-orange-500 flex items-center justify-center flex-shrink-0">
+            🐜
+          </div>
+          <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-lg max-w-[80%]">
+            <div>${formattedContent}</div>
+          </div>
+        `;
+      }
+      
+      messagesDiv.appendChild(messageDiv);
+      
+      // 스크롤을 부드럽게 하단으로
+      setTimeout(() => {
+        messagesDiv.scrollTo({
+          top: messagesDiv.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+
+    function showLoading() {
+      const messagesDiv = document.getElementById('chatMessages');
+      const loadingDiv = document.createElement('div');
+      loadingDiv.id = 'loading';
+      loadingDiv.className = 'flex items-start space-x-3 message-fade-in';
+      loadingDiv.innerHTML = `
+        <div class="w-10 h-10 rounded-full bg-white text-orange-500 flex items-center justify-center flex-shrink-0">
+          🐜
+        </div>
+        <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-lg">
+          <div class="flex items-center space-x-2">
+            <div class="animate-spin">⏳</div>
+            <span class="text-gray-600">알비가 생각 중...</span>
+          </div>
+        </div>
+      `;
+      messagesDiv.appendChild(loadingDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function hideLoading() {
+      const loading = document.getElementById('loading');
+      if (loading) loading.remove();
+    }
+
+    function showQuickReplies(replies) {
+      const quickRepliesDiv = document.getElementById('quickReplies');
+      
+      if (!replies || replies.length === 0) {
+        quickRepliesDiv.classList.add('hidden');
+        return;
+      }
+
+      quickRepliesDiv.innerHTML = replies.map(reply => `
+        <button
+          onclick="selectQuickReply('${reply.value}', '${reply.text.replace(/'/g, "\\'")}')"
+          class="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm hover:bg-white/30 transition border border-white/30"
+        >
+          ${reply.text}
+        </button>
+      `).join('');
+      
+      quickRepliesDiv.classList.remove('hidden');
+    }
+
+    function hideQuickReplies() {
+      const quickRepliesDiv = document.getElementById('quickReplies');
+      quickRepliesDiv.classList.add('hidden');
+      quickRepliesDiv.innerHTML = '';
+    }
+
+    function selectQuickReply(value, text) {
+      document.getElementById('messageInput').value = value;
+      hideQuickReplies();
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      if (isLoading) return;
+      
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+      
+      addMessage('user', message);
+      input.value = '';
+      isLoading = true;
+      hideQuickReplies();
+      
+      showLoading();
+      
+      // 사용자 입력 처리
+      const currentFlow = onboardingFlow[currentStep];
+      
+      // 정보 저장
+      switch (currentFlow.expectsInput) {
+        case 'name':
+          userInfo.name = message;
+          break;
+        case 'userType':
+          if (message === 'jobseeker' || message.includes('구직') || message.includes('일자리')) {
+            userInfo.userType = 'jobseeker';
+          } else if (message === 'employer' || message.includes('구인') || message.includes('직원')) {
+            userInfo.userType = 'employer';
+          } else {
+            userInfo.userType = 'jobseeker'; // 기본값
+          }
+          break;
+        case 'interests':
+          userInfo.interests = message;
+          break;
+        case 'experience':
+          userInfo.experience = message;
+          break;
+        case 'location':
+          userInfo.location = message;
+          break;
+      }
+      
+      // 다음 메시지 생성
+      setTimeout(() => {
+        hideLoading();
+        
+        if (currentFlow.isComplete) {
+          // 온보딩 완료
+          const userTypeText = userInfo.userType === 'jobseeker' ? '구직자' : '구인자';
+          const actionText = userInfo.userType === 'jobseeker' ? '맞춤 일자리를 추천' : '적합한 인재를 추천';
+          
+          const completionMessage = `완벽해요! 🎉<br><br><strong class="text-orange-600">${userInfo.name}님</strong>의 정보를 정리해드릴게요:<br><br>👤 <strong>${userTypeText}</strong><br>🎯 관심분야: ${userInfo.interests}<br>💼 경험: ${userInfo.experience}<br>📍 지역: ${userInfo.location}<br><br>이제 ${actionText}해드릴게요!<br><br><strong class="text-orange-600">가입 보너스 20P</strong>를 드립니다! 🎁`;
+          
+          addMessage('bot', completionMessage, true);
+          
+          // 완료 버튼 표시
+          document.getElementById('inputArea').classList.add('hidden');
+          document.getElementById('completeButton').classList.remove('hidden');
+        } else {
+          // 다음 단계 진행
+          currentStep++;
+          updateProgress();
+          
+          const nextFlow = onboardingFlow[currentStep];
+          let botMessage = '';
+          
+          if (typeof nextFlow.nextMessage === 'string') {
+            botMessage = nextFlow.nextMessage;
+          } else if (typeof nextFlow.nextMessage === 'function') {
+            botMessage = nextFlow.nextMessage(userInfo.name);
+          } else if (typeof nextFlow.nextMessage === 'object') {
+            botMessage = nextFlow.nextMessage[userInfo.userType || 'jobseeker'];
+          }
+          
+          addMessage('bot', botMessage, true);
+          
+          // 빠른 응답 버튼 표시
+          if (nextFlow.quickReplies) {
+            showQuickReplies(nextFlow.quickReplies);
+          }
+        }
+        
+        isLoading = false;
+        document.getElementById('messageInput').focus();
+      }, 1500);
+    }
+
+    function completeOnboarding() {
+      // 사용자 정보 저장
+      localStorage.setItem('albi_user_info', JSON.stringify(userInfo));
+      localStorage.setItem('albi_user_email', userInfo.name + '@albi.co.kr'); // 임시 이메일
+      
+      // 가입 보너스 포인트
+      const currentPoints = parseInt(localStorage.getItem('albi_points') || '0');
+      localStorage.setItem('albi_points', (currentPoints + 20).toString());
+      
+      // 가입 완료 표시
+      localStorage.setItem('albi_onboarding_completed', 'true');
+      
+      alert(`🎉 환영합니다, ${userInfo.name}님!\n\n회원가입이 완료되었습니다.\n가입 보너스 20 알비포인트가 지급되었습니다.`);
+      
+      // 메인 페이지로 이동
+      window.location.href = '/';
+    }
+
+    function skipOnboarding() {
+      if (confirm('온보딩을 건너뛰시겠습니까?\n\n나중에 프로필에서 정보를 입력할 수 있습니다.')) {
+        localStorage.setItem('albi_onboarding_completed', 'true');
+        window.location.href = '/';
+      }
+    }
+
+    // Enter 키 이벤트
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // 페이지 로드 시
+    window.onload = function() {
+      // 이미 온보딩 완료했는지 확인
+      if (localStorage.getItem('albi_onboarding_completed')) {
+        if (confirm('이미 회원가입이 완료되었습니다.\n메인 페이지로 이동하시겠습니까?')) {
+          window.location.href = '/';
+          return;
+        }
+      }
+      
+      // 포커스
+      document.getElementById('messageInput').focus();
+      
+      // 초기 진행 상태 업데이트
+      updateProgress();
+    };
+
+    // 페이지 이탈 방지
+    window.addEventListener('beforeunload', function(e) {
+      if (currentStep > 0 && currentStep < onboardingFlow.length) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '온보딩을 종료하시겠습니까?';
+      }
+    });
+  </script>
+</body>
+</html>
