@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>안전 모달 테스트 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto min-h-screen p-4 pt-20">
+    <!-- 헤더 -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold mb-4">안전 모달 테스트</h1>
+      <p class="text-gray-600">법적 안전장치 모달 동작을 테스트합니다</p>
+    </div>
+
+    <!-- 테스트 버튼들 -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-bold mb-4">기본 사용법</h2>
+        <div class="space-y-3">
+          <button onclick="testBasicModal()"
+                  class="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600">
+            기본 모달 열기
+          </button>
+          
+          <button onclick="testWithJobTitle()"
+                  class="w-full py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600">
+            직무명과 함께 열기
+          </button>
+          
+          <button onclick="testWithCallback()"
+                  class="w-full py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600">
+            콜백 함수 테스트
+          </button>
+        </div>
+      </div>
+
+      <!-- 결과 표시 -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-bold mb-4">실행 결과</h2>
+        <div id="result" class="text-sm text-gray-600 bg-gray-50 rounded-lg p-4 min-h-[100px]">
+          테스트 버튼을 클릭해보세요
+        </div>
+      </div>
+
+      <!-- 동의 내역 -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-bold">동의 내역</h2>
+          <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-700">
+            전체 삭제
+          </button>
+        </div>
+        <div id="historyList" class="space-y-2">
+          <!-- JavaScript로 채워짐 -->
+        </div>
+      </div>
+
+      <!-- API 테스트 -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-bold mb-4">API 테스트</h2>
+        <div class="space-y-2 text-sm">
+          <button onclick="testIsAllAgreed()"
+                  class="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            isAllAgreed() 확인
+          </button>
+          <button onclick="testGetHistory()"
+                  class="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            getAgreementHistory() 조회
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 하단 링크 -->
+    <div class="text-center mt-8 space-y-2">
+      <a href="/" class="block text-sm text-gray-500 hover:text-gray-700">
+        ← 메인으로 돌아가기
+      </a>
+      <a href="/experience" class="block text-sm text-blue-500 hover:text-blue-700">
+        체험 페이지에서 실제 사용 보기 →
+      </a>
+    </div>
+  </div>
+
+  <!-- SafetyModal 스크립트 -->
+  <script src="/js/safety-modal.js"></script>
+
+  <!-- 테스트 스크립트 -->
+  <script>
+    // 결과 표시 함수
+    function showResult(message, data = null) {
+      const resultDiv = document.getElementById('result');
+      const timestamp = new Date().toLocaleTimeString('ko-KR');
+      
+      let html = `<div class="mb-2"><strong>[${timestamp}]</strong> ${message}</div>`;
+      if (data) {
+        html += `<pre class="text-xs bg-white p-2 rounded mt-2 overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>`;
+      }
+      
+      resultDiv.innerHTML = html + resultDiv.innerHTML;
+    }
+
+    // 1. 기본 모달 열기
+    function testBasicModal() {
+      showResult('기본 모달 열기 실행');
+      safetyModal.open();
+    }
+
+    // 2. 직무명과 함께 열기
+    function testWithJobTitle() {
+      const jobTitles = [
+        '홍대 스타벅스 알바',
+        '강남 편의점 야간 알바',
+        '이태원 레스토랑 서빙',
+        '신촌 카페 바리스타'
+      ];
+      const randomJob = jobTitles[Math.floor(Math.random() * jobTitles.length)];
+      
+      showResult(`직무명 "${randomJob}"과 함께 모달 열기`);
+      safetyModal.open(randomJob);
+    }
+
+    // 3. 콜백 함수 테스트
+    function testWithCallback() {
+      showResult('콜백 함수와 함께 모달 열기');
+      safetyModal.open('테스트 직무', (data) => {
+        showResult('✅ 콜백 실행됨!', data);
+        alert('동의가 완료되었습니다!\n\n콘솔과 결과 창을 확인해보세요.');
+        loadHistory();
+      });
+    }
+
+    // 4. isAllAgreed 테스트
+    function testIsAllAgreed() {
+      const result = safetyModal.isAllAgreed();
+      showResult(`isAllAgreed(): ${result}`);
+      alert(`현재 동의 상태: ${result ? '모두 동의됨' : '미동의 항목 있음'}`);
+    }
+
+    // 5. getAgreementHistory 테스트
+    function testGetHistory() {
+      const history = safetyModal.getAgreementHistory();
+      showResult(`동의 내역 ${history.length}개 조회됨`, history);
+    }
+
+    // 동의 내역 로드
+    function loadHistory() {
+      const history = safetyModal.getAgreementHistory();
+      const listDiv = document.getElementById('historyList');
+      
+      if (history.length === 0) {
+        listDiv.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">동의 내역이 없습니다</p>';
+        return;
+      }
+
+      listDiv.innerHTML = history.map((item, index) => `
+        <div class="bg-gray-50 p-3 rounded-lg text-sm">
+          <div class="flex justify-between items-start mb-1">
+            <strong>${item.jobTitle || '직무명 없음'}</strong>
+            <span class="text-xs text-gray-500">${new Date(item.timestamp).toLocaleString('ko-KR')}</span>
+          </div>
+          <div class="text-xs text-gray-600">
+            ✓ 관찰만 하기 | ✓ 업무 거절 | ✓ 물건 안 만지기 | ✓ 긴급신고
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 내역 삭제
+    function clearHistory() {
+      if (confirm('모든 동의 내역을 삭제하시겠습니까?')) {
+        safetyModal.clearAgreementHistory();
+        loadHistory();
+        showResult('동의 내역이 모두 삭제되었습니다');
+      }
+    }
+
+    // 페이지 로드 시 내역 로드
+    window.addEventListener('load', () => {
+      loadHistory();
+      showResult('페이지 로드 완료 - SafetyModal 준비됨');
+    });
+  </script>
+</body>
+</html>
