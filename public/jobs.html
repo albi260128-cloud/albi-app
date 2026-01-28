@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내 주변 알바 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services"></script>
+  <style>
+    .job-card { transition: all 0.3s ease; }
+    .job-card:hover { transform: translateY(-4px); }
+    #map { width: 100%; height: calc(100vh - 200px); }
+  </style>
+</head>
+<body class="bg-gray-50 pb-20">
+  <!-- 상단 헤더 -->
+  <header class="bg-white sticky top-0 z-50 shadow-sm">
+    <div class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="text-2xl">🐜</span>
+        <div>
+          <h1 class="font-bold text-lg">내 주변 알바</h1>
+          <p class="text-xs text-gray-500" id="locationStatus">위치 찾는 중...</p>
+        </div>
+      </div>
+      <a href="/post-job" class="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-orange-600">
+        + 공고 올리기
+      </a>
+    </div>
+    
+    <!-- 뷰 전환 탭 -->
+    <div class="flex border-b">
+      <button onclick="switchView('list')" id="listTab" 
+              class="flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500">
+        📋 리스트
+      </button>
+      <button onclick="switchView('map')" id="mapTab" 
+              class="flex-1 py-3 text-sm font-bold text-gray-500 hover:text-orange-500">
+        🗺️ 지도
+      </button>
+    </div>
+  </header>
+
+  <!-- 필터 바 -->
+  <div class="bg-white px-4 py-3 border-b">
+    <div class="flex items-center space-x-3 overflow-x-auto">
+      <select id="categoryFilter" onchange="filterJobs()" 
+              class="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-orange-500">
+        <option value="all">전체</option>
+        <option value="cafe">카페 ☕</option>
+        <option value="convenience">편의점 🏪</option>
+        <option value="restaurant">음식점 🍽️</option>
+        <option value="retail">매장 👕</option>
+        <option value="etc">기타</option>
+      </select>
+      
+      <select id="sortFilter" onchange="filterJobs()"
+              class="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-orange-500">
+        <option value="distance">가까운순</option>
+        <option value="wage">높은시급순</option>
+        <option value="views">인기순</option>
+        <option value="recent">최신순</option>
+      </select>
+
+      <button onclick="getCurrentLocation()" id="locationBtn"
+              class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100 whitespace-nowrap">
+        📍 현위치
+      </button>
+    </div>
+  </div>
+
+  <!-- 리스트 뷰 -->
+  <div id="listView" class="p-4">
+    <div id="loading" class="text-center py-12">
+      <div class="text-4xl mb-4 animate-bounce">🐜</div>
+      <p class="text-gray-600">주변 알바를 찾고 있어요...</p>
+    </div>
+    
+    <div id="jobsList" class="space-y-4">
+      <!-- JavaScript로 동적 생성 -->
+    </div>
+
+    <div id="noResults" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">😢</div>
+      <h3 class="text-xl font-bold mb-2">주변에 공고가 없어요</h3>
+      <p class="text-gray-600 mb-4">검색 반경을 넓히거나 다른 지역을 확인해보세요</p>
+    </div>
+  </div>
+
+  <!-- 지도 뷰 -->
+  <div id="mapView" class="hidden relative">
+    <div id="map"></div>
+    <div class="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-lg z-10">
+      <p class="text-xs text-gray-600">🔵 내 위치 | 🧡 알바 공고</p>
+    </div>
+  </div>
+
+  <!-- 하단 네비게이션 -->
+  <nav class="fixed bottom-0 w-full bg-white border-t flex justify-around py-3 z-50">
+    <a href="/" class="flex flex-col items-center space-y-1 text-gray-500">
+      <span class="text-xl">🏠</span>
+      <span class="text-xs">홈</span>
+    </a>
+    <a href="/jobs" class="flex flex-col items-center space-y-1 text-orange-500 font-bold">
+      <span class="text-xl">📍</span>
+      <span class="text-xs">내주변</span>
+    </a>
+    <a href="/chat" class="flex flex-col items-center space-y-1 text-gray-500">
+      <span class="text-xl">💬</span>
+      <span class="text-xs">채팅</span>
+    </a>
+    <a href="/store" class="flex flex-col items-center space-y-1 text-gray-500">
+      <span class="text-xl">🎁</span>
+      <span class="text-xs">스토어</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    let currentLocation = { lat: 37.5665, lng: 126.9780 }; // 기본: 서울시청
+    let allJobs = [];
+    let map = null;
+    let markers = [];
+    let currentView = 'list';
+
+    const categoryIcons = {
+      cafe: '☕',
+      convenience: '🏪', 
+      restaurant: '🍽️',
+      retail: '👕',
+      etc: '💼'
+    };
+
+    // 초기화
+    window.onload = function() {
+      getCurrentLocation();
+    };
+
+    // 뷰 전환
+    function switchView(view) {
+      currentView = view;
+      const listView = document.getElementById('listView');
+      const mapView = document.getElementById('mapView');
+      const listTab = document.getElementById('listTab');
+      const mapTab = document.getElementById('mapTab');
+
+      if (view === 'list') {
+        listView.classList.remove('hidden');
+        mapView.classList.add('hidden');
+        listTab.className = 'flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500';
+        mapTab.className = 'flex-1 py-3 text-sm font-bold text-gray-500 hover:text-orange-500';
+      } else {
+        listView.classList.add('hidden');
+        mapView.classList.remove('hidden');
+        listTab.className = 'flex-1 py-3 text-sm font-bold text-gray-500 hover:text-orange-500';
+        mapTab.className = 'flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500';
+        
+        if (!map) initMap();
+        else if (map.relayout) map.relayout();
+      }
+    }
+
+    // 현재 위치 가져오기
+    function getCurrentLocation() {
+      const btn = document.getElementById('locationBtn');
+      const status = document.getElementById('locationStatus');
+      
+      btn.textContent = '위치 확인 중...';
+      btn.disabled = true;
+
+      if (!navigator.geolocation) {
+        alert('위치 서비스를 지원하지 않는 브라우저입니다.');
+        loadJobs();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          status.textContent = `반경 3km 내 공고`;
+          btn.textContent = '✓ 현위치';
+          btn.classList.remove('bg-blue-50', 'text-blue-600');
+          btn.classList.add('bg-green-50', 'text-green-600');
+          btn.disabled = false;
+          
+          loadJobs();
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          status.textContent = '위치 권한이 필요합니다';
+          btn.textContent = '📍 현위치';
+          btn.disabled = false;
+          loadJobs(); // 기본 위치로 로드
+        }
+      );
+    }
+
+    // 공고 데이터 로드
+    async function loadJobs() {
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        
+        const category = document.getElementById('categoryFilter').value;
+        const sort = document.getElementById('sortFilter').value;
+        
+        const params = new URLSearchParams({
+          lat: currentLocation.lat.toString(),
+          lng: currentLocation.lng.toString(),
+          radius: '3',
+          category,
+          sort
+        });
+
+        const response = await axios.get(`/api/jobs/nearby?${params}`);
+
+        if (response.data.success) {
+          allJobs = response.data.data.jobs;
+          renderJobs();
+          if (currentView === 'map') updateMap();
+        } else {
+          throw new Error(response.data.error);
+        }
+      } catch (error) {
+        console.error('Load jobs error:', error);
+        document.getElementById('loading').innerHTML = 
+          '<div class="text-center text-red-500">데이터를 불러올 수 없습니다</div>';
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    // 공고 리스트 렌더링
+    function renderJobs() {
+      const container = document.getElementById('jobsList');
+      const noResults = document.getElementById('noResults');
+
+      if (allJobs.length === 0) {
+        container.innerHTML = '';
+        noResults.classList.remove('hidden');
+        return;
+      }
+
+      noResults.classList.add('hidden');
+      
+      container.innerHTML = allJobs.map(job => {
+        const tags = JSON.parse(job.tags || '[]');
+        const workDays = JSON.parse(job.work_days || '[]');
+        
+        return `
+          <div onclick="viewJobDetail('${job.id}')" 
+               class="job-card bg-white p-4 rounded-xl shadow-sm hover:shadow-lg cursor-pointer transition">
+            <div class="flex items-start space-x-4">
+              <div class="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+                ${categoryIcons[job.category] || '💼'}
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-gray-900 mb-1 truncate">${job.title}</h3>
+                <div class="flex items-center text-sm text-gray-600 mb-2">
+                  <span>📍 ${job.location}</span>
+                  ${job.distance ? `<span class="ml-2 text-blue-600 font-bold">${job.distance}km</span>` : ''}
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-lg font-bold text-orange-600">${job.hourly_wage.toLocaleString()}원</span>
+                  <div class="flex items-center space-x-2 text-xs text-gray-500">
+                    <span>👁️ ${job.views || 0}</span>
+                    <span class="bg-orange-50 text-orange-600 px-2 py-1 rounded-full">체험가능</span>
+                  </div>
+                </div>
+                ${tags.length > 0 ? `
+                <div class="flex flex-wrap gap-1 mt-2">
+                  ${tags.slice(0, 3).map(tag => `
+                    <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">#${tag}</span>
+                  `).join('')}
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 지도 초기화
+    function initMap() {
+      if (!window.kakao || !window.kakao.maps) {
+        console.warn('Kakao Maps API 없음 - 지도 기능 비활성화');
+        document.getElementById('mapView').innerHTML = 
+          '<div class="flex items-center justify-center h-full"><p class="text-gray-500">지도 서비스를 사용할 수 없습니다</p></div>';
+        return;
+      }
+
+      const container = document.getElementById('map');
+      const options = {
+        center: new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng),
+        level: 5
+      };
+
+      map = new kakao.maps.Map(container, options);
+      updateMap();
+    }
+
+    // 지도 마커 업데이트
+    function updateMap() {
+      if (!map || !window.kakao) return;
+
+      // 기존 마커 제거
+      markers.forEach(marker => marker.setMap(null));
+      markers = [];
+
+      // 내 위치 마커
+      const myPosition = new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
+      const myMarker = new kakao.maps.Marker({
+        position: myPosition,
+        map: map
+      });
+      markers.push(myMarker);
+
+      // 공고 마커들
+      allJobs.forEach(job => {
+        if (!job.latitude || !job.longitude) return;
+
+        const position = new kakao.maps.LatLng(job.latitude, job.longitude);
+        const marker = new kakao.maps.Marker({
+          position: position,
+          map: map
+        });
+
+        // 인포윈도우
+        const infoWindow = new kakao.maps.InfoWindow({
+          content: `
+            <div style="padding:10px; min-width:200px; text-align:center;">
+              <div style="font-weight:bold; margin-bottom:5px;">${job.title}</div>
+              <div style="color:#f97316; font-weight:bold; font-size:16px; margin-bottom:5px;">
+                ${job.hourly_wage.toLocaleString()}원
+              </div>
+              <div style="color:#666; font-size:12px; margin-bottom:8px;">
+                📍 ${job.distance}km
+              </div>
+              <button onclick="viewJobDetail('${job.id}')" 
+                      style="background:#f97316; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">
+                상세보기
+              </button>
+            </div>
+          `
+        });
+
+        kakao.maps.event.addListener(marker, 'click', () => {
+          infoWindow.open(map, marker);
+        });
+
+        markers.push(marker);
+      });
+    }
+
+    // 필터 변경 시 재검색
+    function filterJobs() {
+      loadJobs();
+    }
+
+    // 공고 상세 페이지로 이동
+    function viewJobDetail(jobId) {
+      window.location.href = `/job-detail?id=${jobId}`;
+    }
+  </script>
+</body>
+</html>

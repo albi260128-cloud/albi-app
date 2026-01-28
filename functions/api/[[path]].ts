@@ -639,6 +639,211 @@ app.get('/referral/stats/:userId', async (c) => {
 });
 
 // ========================================
+// 위치 기반 구인공고 API
+// ========================================
+
+// Haversine 공식으로 두 지점 간 거리 계산 (km)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // 지구 반지름 (km)
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}
+
+// 1. 위치 기반 구인공고 검색 (3km 반경)
+app.get('/jobs/nearby', async (c) => {
+  try {
+    const lat = parseFloat(c.req.query('lat') || '37.5665');
+    const lng = parseFloat(c.req.query('lng') || '126.9780');
+    const radius = parseFloat(c.req.query('radius') || '3');
+    const category = c.req.query('category') || 'all';
+    const sortBy = c.req.query('sort') || 'distance';
+
+    // 1차 필터링: Bounding Box로 대략적 범위 좁히기 (성능 최적화)
+    const latDelta = radius / 111; // 위도 1도 ≈ 111km
+    const lngDelta = radius / (111 * Math.cos(lat * Math.PI / 180));
+
+    let query = `
+      SELECT * FROM jobs 
+      WHERE status = 'active'
+      AND latitude BETWEEN ? AND ?
+      AND longitude BETWEEN ? AND ?
+    `;
+    const params: (number | string)[] = [lat - latDelta, lat + latDelta, lng - lngDelta, lng + lngDelta];
+
+    // 카테고리 필터 추가
+    if (category !== 'all') {
+      query += ' AND category = ?';
+      params.push(category);
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT 200';
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    // 2차 필터링: 정확한 거리 계산 (Haversine 공식)
+    const nearbyJobs = (results as any[])
+      .map((job: any) => {
+        if (!job.latitude || !job.longitude) return null;
+        
+        const distance = calculateDistance(lat, lng, job.latitude, job.longitude);
+        return distance <= radius ? { ...job, distance: Math.round(distance * 10) / 10 } : null;
+      })
+      .filter(job => job !== null);
+
+    // 정렬
+    if (sortBy === 'distance') {
+      nearbyJobs.sort((a: any, b: any) => a.distance - b.distance);
+    } else if (sortBy === 'wage') {
+      nearbyJobs.sort((a: any, b: any) => b.hourly_wage - a.hourly_wage);
+    } else if (sortBy === 'views') {
+      nearbyJobs.sort((a: any, b: any) => (b.views || 0) - (a.views || 0));
+    }
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        jobs: nearbyJobs,
+        total: nearbyJobs.length,
+        center: { lat, lng },
+        radius
+      }
+    });
+  } catch (error) {
+    console.error('Nearby jobs error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '공고 검색 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 2. 구인공고 상세 조회
+app.get('/jobs/:jobId', async (c) => {
+  try {
+    const jobId = c.req.param('jobId');
+
+    // 조회수 증가와 함께 상세 정보 조회
+    await c.env.DB.prepare('UPDATE jobs SET views = views + 1 WHERE id = ?')
+      .bind(jobId).run();
+
+    const job = await c.env.DB.prepare(`
+      SELECT j.*, u.name as employer_name
+      FROM jobs j
+      LEFT JOIN users u ON j.employer_id = u.id
+      WHERE j.id = ?
+    `).bind(jobId).first();
+
+    if (!job) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '공고를 찾을 수 없습니다.' 
+      }, 404);
+    }
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: job
+    });
+  } catch (error) {
+    console.error('Job detail error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '공고 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 3. 구인공고 등록
+app.post('/jobs', async (c) => {
+  try {
+    const {
+      employerId, title, hourlyWage, location, description,
+      latitude, longitude, address, category, tags, workDays, workHours
+    } = await c.req.json();
+
+    // 유효성 검증
+    if (!employerId || !title || !location || !latitude || !longitude) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '필수 정보를 모두 입력해주세요.' 
+      }, 400);
+    }
+
+    if (hourlyWage < 10030) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '최저시급(10,030원) 이상으로 입력해주세요.' 
+      }, 400);
+    }
+
+    // 알비포인트 확인
+    const user = await c.env.DB.prepare('SELECT albi_points FROM users WHERE id = ?')
+      .bind(employerId).first();
+
+    if (!user || (user.albi_points as number) < 30) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '알비포인트가 부족합니다. (필요: 30P)' 
+      }, 400);
+    }
+
+    const jobId = 'job-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // 트랜잭션: 공고 등록 + 포인트 차감
+    await c.env.DB.batch([
+      // 공고 등록
+      c.env.DB.prepare(`
+        INSERT INTO jobs (
+          id, employer_id, title, hourly_wage, location, description,
+          latitude, longitude, address, category, tags, work_days, work_hours,
+          status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+      `).bind(
+        jobId, employerId, title, hourlyWage, location, description,
+        latitude, longitude, address, category || 'etc',
+        JSON.stringify(tags || []), JSON.stringify(workDays || []),
+        workHours, timestamp
+      ),
+      
+      // 포인트 차감
+      c.env.DB.prepare('UPDATE users SET albi_points = albi_points - 30 WHERE id = ?')
+        .bind(employerId),
+      
+      // 포인트 거래 내역
+      c.env.DB.prepare(`
+        INSERT INTO point_transactions (user_id, amount, transaction_type, description, balance_after)
+        VALUES (?, -30, 'job_posting', '구인공고 등록', 
+                (SELECT albi_points FROM users WHERE id = ?) - 30)
+      `).bind(employerId, employerId)
+    ]);
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: { jobId, message: '공고가 성공적으로 등록되었습니다!' }
+    });
+  } catch (error) {
+    console.error('Job posting error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '공고 등록 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
 // 헬스체크 및 정보 API
 // ========================================
 
@@ -665,7 +870,9 @@ app.get('/info', (c) => {
         'POST /api/calculator/wage - 급여 계산',
         'GET /api/users - 사용자 목록',
         'GET /api/jobs - 구인 공고 목록',
+        'GET /api/jobs/nearby - 위치 기반 공고 검색',
         'GET /api/jobs/:id - 구인 공고 상세',
+        'POST /api/jobs - 구인 공고 등록',
         'POST /api/experiences - 체험 예약',
         'GET /api/referral/my-code/:userId - 내 추천 코드 조회',
         'POST /api/referral/register - 친구 추천 등록',

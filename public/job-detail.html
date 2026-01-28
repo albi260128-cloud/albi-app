@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>공고 상세 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/js/safety-modal.js"></script>
+</head>
+<body class="bg-gray-50 pb-24">
+  <div class="max-w-2xl mx-auto min-h-screen bg-white shadow-xl">
+    <div id="loading" class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <div class="text-6xl mb-4 animate-bounce">🐜</div>
+        <p class="text-gray-600">공고 정보를 불러오는 중...</p>
+      </div>
+    </div>
+
+    <div id="jobDetail" class="hidden">
+      <div class="sticky top-0 bg-white z-50 px-4 py-4 border-b flex items-center justify-between">
+        <button onclick="history.back()" class="text-gray-600 hover:text-gray-800">
+          <i class="fas fa-arrow-left mr-2"></i>뒤로
+        </button>
+        <h1 class="font-bold text-lg">공고 상세</h1>
+        <button onclick="shareJob()" class="text-gray-600 hover:text-gray-800">
+          <i class="fas fa-share-alt"></i>
+        </button>
+      </div>
+
+      <div id="jobInfo"></div>
+
+      <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg">
+        <div class="max-w-2xl mx-auto">
+          <button onclick="applyForExperience()" id="applyBtn"
+                  class="w-full bg-orange-500 text-white py-4 rounded-lg font-bold hover:bg-orange-600 transition text-lg flex items-center justify-center space-x-2">
+            <span>👀</span>
+            <span>1시간 체험 신청하기</span>
+          </button>
+          <p class="text-center text-xs text-gray-500 mt-2">
+            10 알비포인트가 차감됩니다
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId = urlParams.get('id');
+    let currentJob = null;
+
+    window.onload = function() {
+      if (!jobId) {
+        alert('잘못된 접근입니다.');
+        window.location.href = '/jobs';
+        return;
+      }
+      loadJobDetail();
+    };
+
+    async function loadJobDetail() {
+      try {
+        const response = await axios.get(`/api/jobs/${jobId}`);
+
+        if (response.data.success) {
+          currentJob = response.data.data;
+          renderJobDetail(currentJob);
+        } else {
+          throw new Error(response.data.error);
+        }
+      } catch (error) {
+        console.error('Load job detail error:', error);
+        alert('공고를 불러올 수 없습니다.');
+        window.location.href = '/jobs';
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('jobDetail').classList.remove('hidden');
+      }
+    }
+
+    function renderJobDetail(job) {
+      const tags = JSON.parse(job.tags || '[]');
+      const workDays = JSON.parse(job.work_days || '[]');
+      
+      const categoryIcons = {
+        cafe: '☕',
+        convenience: '🏪',
+        restaurant: '🍽️',
+        retail: '👕',
+        etc: '💼'
+      };
+
+      document.getElementById('jobInfo').innerHTML = `
+        <div class="p-6">
+          <div class="flex items-start space-x-4 mb-6">
+            <div class="w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0">
+              ${categoryIcons[job.category] || '💼'}
+            </div>
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold text-gray-900 mb-2">${job.title}</h1>
+              <div class="flex items-center text-gray-600 mb-2">
+                <span><i class="fas fa-map-marker-alt mr-1"></i>${job.location}</span>
+                ${job.distance ? `<span class="ml-2 text-blue-600 font-bold">${job.distance}km</span>` : ''}
+              </div>
+              <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <span><i class="fas fa-eye mr-1"></i>${job.views || 0}회</span>
+                <span><i class="fas fa-calendar mr-1"></i>${new Date(job.created_at * 1000).toLocaleDateString('ko-KR')}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 rounded-2xl mb-6 text-center">
+            <div class="text-sm opacity-90 mb-2">시급</div>
+            <div class="text-4xl font-bold mb-2">${job.hourly_wage.toLocaleString()}원</div>
+            <div class="text-sm opacity-90">2025년 최저시급 ${job.hourly_wage >= 10030 ? '✓' : '✗'}</div>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-bold mb-4">근무 조건</h3>
+            <div class="space-y-3">
+              <div class="flex items-center">
+                <span class="w-6 text-gray-500"><i class="fas fa-clock"></i></span>
+                <span class="ml-2">${job.work_hours || '시간 협의'}</span>
+              </div>
+              ${workDays.length > 0 ? `
+              <div class="flex items-center">
+                <span class="w-6 text-gray-500"><i class="fas fa-calendar-week"></i></span>
+                <span class="ml-2">${workDays.join(', ')}</span>
+              </div>
+              ` : ''}
+              <div class="flex items-center">
+                <span class="w-6 text-gray-500"><i class="fas fa-map-marker-alt"></i></span>
+                <span class="ml-2">${job.address || job.location}</span>
+              </div>
+            </div>
+          </div>
+
+          ${tags.length > 0 ? `
+          <div class="mb-6">
+            <h3 class="text-lg font-bold mb-3">특징</h3>
+            <div class="flex flex-wrap gap-2">
+              ${tags.map(tag => `
+                <span class="bg-orange-100 text-orange-600 text-sm px-3 py-1 rounded-full">#${tag}</span>
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="mb-6">
+            <h3 class="text-lg font-bold mb-3">상세 설명</h3>
+            <div class="bg-gray-50 p-4 rounded-xl">
+              <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${job.description}</p>
+            </div>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-6">
+            <h3 class="text-lg font-bold mb-3 text-blue-900">사업주 정보</h3>
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-user text-blue-600"></i>
+              </div>
+              <div>
+                <div class="font-bold text-blue-900">${job.employer_name || '사업주'}</div>
+                <div class="text-sm text-blue-600">알비 인증 사업주</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 mb-20">
+            <h3 class="text-lg font-bold mb-3 text-yellow-900 flex items-center">
+              <span class="mr-2"><i class="fas fa-exclamation-triangle"></i></span>
+              1시간 체험 안내
+            </h3>
+            <ul class="text-sm text-yellow-800 space-y-2">
+              <li>• <strong>관찰만 가능</strong>: 실제 업무는 하지 않습니다</li>
+              <li>• <strong>No-Touch Rule</strong>: 도구나 상품을 만지지 않습니다</li>
+              <li>• <strong>질문 환영</strong>: 궁금한 점은 자유롭게 질문하세요</li>
+              <li>• <strong>안전 우선</strong>: 불편하면 언제든 중단 가능합니다</li>
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    function applyForExperience() {
+      const userInfo = JSON.parse(localStorage.getItem('albi_user_info') || '{}');
+      
+      if (!userInfo.id) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/onboarding';
+        return;
+      }
+
+      if (typeof safetyModal !== 'undefined' && safetyModal.open) {
+        safetyModal.open(currentJob.title, () => {
+          alert('체험 신청이 완료되었습니다! 🎉\\n사업주의 승인을 기다려주세요.');
+          window.location.href = '/experience';
+        });
+      } else {
+        alert('체험 신청이 완료되었습니다! 🎉\\n사업주의 승인을 기다려주세요.');
+        window.location.href = '/experience';
+      }
+    }
+
+    function shareJob() {
+      const shareData = {
+        title: currentJob.title,
+        text: `${currentJob.title} - 시급 ${currentJob.hourly_wage.toLocaleString()}원`,
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        navigator.share(shareData);
+      } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert('공고 링크가 복사되었습니다!');
+        });
+      }
+    }
+  </script>
+</body>
+</html>

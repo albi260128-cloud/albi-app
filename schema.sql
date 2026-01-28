@@ -27,6 +27,15 @@ CREATE TABLE IF NOT EXISTS jobs (
   requirements TEXT,
   benefits TEXT,
   status TEXT DEFAULT 'active',
+  latitude REAL,
+  longitude REAL,
+  address TEXT,
+  category TEXT DEFAULT 'etc',
+  tags TEXT,
+  work_days TEXT,
+  work_hours TEXT,
+  views INTEGER DEFAULT 0,
+  featured INTEGER DEFAULT 0,
   created_at INTEGER DEFAULT (unixepoch()),
   FOREIGN KEY (employer_id) REFERENCES users(id)
 );
@@ -113,6 +122,11 @@ CREATE INDEX IF NOT EXISTS idx_referrals_referee ON referrals(referee_id);
 CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status);
 CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
 
+CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_jobs_category ON jobs(category);
+CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(status) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_jobs_featured ON jobs(featured) WHERE featured = 1;
+
 -- ========================================
 -- 샘플 데이터 (개발/테스트용)
 -- ========================================
@@ -123,10 +137,24 @@ INSERT OR IGNORE INTO users (id, email, user_type, name, albi_points, trust_scor
 ('user003', 'jobseeker2@albi.co.kr', 'jobseeker', '박알바', 30, 4.5, 'ALBIG7H8I9'),
 ('user004', 'employer2@albi.co.kr', 'employer', '최대표', 80, 4.9, 'ALBIJ1K2L3');
 
-INSERT OR IGNORE INTO jobs (id, employer_id, title, hourly_wage, location, description, work_schedule) VALUES
-('job001', 'user002', '홍대 카페 알바', 12000, '서울 마포구 홍대입구역 2번 출구', '친절한 카페 직원을 구합니다. 커피 제조 경험 우대', '{"weekdays": ["월", "수", "금"], "hours": "10:00-18:00"}'),
-('job002', 'user002', '강남 편의점 야간 알바', 13500, '서울 강남구 강남역 인근', '야간 근무 가능자 우대. 책임감 있는 분 환영', '{"weekdays": ["화", "목", "토"], "hours": "22:00-06:00"}'),
-('job003', 'user004', '신촌 음식점 홀 서빙', 11000, '서울 서대문구 신촌역 근처', '밝고 친절한 성격의 홀 직원 모집', '{"weekdays": ["월", "화", "수", "목"], "hours": "11:00-15:00"}');
+INSERT OR IGNORE INTO jobs (
+  id, employer_id, title, hourly_wage, location, description, 
+  latitude, longitude, address, category, tags, work_days, work_hours, status
+) VALUES
+  ('job001', 'user002', '홍대 감성 카페 직원 모집', 12000, '서울 마포구', 
+   '친절하고 밝은 분을 찾습니다. 커피 경험 없어도 괜찮아요!',
+   37.5563, 126.9236, '서울 마포구 양화로 160', 'cafe', 
+   '["초보환영", "주말근무", "장기알바"]', '["월", "화", "수", "목", "금"]', '09:00-18:00', 'active'),
+   
+  ('job002', 'user002', 'GS25 편의점 야간 알바', 13000, '서울 마포구',
+   '야간 근무 가능하신 분 우대합니다. 2인 근무로 안전해요!',
+   37.5547, 126.9207, '서울 마포구 와우산로 94', 'convenience',
+   '["야간근무", "초보환영"]', '["월", "수", "금"]', '22:00-06:00', 'active'),
+   
+  ('job003', 'user004', '신촌 떡볶이집 홀서빙', 11000, '서울 서대문구',
+   '밝고 친절한 분! 음식 할인 혜택 있어요 🍜',
+   37.5596, 126.9370, '서울 서대문구 신촌역로 30', 'restaurant',
+   '["초보환영", "식사제공"]', '["화", "수", "목", "금", "토"]', '11:00-20:00', 'active');
 
 INSERT OR IGNORE INTO experiences (id, job_id, jobseeker_id, employer_id, status, scheduled_date, scheduled_time) VALUES
 ('exp001', 'job001', 'user001', 'user002', 'completed', '2025-01-20', '14:00'),
