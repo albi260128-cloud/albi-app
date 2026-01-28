@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>알비 스토어 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes slideUp {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .slide-up { animation: slideUp 0.3s ease-out; }
+    
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-500px) rotate(720deg); opacity: 0; }
+    }
+    .confetti { animation: confetti 2s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto min-h-screen p-4 pb-20">
+    <!-- 헤더 -->
+    <div class="text-center mb-8 pt-8">
+      <div class="text-6xl mb-4">🎁</div>
+      <h1 class="text-2xl font-bold mb-2">알비 스토어</h1>
+      <p class="text-gray-600">포인트로 다양한 기프티콘을 교환하세요!</p>
+    </div>
+
+    <!-- 포인트 잔액 카드 -->
+    <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-lg p-6 text-white mb-8 text-center">
+      <p class="text-sm opacity-90 mb-2">보유 포인트</p>
+      <h2 class="text-5xl font-bold mb-2" id="myPoints">0 P</h2>
+      <p class="text-xs opacity-75">체험하고 일하면서 포인트를 모아보세요!</p>
+    </div>
+
+    <!-- 카테고리 필터 -->
+    <div class="flex space-x-2 mb-6 overflow-x-auto pb-2">
+      <button onclick="filterCategory('all')" 
+              class="px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-orange-500 text-white"
+              id="filter-all">
+        전체
+      </button>
+      <button onclick="filterCategory('카페')" 
+              class="px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-white text-gray-700"
+              id="filter-카페">
+        ☕ 카페
+      </button>
+      <button onclick="filterCategory('편의점')" 
+              class="px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-white text-gray-700"
+              id="filter-편의점">
+        🏪 편의점
+      </button>
+      <button onclick="filterCategory('문화')" 
+              class="px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-white text-gray-700"
+              id="filter-문화">
+        🎬 문화
+      </button>
+      <button onclick="filterCategory('음식')" 
+              class="px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-white text-gray-700"
+              id="filter-음식">
+        🍗 음식
+      </button>
+    </div>
+
+    <!-- 상품 그리드 -->
+    <div class="grid grid-cols-2 gap-4 mb-8" id="productGrid">
+      <!-- JavaScript로 동적 생성 -->
+    </div>
+
+    <!-- 최근 교환 내역 -->
+    <div id="historySection" class="bg-white rounded-2xl shadow-sm p-4 hidden mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold">최근 교환 내역</h3>
+        <button onclick="clearHistory()" class="text-xs text-gray-500 hover:text-red-500">
+          전체 삭제
+        </button>
+      </div>
+      <div class="space-y-3" id="historyList">
+        <!-- JavaScript로 동적 생성 -->
+      </div>
+    </div>
+
+    <!-- 하단 네비게이션 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+      <div class="max-w-md mx-auto flex justify-around">
+        <a href="/" class="flex flex-col items-center text-gray-500 hover:text-orange-500">
+          <span class="text-2xl mb-1">🏠</span>
+          <span class="text-xs">홈</span>
+        </a>
+        <a href="/store" class="flex flex-col items-center text-orange-500">
+          <span class="text-2xl mb-1">🎁</span>
+          <span class="text-xs font-bold">스토어</span>
+        </a>
+        <a href="/chat" class="flex flex-col items-center text-gray-500 hover:text-orange-500">
+          <span class="text-2xl mb-1">💬</span>
+          <span class="text-xs">채팅</span>
+        </a>
+        <a href="/profile" class="flex flex-col items-center text-gray-500 hover:text-orange-500">
+          <span class="text-2xl mb-1">👤</span>
+          <span class="text-xs">마이</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 구매 확인 모달 -->
+  <div id="purchaseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 slide-up">
+      <div class="text-center">
+        <div class="text-6xl mb-4" id="modalIcon">☕</div>
+        <h3 class="text-lg font-bold mb-2" id="modalTitle">스타벅스 아메리카노</h3>
+        <div class="bg-gray-100 p-4 rounded-lg mb-4">
+          <div class="text-sm text-gray-600 mb-1">차감 포인트</div>
+          <div class="text-2xl font-bold text-orange-500" id="modalPrice">100 P</div>
+        </div>
+        <div class="bg-blue-50 p-3 rounded-lg mb-4">
+          <p class="text-xs text-blue-800">
+            💡 교환 후 즉시 이메일과 카카오톡으로 발송됩니다
+          </p>
+        </div>
+        <p class="text-gray-600 text-sm mb-6">
+          정말 교환하시겠습니까?<br>
+          <span class="text-xs text-red-500">⚠️ 교환 후 취소할 수 없습니다</span>
+        </p>
+        <div class="flex space-x-3">
+          <button onclick="closeModal()" 
+                  class="flex-1 py-3 border-2 border-gray-200 rounded-lg font-bold hover:bg-gray-100 transition">
+            취소
+          </button>
+          <button onclick="confirmPurchase()" 
+                  class="flex-1 py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 shadow-lg transition">
+            교환하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 성공 모달 -->
+  <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center slide-up">
+      <div class="text-6xl mb-4">🎉</div>
+      <h3 class="text-xl font-bold mb-4">교환 완료!</h3>
+      <p class="text-gray-600 mb-4">
+        기프티콘이 발송되었습니다.<br>
+        등록하신 이메일을 확인해주세요.
+      </p>
+      <div class="bg-blue-50 p-4 rounded-lg mb-4 text-sm">
+        <p class="text-blue-800">
+          📧 <strong id="userEmail">user@albi.co.kr</strong><br>
+          💬 카카오톡 알림톡 발송 완료<br>
+          <span class="text-xs mt-2 block">기프티콘 코드: <strong id="giftCode">-</strong></span>
+        </p>
+      </div>
+      <div class="bg-yellow-50 p-3 rounded-lg mb-6 text-xs text-yellow-800">
+        ⏰ 유효기간: 발급일로부터 90일
+      </div>
+      <button onclick="closeSuccessModal()" 
+              class="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- 포인트 부족 모달 -->
+  <div id="insufficientModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center slide-up">
+      <div class="text-6xl mb-4">😢</div>
+      <h3 class="text-xl font-bold mb-4">포인트가 부족해요</h3>
+      <div class="bg-gray-100 p-4 rounded-lg mb-4">
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-600">필요 포인트</span>
+          <span class="font-bold" id="needPoints">-</span>
+        </div>
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-600">보유 포인트</span>
+          <span class="font-bold text-orange-500" id="currentPoints">-</span>
+        </div>
+        <div class="border-t border-gray-300 mt-2 pt-2">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">부족한 포인트</span>
+            <span class="font-bold text-red-500" id="lackPoints">-</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-sm text-gray-600 mb-6">
+        💡 1시간 체험을 완료하면<br>
+        <strong class="text-orange-600">최대 50P</strong>를 획득할 수 있어요!
+      </p>
+      <div class="flex space-x-3">
+        <button onclick="closeInsufficientModal()" 
+                class="flex-1 py-3 border-2 border-gray-200 rounded-lg font-bold hover:bg-gray-100 transition">
+          닫기
+        </button>
+        <a href="/experience" 
+           class="flex-1 py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 text-center transition">
+          체험하러 가기
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let myPoints = 0;
+    let selectedProduct = null;
+    let purchaseHistory = [];
+    let currentFilter = 'all';
+
+    const products = [
+      { id: 1, name: "스타벅스 아메리카노", icon: "☕", price: 100, category: "카페", popular: true },
+      { id: 2, name: "GS25 모바일상품권 5천원", icon: "🏪", price: 100, category: "편의점" },
+      { id: 3, name: "CU 모바일상품권 5천원", icon: "🏪", price: 100, category: "편의점" },
+      { id: 4, name: "배스킨라빈스 파인트", icon: "🍦", price: 150, category: "디저트" },
+      { id: 5, name: "CGV 영화관람권", icon: "🎬", price: 200, category: "문화", popular: true },
+      { id: 6, name: "치킨 기프티콘", icon: "🍗", price: 300, category: "음식" },
+      { id: 7, name: "카카오 이모티콘", icon: "💬", price: 50, category: "디지털" },
+      { id: 8, name: "올리브영 1만원권", icon: "💄", price: 200, category: "뷰티" },
+      { id: 9, name: "피자 기프티콘", icon: "🍕", price: 300, category: "음식" }
+    ];
+
+    // 초기화
+    function init() {
+      loadPoints();
+      loadHistory();
+      renderProducts();
+      renderHistory();
+    }
+
+    // 포인트 로드
+    function loadPoints() {
+      myPoints = parseInt(localStorage.getItem('albi_points') || '0');
+      document.getElementById('myPoints').textContent = `${myPoints.toLocaleString()} P`;
+    }
+
+    // 히스토리 로드
+    function loadHistory() {
+      const saved = localStorage.getItem('albi_purchase_history');
+      if (saved) {
+        purchaseHistory = JSON.parse(saved);
+      }
+    }
+
+    // 카테고리 필터
+    function filterCategory(category) {
+      currentFilter = category;
+      
+      // 버튼 스타일 업데이트
+      document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+        btn.className = 'px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-white text-gray-700';
+      });
+      document.getElementById(`filter-${category}`).className = 
+        'px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-orange-500 text-white';
+      
+      renderProducts();
+    }
+
+    // 상품 렌더링
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      const filteredProducts = currentFilter === 'all' 
+        ? products 
+        : products.filter(p => p.category === currentFilter);
+
+      grid.innerHTML = filteredProducts.map(product => {
+        const canAfford = myPoints >= product.price;
+        return `
+          <div class="bg-white rounded-2xl shadow-sm p-4 relative ${canAfford ? 'hover:shadow-md cursor-pointer' : 'opacity-60'} transition">
+            ${product.popular ? '<div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold z-10">인기</div>' : ''}
+            <div class="text-center">
+              <div class="text-5xl mb-3">${product.icon}</div>
+              <h3 class="font-bold text-sm mb-1 leading-tight h-10 flex items-center justify-center">${product.name}</h3>
+              <div class="mb-3">
+                <span class="text-orange-500 font-bold text-lg">${product.price} P</span>
+              </div>
+              <button onclick="openPurchaseModal(${product.id})" ${!canAfford ? 'disabled' : ''}
+                      class="w-full py-2 rounded-lg font-bold text-sm transition ${
+                        canAfford 
+                          ? 'bg-orange-100 text-orange-600 hover:bg-orange-200' 
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }">
+                ${canAfford ? '교환하기' : '포인트 부족'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (filteredProducts.length === 0) {
+        grid.innerHTML = '<div class="col-span-2 text-center py-8 text-gray-500">해당 카테고리의 상품이 없습니다</div>';
+      }
+    }
+
+    // 히스토리 렌더링
+    function renderHistory() {
+      if (purchaseHistory.length === 0) {
+        document.getElementById('historySection').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('historySection').classList.remove('hidden');
+      const list = document.getElementById('historyList');
+      list.innerHTML = purchaseHistory.slice(0, 5).map(item => `
+        <div class="flex items-center justify-between text-sm border-b border-gray-100 pb-2">
+          <div class="flex items-center space-x-3">
+            <div class="text-2xl">${item.icon}</div>
+            <div>
+              <div class="font-bold">${item.name}</div>
+              <div class="text-xs text-gray-500">${new Date(item.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+          </div>
+          <div class="text-orange-500 font-bold">-${item.price}P</div>
+        </div>
+      `).join('');
+    }
+
+    // 히스토리 삭제
+    function clearHistory() {
+      if (confirm('교환 내역을 모두 삭제하시겠습니까?')) {
+        purchaseHistory = [];
+        localStorage.setItem('albi_purchase_history', JSON.stringify(purchaseHistory));
+        renderHistory();
+      }
+    }
+
+    // 구매 모달 열기
+    function openPurchaseModal(productId) {
+      selectedProduct = products.find(p => p.id === productId);
+      if (!selectedProduct) return;
+
+      // 포인트 부족 체크
+      if (myPoints < selectedProduct.price) {
+        showInsufficientModal(selectedProduct.price);
+        return;
+      }
+
+      document.getElementById('modalIcon').textContent = selectedProduct.icon;
+      document.getElementById('modalTitle').textContent = selectedProduct.name;
+      document.getElementById('modalPrice').textContent = `${selectedProduct.price} P`;
+      document.getElementById('purchaseModal').classList.remove('hidden');
+      document.getElementById('purchaseModal').classList.add('flex');
+    }
+
+    // 모달 닫기
+    function closeModal() {
+      document.getElementById('purchaseModal').classList.add('hidden');
+      document.getElementById('purchaseModal').classList.remove('flex');
+      selectedProduct = null;
+    }
+
+    // 포인트 부족 모달 표시
+    function showInsufficientModal(requiredPoints) {
+      document.getElementById('needPoints').textContent = `${requiredPoints} P`;
+      document.getElementById('currentPoints').textContent = `${myPoints} P`;
+      document.getElementById('lackPoints').textContent = `${requiredPoints - myPoints} P`;
+      document.getElementById('insufficientModal').classList.remove('hidden');
+      document.getElementById('insufficientModal').classList.add('flex');
+    }
+
+    // 포인트 부족 모달 닫기
+    function closeInsufficientModal() {
+      document.getElementById('insufficientModal').classList.add('hidden');
+      document.getElementById('insufficientModal').classList.remove('flex');
+    }
+
+    // 구매 확인
+    function confirmPurchase() {
+      if (!selectedProduct) return;
+
+      if (myPoints < selectedProduct.price) {
+        alert("포인트가 부족합니다! 체험을 통해 포인트를 모아보세요.");
+        closeModal();
+        return;
+      }
+
+      // 포인트 차감
+      myPoints -= selectedProduct.price;
+      localStorage.setItem('albi_points', myPoints.toString());
+
+      // 구매 내역 추가
+      const giftCode = generateGiftCode();
+      const purchase = {
+        id: Date.now().toString(),
+        name: selectedProduct.name,
+        icon: selectedProduct.icon,
+        price: selectedProduct.price,
+        date: new Date().toISOString(),
+        giftCode: giftCode
+      };
+
+      purchaseHistory.unshift(purchase);
+      if (purchaseHistory.length > 20) {
+        purchaseHistory = purchaseHistory.slice(0, 20);
+      }
+      localStorage.setItem('albi_purchase_history', JSON.stringify(purchaseHistory));
+
+      closeModal();
+      showSuccessModal(purchase);
+      
+      // 화면 업데이트
+      loadPoints();
+      renderProducts();
+      renderHistory();
+
+      // 콘페티 효과
+      createConfetti();
+    }
+
+    // 성공 모달 표시
+    function showSuccessModal(purchase) {
+      document.getElementById('giftCode').textContent = purchase.giftCode;
+      document.getElementById('userEmail').textContent = localStorage.getItem('albi_user_email') || 'user@albi.co.kr';
+      document.getElementById('successModal').classList.remove('hidden');
+      document.getElementById('successModal').classList.add('flex');
+    }
+
+    // 성공 모달 닫기
+    function closeSuccessModal() {
+      document.getElementById('successModal').classList.add('hidden');
+      document.getElementById('successModal').classList.remove('flex');
+    }
+
+    // 기프트 코드 생성
+    function generateGiftCode() {
+      return 'ALBI-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    }
+
+    // 콘페티 효과
+    function createConfetti() {
+      const colors = ['🎉', '🎊', '✨', '⭐', '💫'];
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.textContent = colors[Math.floor(Math.random() * colors.length)];
+          confetti.className = 'confetti fixed text-2xl';
+          confetti.style.left = Math.random() * window.innerWidth + 'px';
+          confetti.style.top = '0px';
+          confetti.style.zIndex = '9999';
+          document.body.appendChild(confetti);
+          
+          setTimeout(() => confetti.remove(), 2000);
+        }, i * 100);
+      }
+    }
+
+    // 페이지 로드 시 초기화
+    window.onload = init;
+  </script>
+</body>
+</html>
