@@ -10,10 +10,13 @@ binding = "DB"
 database_name = "albi-production"
 database_id = "00000000-0000-0000-0000-000000000000"  # 임시 ID (로컬 개발용)
 
-# Workers AI 바인딩
-[ai]
-binding = "AI"
-
 # 환경 변수
 [vars]
 ENVIRONMENT = "production"
+
+# 주의: Workers AI 바인딩은 로컬 개발에서만 사용
+# 프로덕션 배포 시에는 Cloudflare Dashboard에서 설정 필요
+# 또는 아래 [ai] 섹션을 주석 처리하고 배포 후 Dashboard에서 수동 설정
+
+# [ai]
+# binding = "AI"

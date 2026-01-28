@@ -63,30 +63,44 @@ app.post('/chat', async (c) => {
 
     const systemPrompt = systemPrompts[userType as keyof typeof systemPrompts] || systemPrompts.jobseeker;
 
-    // Cloudflare Workers AI 호출
-    const response = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message }
-      ],
-      max_tokens: 256,
-      temperature: 0.7,
-    });
-
-    // 응답 파싱 (안전하게)
+    // 임시: AI 기능 비활성화 (프로덕션 배포용)
+    // TODO: Cloudflare Dashboard에서 Workers AI 바인딩 설정 후 활성화
     let aiMessage = '';
-    if (response && typeof response === 'object') {
-      if ('response' in response && typeof response.response === 'string') {
-        aiMessage = response.response;
-      } else if ('content' in response && typeof response.content === 'string') {
-        aiMessage = response.content;
-      } else {
-        aiMessage = '알비가 생각중입니다... 🐜';
+    
+    if (c.env.AI) {
+      // Workers AI가 사용 가능한 경우 (로컬 개발 환경)
+      try {
+        const response = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ],
+          max_tokens: 256,
+          temperature: 0.7,
+        });
+
+        // 응답 파싱
+        if (response && typeof response === 'object') {
+          if ('response' in response && typeof response.response === 'string') {
+            aiMessage = response.response;
+          } else if ('content' in response && typeof response.content === 'string') {
+            aiMessage = response.content;
+          }
+        } else if (typeof response === 'string') {
+          aiMessage = response;
+        }
+      } catch (error) {
+        console.error('AI Error:', error);
       }
-    } else if (typeof response === 'string') {
-      aiMessage = response;
-    } else {
-      aiMessage = '죄송합니다. 응답을 생성할 수 없습니다. 🐜';
+    }
+    
+    // AI를 사용할 수 없는 경우 기본 응답
+    if (!aiMessage) {
+      if (userType === 'jobseeker') {
+        aiMessage = '안녕하세요! 알비입니다 🐜\n\n어떤 종류의 알바를 찾고 계신가요? 카페, 편의점, 음식점 등 편하게 말씀해주세요!';
+      } else {
+        aiMessage = '안녕하세요! 알비입니다 🐜\n\n어떤 업종에서 인재를 찾고 계신가요? 필요하신 조건을 알려주세요!';
+      }
     }
 
     return c.json<ApiResponse>({
