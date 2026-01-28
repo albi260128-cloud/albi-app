@@ -56,6 +56,15 @@
           7일 이내 환불 요청이 가능합니다.
         </p>
       </div>
+
+      <!-- 추천 보상 알림 (조건부 표시) -->
+      <div id="referralRewardNotification" class="mt-4 p-4 bg-purple-50 rounded-lg hidden">
+        <p class="text-xs text-purple-800">
+          🎉 <strong>친구 추천 보상!</strong><br>
+          추천인에게 10P가 지급되었습니다!<br>
+          <span id="referrerName" class="font-bold"></span>님, 감사합니다!
+        </p>
+      </div>
     </div>
 
     <!-- 다음 단계 안내 -->
@@ -104,8 +113,9 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
-    window.onload = function() {
+    window.onload = async function() {
       // URL 파라미터에서 주문 정보 가져오기
       const urlParams = new URLSearchParams(window.location.search);
       const orderId = urlParams.get('orderId');
@@ -143,6 +153,42 @@
 
       console.log('💳 결제 성공 페이지 로드 완료');
       console.log('🎁 보너스 포인트 100P 지급');
+
+      // ========================================
+      // 친구 추천 보상 처리
+      // ========================================
+      
+      // 현재 사용자 ID (실제로는 세션에서 가져와야 함)
+      const currentUserId = localStorage.getItem('albi_user_id') || 'user001';
+      const jobId = urlParams.get('jobId') || 'job001'; // 실제로는 결제 정보에서 가져와야 함
+
+      try {
+        // 추천인 보상 API 호출
+        const response = await axios.post('/api/referral/reward', {
+          refereeId: currentUserId,
+          jobId: jobId
+        });
+
+        if (response.data.success && response.data.data.rewarded) {
+          // 추천 보상이 성공적으로 지급됨
+          const data = response.data.data;
+          console.log('🎉 추천인 보상 성공:', data);
+          
+          // 알림 표시
+          const notification = document.getElementById('referralRewardNotification');
+          const referrerNameSpan = document.getElementById('referrerName');
+          
+          if (notification && referrerNameSpan) {
+            referrerNameSpan.textContent = data.referrerName || '추천인';
+            notification.classList.remove('hidden');
+          }
+        } else {
+          console.log('ℹ️ 추천 보상 없음:', response.data.data?.message || '추천 관계 없음');
+        }
+      } catch (error) {
+        console.error('❌ 추천 보상 처리 오류:', error);
+        // 오류가 발생해도 결제 성공 페이지는 정상 표시
+      }
     };
   </script>
 </body>

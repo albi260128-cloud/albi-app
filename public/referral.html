@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>친구 초대하기 - 알비</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .referral-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .share-btn:hover {
+            transform: scale(1.05);
+        }
+        .share-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex items-center justify-between mb-4">
+                <a href="/" class="text-white hover:text-gray-200">
+                    <i class="fas fa-arrow-left mr-2"></i> 홈으로
+                </a>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-gift text-2xl"></i>
+                    <span class="text-sm bg-white/20 px-3 py-1 rounded-full">
+                        <span id="userPointsBadge">0 P</span>
+                    </span>
+                </div>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">
+                <i class="fas fa-user-friends mr-2"></i>
+                친구 초대하기
+            </h1>
+            <p class="text-white/90">친구를 초대하고 함께 포인트를 받아요! 🎁</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <!-- 보상 안내 카드 -->
+        <div class="referral-card text-white rounded-2xl p-6 mb-8 shadow-lg fade-in">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-coins mr-2"></i>
+                친구 초대 이벤트
+            </h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white/20 rounded-xl p-4">
+                    <div class="text-4xl mb-2">🎁</div>
+                    <div class="font-bold text-lg mb-1">친구가 가입하면</div>
+                    <div class="text-3xl font-bold">+20P</div>
+                    <div class="text-sm text-white/80 mt-2">즉시 지급!</div>
+                </div>
+                <div class="bg-white/20 rounded-xl p-4">
+                    <div class="text-4xl mb-2">🎉</div>
+                    <div class="font-bold text-lg mb-1">친구가 채용되면</div>
+                    <div class="text-3xl font-bold">+10P</div>
+                    <div class="text-sm text-white/80 mt-2">추천인에게 지급!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 내 추천 코드 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 fade-in">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-qrcode mr-2 text-purple-600"></i>
+                내 추천 코드
+            </h2>
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 text-center">
+                <div class="text-gray-600 mb-2">내 코드</div>
+                <div id="referralCode" class="text-4xl font-bold text-purple-600 mb-4 tracking-wider">
+                    ALBI------
+                </div>
+                <div class="text-sm text-gray-500 mb-4" id="inviteLink">
+                    초대 링크 생성 중...
+                </div>
+                <div class="flex gap-2 justify-center">
+                    <button onclick="copyCode()" class="share-btn bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-all">
+                        <i class="fas fa-copy mr-2"></i>
+                        코드 복사
+                    </button>
+                    <button onclick="copyLink()" class="share-btn bg-pink-600 text-white px-6 py-3 rounded-lg hover:bg-pink-700 transition-all">
+                        <i class="fas fa-link mr-2"></i>
+                        링크 복사
+                    </button>
+                    <button onclick="shareKakao()" class="share-btn bg-yellow-400 text-gray-800 px-6 py-3 rounded-lg hover:bg-yellow-500 transition-all">
+                        <i class="fas fa-comment mr-2"></i>
+                        카톡 공유
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 추천 통계 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 fade-in">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-chart-bar mr-2 text-blue-600"></i>
+                내 추천 현황
+            </h2>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="text-center p-4 bg-blue-50 rounded-xl">
+                    <div class="text-3xl font-bold text-blue-600" id="totalReferrals">0</div>
+                    <div class="text-sm text-gray-600 mt-1">총 추천</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-xl">
+                    <div class="text-3xl font-bold text-green-600" id="successReferrals">0</div>
+                    <div class="text-sm text-gray-600 mt-1">채용 성공</div>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-xl">
+                    <div class="text-3xl font-bold text-purple-600" id="totalEarned">0 P</div>
+                    <div class="text-sm text-gray-600 mt-1">획득 포인트</div>
+                </div>
+            </div>
+
+            <!-- 최근 추천 친구 -->
+            <h3 class="font-bold mb-3 text-gray-700">최근 추천 친구</h3>
+            <div id="recentReferrals" class="space-y-2">
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-user-plus text-4xl mb-3"></i>
+                    <p>아직 추천한 친구가 없어요</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 사용 방법 -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 fade-in">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-question-circle mr-2 text-blue-600"></i>
+                친구 초대 방법
+            </h2>
+            <div class="space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold">1</div>
+                    <div>
+                        <div class="font-bold text-gray-800">추천 코드 공유</div>
+                        <div class="text-sm text-gray-600">위의 버튼으로 친구에게 코드나 링크를 전달하세요</div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold">2</div>
+                    <div>
+                        <div class="font-bold text-gray-800">친구 가입</div>
+                        <div class="text-sm text-gray-600">친구가 추천 코드로 회원가입하면 <span class="font-bold text-pink-600">친구에게 20P 즉시 지급</span></div>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold">3</div>
+                    <div>
+                        <div class="font-bold text-gray-800">채용 성공</div>
+                        <div class="text-sm text-gray-600">친구가 채용되면 <span class="font-bold text-purple-600">나에게 10P 추가 지급</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        // 사용자 정보 (실제로는 로그인 세션에서 가져와야 함)
+        let currentUserId = localStorage.getItem('albi_user_id') || 'user001';
+        let referralData = {
+            code: '',
+            link: ''
+        };
+
+        // 페이지 로드 시 데이터 가져오기
+        async function loadReferralData() {
+            try {
+                // 1. 추천 코드 가져오기
+                const codeResponse = await axios.get(`/api/referral/my-code/${currentUserId}`);
+                if (codeResponse.data.success) {
+                    referralData.code = codeResponse.data.data.referralCode;
+                    referralData.link = codeResponse.data.data.inviteLink;
+                    
+                    document.getElementById('referralCode').textContent = referralData.code;
+                    document.getElementById('inviteLink').textContent = referralData.link;
+                }
+
+                // 2. 통계 가져오기
+                const statsResponse = await axios.get(`/api/referral/stats/${currentUserId}`);
+                if (statsResponse.data.success) {
+                    const stats = statsResponse.data.data;
+                    document.getElementById('totalReferrals').textContent = stats.totalReferrals;
+                    document.getElementById('successReferrals').textContent = stats.successfulReferrals;
+                    document.getElementById('totalEarned').textContent = stats.totalEarned + ' P';
+
+                    // 최근 추천 친구 표시
+                    displayRecentReferrals(stats.recentReferrals);
+                }
+
+                // 3. 포인트 가져오기
+                const userPoints = localStorage.getItem('albi_points') || 0;
+                document.getElementById('userPointsBadge').textContent = userPoints + ' P';
+
+            } catch (error) {
+                console.error('Error loading referral data:', error);
+                showNotification('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // 최근 추천 친구 표시
+        function displayRecentReferrals(referrals) {
+            const container = document.getElementById('recentReferrals');
+            
+            if (!referrals || referrals.length === 0) {
+                return;
+            }
+
+            container.innerHTML = referrals.map(ref => {
+                const statusBadge = ref.status === 'hired' 
+                    ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">채용 성공 ✅</span>'
+                    : '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">가입 완료</span>';
+                
+                const date = new Date(ref.created_at * 1000).toLocaleDateString('ko-KR');
+                
+                return `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+                                ${ref.referee_name ? ref.referee_name[0] : '?'}
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">${ref.referee_name || '익명'}</div>
+                                <div class="text-sm text-gray-500">${date}</div>
+                            </div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 코드 복사
+        function copyCode() {
+            navigator.clipboard.writeText(referralData.code).then(() => {
+                showNotification('추천 코드가 복사되었습니다! 📋', 'success');
+            }).catch(err => {
+                console.error('복사 실패:', err);
+                showNotification('복사에 실패했습니다.', 'error');
+            });
+        }
+
+        // 링크 복사
+        function copyLink() {
+            navigator.clipboard.writeText(referralData.link).then(() => {
+                showNotification('초대 링크가 복사되었습니다! 🔗', 'success');
+            }).catch(err => {
+                console.error('복사 실패:', err);
+                showNotification('복사에 실패했습니다.', 'error');
+            });
+        }
+
+        // 카카오톡 공유
+        function shareKakao() {
+            const text = `알비에서 함께 일자리를 찾아요! 🐜\n\n내 추천 코드: ${referralData.code}\n가입하면 20P 즉시 지급!\n\n${referralData.link}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '알비 친구 초대',
+                    text: text,
+                }).then(() => {
+                    showNotification('공유 성공!', 'success');
+                }).catch(err => {
+                    console.error('공유 실패:', err);
+                });
+            } else {
+                // 모바일이 아닌 경우 링크 복사
+                copyLink();
+            }
+        }
+
+        // 알림 표시
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-bold fade-in ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 페이지 로드
+        document.addEventListener('DOMContentLoaded', loadReferralData);
+    </script>
+</body>
+</html>

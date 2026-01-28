@@ -327,6 +327,318 @@ app.post('/experiences', async (c) => {
 });
 
 // ========================================
+// 친구 추천 시스템 API
+// ========================================
+
+// 추천 코드 생성 함수
+function generateReferralCode(userId: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = 'ALBI';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// 1. 내 추천 코드 가져오기 또는 생성
+app.get('/referral/my-code/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+
+    if (!userId) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '사용자 ID가 필요합니다.' 
+      }, 400);
+    }
+
+    // 사용자 정보 조회
+    const user = await c.env.DB.prepare(`
+      SELECT id, email, name, referral_code 
+      FROM users 
+      WHERE id = ?
+    `).bind(userId).first();
+
+    if (!user) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '사용자를 찾을 수 없습니다.' 
+      }, 404);
+    }
+
+    let referralCode = user.referral_code as string | null;
+
+    // 추천 코드가 없으면 생성
+    if (!referralCode) {
+      referralCode = generateReferralCode(userId);
+      
+      await c.env.DB.prepare(`
+        UPDATE users 
+        SET referral_code = ? 
+        WHERE id = ?
+      `).bind(referralCode, userId).run();
+    }
+
+    // 초대 링크 생성 (현재 호스트 기준)
+    const baseUrl = new URL(c.req.url).origin;
+    const inviteLink = `${baseUrl}/signup?ref=${referralCode}`;
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        referralCode,
+        inviteLink,
+        userName: user.name
+      }
+    });
+  } catch (error) {
+    console.error('Get Referral Code Error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '추천 코드 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 2. 친구 추천 등록 (회원가입 시)
+app.post('/referral/register', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { refereeId, referralCode } = body;
+
+    if (!refereeId || !referralCode) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '필수 정보가 누락되었습니다.' 
+      }, 400);
+    }
+
+    // 추천인 찾기
+    const referrer = await c.env.DB.prepare(`
+      SELECT id, name, albi_points 
+      FROM users 
+      WHERE referral_code = ?
+    `).bind(referralCode).first();
+
+    if (!referrer) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 추천 코드입니다.' 
+      }, 400);
+    }
+
+    // 자기 자신 추천 방지
+    if (referrer.id === refereeId) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '자기 자신을 추천할 수 없습니다.' 
+      }, 400);
+    }
+
+    // 중복 추천 확인
+    const existing = await c.env.DB.prepare(`
+      SELECT id 
+      FROM referrals 
+      WHERE referrer_id = ? AND referee_id = ?
+    `).bind(referrer.id, refereeId).first();
+
+    if (existing) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이미 추천 관계가 등록되어 있습니다.' 
+      }, 400);
+    }
+
+    // 트랜잭션 시작 (D1은 배치 실행 지원)
+    const referralId = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+    
+    // 1) referrals 테이블에 추천 관계 저장
+    await c.env.DB.prepare(`
+      INSERT INTO referrals (id, referrer_id, referee_id, referral_code, status, reward_given)
+      VALUES (?, ?, ?, ?, 'registered', 0)
+    `).bind(referralId, referrer.id, refereeId, referralCode).run();
+
+    // 2) 피추천인에게 20P 지급
+    const referee = await c.env.DB.prepare(`
+      SELECT albi_points 
+      FROM users 
+      WHERE id = ?
+    `).bind(refereeId).first();
+
+    const newBalance = (referee?.albi_points as number || 0) + 20;
+
+    await c.env.DB.prepare(`
+      UPDATE users 
+      SET albi_points = ? 
+      WHERE id = ?
+    `).bind(newBalance, refereeId).run();
+
+    // 3) 포인트 거래 내역 기록
+    await c.env.DB.prepare(`
+      INSERT INTO point_transactions (user_id, amount, transaction_type, description, balance_after)
+      VALUES (?, 20, 'referral_signup_bonus', '친구 추천 가입 보너스 🎁', ?)
+    `).bind(refereeId, newBalance).run();
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        message: '친구 추천이 등록되었습니다! 20P가 지급되었습니다.',
+        referralId,
+        bonusPoints: 20,
+        newBalance
+      }
+    });
+  } catch (error) {
+    console.error('Register Referral Error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '추천 등록 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 3. 채용 성공 시 추천인 보상 (채용 결제 완료 시 호출)
+app.post('/referral/reward', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { refereeId, jobId } = body;
+
+    if (!refereeId || !jobId) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '필수 정보가 누락되었습니다.' 
+      }, 400);
+    }
+
+    // 추천 관계 찾기 (registered 상태이고 아직 보상받지 않은 경우만)
+    const referral = await c.env.DB.prepare(`
+      SELECT r.id, r.referrer_id, r.referee_id, r.referral_code, u.name as referrer_name, u.albi_points as referrer_points
+      FROM referrals r
+      JOIN users u ON r.referrer_id = u.id
+      WHERE r.referee_id = ? AND r.status = 'registered' AND r.reward_given = 0
+    `).bind(refereeId).first();
+
+    if (!referral) {
+      // 추천 관계가 없거나 이미 보상받음
+      return c.json<ApiResponse>({
+        success: true,
+        data: {
+          message: '추천 보상 대상이 아닙니다.',
+          rewarded: false
+        }
+      });
+    }
+
+    // 트랜잭션: 추천인에게 10P 지급
+    const newBalance = (referral.referrer_points as number || 0) + 10;
+
+    await c.env.DB.prepare(`
+      UPDATE users 
+      SET albi_points = ? 
+      WHERE id = ?
+    `).bind(newBalance, referral.referrer_id).run();
+
+    // referrals 테이블 업데이트
+    await c.env.DB.prepare(`
+      UPDATE referrals 
+      SET status = 'hired', reward_given = 1, rewarded_at = unixepoch()
+      WHERE id = ?
+    `).bind(referral.id).run();
+
+    // 포인트 거래 내역 기록
+    await c.env.DB.prepare(`
+      INSERT INTO point_transactions (user_id, amount, transaction_type, description, balance_after)
+      VALUES (?, 10, 'referral_hire_reward', '친구 채용 성공 보너스 🎉', ?)
+    `).bind(referral.referrer_id, newBalance).run();
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        message: '추천인에게 보상이 지급되었습니다!',
+        rewarded: true,
+        referrerId: referral.referrer_id,
+        referrerName: referral.referrer_name,
+        bonusPoints: 10,
+        newBalance
+      }
+    });
+  } catch (error) {
+    console.error('Reward Referral Error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '보상 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 4. 내 추천 통계 조회
+app.get('/referral/stats/:userId', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+
+    if (!userId) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '사용자 ID가 필요합니다.' 
+      }, 400);
+    }
+
+    // 전체 추천 수
+    const totalResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as total
+      FROM referrals
+      WHERE referrer_id = ?
+    `).bind(userId).first();
+
+    // 성공한 추천 수 (채용 완료)
+    const successResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as success
+      FROM referrals
+      WHERE referrer_id = ? AND status = 'hired'
+    `).bind(userId).first();
+
+    // 총 획득 포인트
+    const pointsResult = await c.env.DB.prepare(`
+      SELECT COALESCE(SUM(amount), 0) as total_earned
+      FROM point_transactions
+      WHERE user_id = ? AND transaction_type = 'referral_hire_reward'
+    `).bind(userId).first();
+
+    // 최근 추천 친구 목록
+    const recentReferrals = await c.env.DB.prepare(`
+      SELECT 
+        r.id,
+        r.status,
+        r.created_at,
+        r.rewarded_at,
+        u.name as referee_name,
+        u.email as referee_email
+      FROM referrals r
+      JOIN users u ON r.referee_id = u.id
+      WHERE r.referrer_id = ?
+      ORDER BY r.created_at DESC
+      LIMIT 10
+    `).bind(userId).all();
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        totalReferrals: totalResult?.total || 0,
+        successfulReferrals: successResult?.success || 0,
+        totalEarned: pointsResult?.total_earned || 0,
+        recentReferrals: recentReferrals.results || []
+      }
+    });
+  } catch (error) {
+    console.error('Get Referral Stats Error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '통계 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
 // 헬스체크 및 정보 API
 // ========================================
 
@@ -355,6 +667,10 @@ app.get('/info', (c) => {
         'GET /api/jobs - 구인 공고 목록',
         'GET /api/jobs/:id - 구인 공고 상세',
         'POST /api/experiences - 체험 예약',
+        'GET /api/referral/my-code/:userId - 내 추천 코드 조회',
+        'POST /api/referral/register - 친구 추천 등록',
+        'POST /api/referral/reward - 채용 성공 보상',
+        'GET /api/referral/stats/:userId - 추천 통계',
         'GET /api/health - 헬스체크',
         'GET /api/info - API 정보'
       ]

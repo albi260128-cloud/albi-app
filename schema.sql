@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   albi_points INTEGER DEFAULT 20,
   trust_score REAL DEFAULT 5.0,
   level INTEGER DEFAULT 1,
+  referral_code TEXT UNIQUE,
   created_at INTEGER DEFAULT (unixepoch())
 );
 
@@ -72,6 +73,21 @@ CREATE TABLE IF NOT EXISTS ai_interviews (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- 친구 추천 테이블
+CREATE TABLE IF NOT EXISTS referrals (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  referrer_id TEXT NOT NULL,
+  referee_id TEXT NOT NULL,
+  referral_code TEXT NOT NULL,
+  status TEXT DEFAULT 'registered' CHECK(status IN ('registered', 'hired', 'cancelled')),
+  reward_given INTEGER DEFAULT 0 CHECK(reward_given IN (0, 1)),
+  created_at INTEGER DEFAULT (unixepoch()),
+  rewarded_at INTEGER,
+  FOREIGN KEY (referrer_id) REFERENCES users(id),
+  FOREIGN KEY (referee_id) REFERENCES users(id),
+  UNIQUE(referrer_id, referee_id)
+);
+
 -- ========================================
 -- 인덱스 생성
 -- ========================================
@@ -92,15 +108,20 @@ CREATE INDEX IF NOT EXISTS idx_point_transactions_user ON point_transactions(use
 
 CREATE INDEX IF NOT EXISTS idx_ai_interviews_user ON ai_interviews(user_id);
 
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_referrals_referee ON referrals(referee_id);
+CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status);
+CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
+
 -- ========================================
 -- 샘플 데이터 (개발/테스트용)
 -- ========================================
 
-INSERT OR IGNORE INTO users (id, email, user_type, name, albi_points, trust_score) VALUES
-('user001', 'jobseeker1@albi.co.kr', 'jobseeker', '김구직', 50, 5.0),
-('user002', 'employer1@albi.co.kr', 'employer', '이사장', 100, 4.8),
-('user003', 'jobseeker2@albi.co.kr', 'jobseeker', '박알바', 30, 4.5),
-('user004', 'employer2@albi.co.kr', 'employer', '최대표', 80, 4.9);
+INSERT OR IGNORE INTO users (id, email, user_type, name, albi_points, trust_score, referral_code) VALUES
+('user001', 'jobseeker1@albi.co.kr', 'jobseeker', '김구직', 50, 5.0, 'ALBIA1B2C3'),
+('user002', 'employer1@albi.co.kr', 'employer', '이사장', 100, 4.8, 'ALBID4E5F6'),
+('user003', 'jobseeker2@albi.co.kr', 'jobseeker', '박알바', 30, 4.5, 'ALBIG7H8I9'),
+('user004', 'employer2@albi.co.kr', 'employer', '최대표', 80, 4.9, 'ALBIJ1K2L3');
 
 INSERT OR IGNORE INTO jobs (id, employer_id, title, hourly_wage, location, description, work_schedule) VALUES
 ('job001', 'user002', '홍대 카페 알바', 12000, '서울 마포구 홍대입구역 2번 출구', '친절한 카페 직원을 구합니다. 커피 제조 경험 우대', '{"weekdays": ["월", "수", "금"], "hours": "10:00-18:00"}'),
@@ -115,6 +136,9 @@ INSERT OR IGNORE INTO point_transactions (id, user_id, amount, transaction_type,
 ('pt001', 'user001', 20, 'signup_bonus', '회원가입 축하 포인트', 20),
 ('pt002', 'user001', 15, 'experience_completed', '1시간 체험 완료', 35),
 ('pt003', 'user001', 30, 'first_week_bonus', '첫 주 근무 완료 보너스', 65);
+
+INSERT OR IGNORE INTO referrals (id, referrer_id, referee_id, referral_code, status, reward_given) VALUES
+('ref001', 'user001', 'user003', 'ALBIA1B2C3', 'registered', 0);
 
 -- ========================================
 -- 완료 메시지
