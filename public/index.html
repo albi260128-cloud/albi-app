@@ -5,247 +5,399 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>알비 - 1시간 직장체험 플랫폼</title>
   <meta name="description" content="알바, 1시간만 구경하고 결정하세요. 면접 부담 없이, 텃세 걱정 없이.">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
-    @keyframes bounce-slow {
-      0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
-      40%, 43% { transform: translate3d(0, -30px, 0); }
-      70% { transform: translate3d(0, -15px, 0); }
-      90% { transform: translate3d(0, -4px, 0); }
+    /* Hero Section Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
     }
-    .animate-bounce-slow { animation: bounce-slow 3s infinite; }
-    .gradient-text {
-      background: linear-gradient(45deg, #f97316, #ef4444);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    .hero-gradient {
+      background: linear-gradient(-45deg, #FF6B35, #FF8B5F, #FFB627, #FFC947);
+      background-size: 400% 400%;
+      animation: gradient-shift 15s ease infinite;
+    }
+    
+    .mascot-float {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Feature Card Hover Effects */
+    .feature-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-8px) scale(1.02);
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+      opacity: 0;
+      transition: opacity 0.3s;
+      border-radius: inherit;
+    }
+    
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+    
+    /* Counter Animation */
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .stat-number {
+      animation: countUp 0.6s ease-out;
     }
   </style>
 </head>
-<body class="bg-gray-50">
-  <!-- 네비게이션 -->
-  <nav class="fixed top-0 w-full bg-white shadow-sm z-50 border-b">
-    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-      <a href="/" class="flex items-center space-x-2">
-        <span class="text-3xl">🐜</span>
-        <span class="text-2xl font-bold text-orange-500">알비</span>
+<body class="bg-gray-100">
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="container flex items-center justify-between" style="max-width: 1200px;">
+      <a href="/" class="navbar-brand">
+        <img src="/albi-mascot.svg" alt="알비" class="albi-mascot">
+        <span>알비</span>
       </a>
-      <div class="hidden md:flex items-center space-x-6">
-        <a href="/chat.html" class="hover:text-orange-500 transition">AI 면접</a>
-        <a href="/calculator.html" class="hover:text-orange-500 transition">급여계산기</a>
-        <a href="#features" class="hover:text-orange-500 transition">서비스 소개</a>
-      </div>
-      <div class="flex items-center space-x-3">
-        <a href="/referral" class="relative px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:from-purple-700 hover:to-pink-700 transition font-bold shadow-lg">
-          <i class="fas fa-gift mr-2"></i>
-          친구 초대
-          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">+20P</span>
+      
+      <div class="hidden md:flex items-center gap-4">
+        <a href="/jobs" class="nav-item">
+          <i class="fas fa-briefcase"></i>
+          <span>알바찾기</span>
         </a>
-        <a href="/chat.html" class="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition font-bold">
+        <a href="/community.html" class="nav-item">
+          <i class="fas fa-comments"></i>
+          <span>커뮤니티</span>
+        </a>
+        <a href="/chat.html" class="nav-item">
+          <i class="fas fa-robot"></i>
+          <span>AI 면접</span>
+        </a>
+        <a href="/calculator.html" class="nav-item">
+          <i class="fas fa-calculator"></i>
+          <span>급여계산</span>
+        </a>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <a href="/referral" class="btn btn-outline btn-sm">
+          <i class="fas fa-gift"></i>
+          친구 초대
+          <span class="badge badge-orange" style="margin-left: 4px;">+20P</span>
+        </a>
+        <a href="/signup.html" class="btn btn-primary btn-sm">
           시작하기
         </a>
       </div>
     </div>
   </nav>
 
-  <!-- 히어로 섹션 -->
-  <section class="pt-32 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white relative overflow-hidden">
-    <div class="absolute inset-0 bg-black/10"></div>
-    <div class="container mx-auto px-4 py-20 md:py-32 relative z-10">
-      <div class="text-center max-w-4xl mx-auto">
-        <div class="text-8xl md:text-9xl mb-6 animate-bounce-slow">🐜</div>
-        <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+  <div class="main-content">
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white relative overflow-hidden" style="padding: 80px 0;">
+      <div class="absolute inset-0 bg-black/5"></div>
+      
+      <div class="container container-md relative z-10 text-center">
+        <div class="mascot-float mb-5">
+          <img src="/albi-mascot.svg" alt="알비 마스코트" class="albi-mascot-xl mx-auto">
+        </div>
+        
+        <h1 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">
           알바, 1시간만<br>
-          <span class="text-yellow-300">구경하고</span> 결정하세요
+          <span style="color: #FFB627;">구경하고</span> 결정하세요
         </h1>
-        <p class="text-xl md:text-2xl mb-8 opacity-95 leading-relaxed">
+        
+        <p class="text-lg md:text-xl mb-5 opacity-95" style="line-height: 1.8;">
           면접 부담 없이, 텃세 걱정 없이,<br>
           그냥 가서 보고 오세요
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <a href="/chat.html" class="bg-white text-orange-500 px-8 py-4 rounded-full text-lg font-bold hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition flex items-center space-x-2">
-            <span>👀</span>
-            <span>1시간 체험 신청하기</span>
+        
+        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+          <a href="/jobs" class="btn btn-lg" style="background: white; color: var(--albi-orange); box-shadow: var(--shadow-xl);">
+            <i class="fas fa-search"></i>
+            <span>1시간 체험 알바 찾기</span>
           </a>
-          <a href="#features" class="border-2 border-white text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-white hover:text-orange-500 transition flex items-center space-x-2">
+          <a href="#features" class="btn btn-lg btn-outline" style="border-color: white; color: white;">
             <span>서비스 소개 보기</span>
-            <span>→</span>
+            <i class="fas fa-arrow-down"></i>
           </a>
         </div>
-        <p class="mt-6 text-sm opacity-90">
-          🎁 가입하면 20 알비포인트 무료 증정!
+        
+        <div class="albi-points albi-points-lg mx-auto" style="max-width: fit-content;">
+          <i class="fas fa-gift"></i>
+          <span>가입하면 20 알비포인트 무료 증정!</span>
+        </div>
+      </div>
+      
+      <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-white">
+      <div class="container">
+        <h2 class="text-2xl md:text-3xl font-bold text-center mb-3">
+          알비는 이렇게 다릅니다
+        </h2>
+        <p class="text-center text-gray mb-5">
+          기존 구인구직 플랫폼과는 완전히 다른 경험을 제공합니다
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Feature 1: 1시간 시각체험 -->
+          <div class="feature-card card relative" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);">
+            <div class="card-body">
+              <div style="font-size: 3rem; margin-bottom: var(--space-md);">👀</div>
+              <h3 class="text-xl font-bold mb-3">1시간 시각체험</h3>
+              <p class="text-gray-700 mb-4" style="line-height: 1.6;">
+                일하지 않고 관찰만! 직장 분위기를 미리 확인하고 마음에 들면 바로 시작하세요.
+              </p>
+              <ul class="flex flex-col gap-2">
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>실제 업무 환경 관찰</span>
+                </li>
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>동료와 사장님 성향 파악</span>
+                </li>
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>거절해도 페널티 없음</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Feature 2: AI 면접 -->
+          <div class="feature-card card relative" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);">
+            <div class="card-body">
+              <div style="font-size: 3rem; margin-bottom: var(--space-md);">🤖</div>
+              <h3 class="text-xl font-bold mb-3">AI 면접 완료</h3>
+              <p class="text-gray-700 mb-4" style="line-height: 1.6;">
+                알비 AI가 미리 심층 면접을 진행합니다. 사장님은 검증된 사람만 만나보세요.
+              </p>
+              <ul class="flex flex-col gap-2">
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>5분 AI 면접으로 시간 절약</span>
+                </li>
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>성향 분석 기반 매칭</span>
+                </li>
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>면접 스트레스 제로</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Feature 3: 알비포인트 -->
+          <div class="feature-card card relative" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);">
+            <div class="card-body">
+              <div style="font-size: 3rem; margin-bottom: var(--space-md);">🪙</div>
+              <h3 class="text-xl font-bold mb-3">알비포인트 적립</h3>
+              <p class="text-gray-700 mb-4" style="line-height: 1.6;">
+                체험하고, 일하고, 미션 달성하면 알비포인트가 쌓여요. 기프티콘으로 교환!
+              </p>
+              <ul class="flex flex-col gap-2">
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>체험 완료 시 15P 지급</span>
+                </li>
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>1개월 근무 시 100P 보너스</span>
+                </li>
+                <li class="flex items-start text-sm text-gray-700">
+                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
+                  <span>스타벅스 기프티콘 교환</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-5 bg-orange text-white">
+      <div class="container">
+        <h2 class="text-2xl font-bold text-center mb-5">알비의 성과</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div class="stat-number">
+            <div class="text-3xl md:text-4xl font-bold mb-2">1,234</div>
+            <div class="text-sm md:text-base opacity-90">누적 체험 건수</div>
+          </div>
+          <div class="stat-number" style="animation-delay: 0.1s;">
+            <div class="text-3xl md:text-4xl font-bold mb-2">89%</div>
+            <div class="text-sm md:text-base opacity-90">체험 만족도</div>
+          </div>
+          <div class="stat-number" style="animation-delay: 0.2s;">
+            <div class="text-3xl md:text-4xl font-bold mb-2">456</div>
+            <div class="text-sm md:text-base opacity-90">채용 성공</div>
+          </div>
+          <div class="stat-number" style="animation-delay: 0.3s;">
+            <div class="text-3xl md:text-4xl font-bold mb-2">4.8★</div>
+            <div class="text-sm md:text-base opacity-90">평균 평점</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Links Section -->
+    <section class="py-5 bg-gray-100">
+      <div class="container">
+        <h2 class="text-2xl font-bold text-center mb-4">빠른 메뉴</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <a href="/jobs" class="card text-center" style="cursor: pointer;">
+            <div class="card-body">
+              <i class="fas fa-briefcase text-orange" style="font-size: 2rem; margin-bottom: var(--space-sm);"></i>
+              <h3 class="font-bold">알바 찾기</h3>
+              <p class="text-xs text-gray mt-1">내 주변 3km 검색</p>
+            </div>
+          </a>
+          
+          <a href="/community.html" class="card text-center" style="cursor: pointer;">
+            <div class="card-body">
+              <i class="fas fa-comments text-blue" style="font-size: 2rem; margin-bottom: var(--space-sm);"></i>
+              <h3 class="font-bold">커뮤니티</h3>
+              <p class="text-xs text-gray mt-1">알바 후기 & 꿀팁</p>
+            </div>
+          </a>
+          
+          <a href="/chat.html" class="card text-center" style="cursor: pointer;">
+            <div class="card-body">
+              <i class="fas fa-robot text-orange" style="font-size: 2rem; margin-bottom: var(--space-sm);"></i>
+              <h3 class="font-bold">AI 면접</h3>
+              <p class="text-xs text-gray mt-1">5분 완성</p>
+            </div>
+          </a>
+          
+          <a href="/store.html" class="card text-center" style="cursor: pointer;">
+            <div class="card-body">
+              <i class="fas fa-gift text-orange" style="font-size: 2rem; margin-bottom: var(--space-sm);"></i>
+              <h3 class="font-bold">스토어</h3>
+              <p class="text-xs text-gray mt-1">포인트 교환</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="hero-gradient text-white py-5">
+      <div class="container text-center">
+        <img src="/albi-mascot.svg" alt="알비" class="albi-mascot-lg mx-auto mb-4 mascot-float">
+        
+        <h2 class="text-2xl md:text-3xl font-bold mb-3">
+          지금 바로 시작해보세요!
+        </h2>
+        <p class="text-lg mb-4 opacity-95">
+          첫 100명에게는 평생 수수료 50% 할인 혜택! 🎉
+        </p>
+        
+        <a href="/signup.html" class="btn btn-lg" style="background: white; color: var(--albi-orange); box-shadow: var(--shadow-xl);">
+          <span>무료로 시작하기</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
+        
+        <p class="mt-3 text-sm opacity-90">
+          신용카드 등록 없음 · 언제든 탈퇴 가능
         </p>
       </div>
-    </div>
-    <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
-  </section>
+    </section>
 
-  <!-- 차별화 포인트 -->
-  <section id="features" class="py-20 bg-white">
-    <div class="container mx-auto px-4">
-      <h2 class="text-4xl md:text-5xl font-bold text-center mb-4">
-        알비는 이렇게 다릅니다
-      </h2>
-      <p class="text-center text-gray-600 mb-16 text-lg">
-        기존 구인구직 플랫폼과는 완전히 다른 경험을 제공합니다
-      </p>
-      <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <!-- 카드 1 -->
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="text-6xl mb-4">👀</div>
-          <h3 class="text-2xl font-bold mb-4">1시간 시각체험</h3>
-          <p class="text-gray-700 leading-relaxed mb-6">일하지 않고 관찰만! 직장 분위기를 미리 확인하고 마음에 들면 바로 시작하세요.</p>
-          <ul class="space-y-2">
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>실제 업무 환경 관찰</span>
-            </li>
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>동료와 사장님 성향 파악</span>
-            </li>
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>거절해도 페널티 없음</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- 카드 2 -->
-        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-8 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="text-6xl mb-4">🤖</div>
-          <h3 class="text-2xl font-bold mb-4">AI 면접 완료</h3>
-          <p class="text-gray-700 leading-relaxed mb-6">알비 AI가 미리 심층 면접을 진행합니다. 사장님은 검증된 사람만 만나보세요.</p>
-          <ul class="space-y-2">
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>5분 AI 면접으로 시간 절약</span>
-            </li>
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>성향 분석 기반 매칭</span>
-            </li>
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>면접 스트레스 제로</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- 카드 3 -->
-        <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-8 rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-2">
-          <div class="text-6xl mb-4">🪙</div>
-          <h3 class="text-2xl font-bold mb-4">알비포인트 적립</h3>
-          <p class="text-gray-700 leading-relaxed mb-6">체험하고, 일하고, 미션 달성하면 알비포인트가 쌓여요. 기프티콘으로 교환!</p>
-          <ul class="space-y-2">
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>체험 완료 시 15P 지급</span>
-            </li>
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>1개월 근무 시 100P 보너스</span>
-            </li>
-            <li class="flex items-start text-sm text-gray-600">
-              <span class="text-green-500 mr-2 font-bold">✓</span>
-              <span>스타벅스 기프티콘 교환</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 통계 섹션 -->
-  <section class="py-20 bg-gradient-to-r from-orange-500 to-red-500 text-white">
-    <div class="container mx-auto px-4">
-      <h2 class="text-3xl font-bold text-center mb-12">알비의 성과</h2>
-      <div class="grid md:grid-cols-4 gap-8 text-center max-w-5xl mx-auto">
-        <div>
-          <div class="text-5xl font-bold mb-2">1,234</div>
-          <div class="text-lg opacity-90">누적 체험 건수</div>
-        </div>
-        <div>
-          <div class="text-5xl font-bold mb-2">89%</div>
-          <div class="text-lg opacity-90">체험 만족도</div>
-        </div>
-        <div>
-          <div class="text-5xl font-bold mb-2">456</div>
-          <div class="text-lg opacity-90">채용 성공</div>
-        </div>
-        <div>
-          <div class="text-5xl font-bold mb-2">4.8</div>
-          <div class="text-lg opacity-90">평균 평점</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 최종 CTA -->
-  <section class="py-20 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white">
-    <div class="container mx-auto px-4 text-center">
-      <h2 class="text-4xl md:text-5xl font-bold mb-4">
-        지금 바로 시작해보세요!
-      </h2>
-      <p class="text-xl md:text-2xl mb-8 opacity-95">
-        첫 100명에게는 평생 수수료 50% 할인 혜택! 🎉
-      </p>
-      <a href="/chat.html" class="inline-flex items-center space-x-3 bg-white text-orange-500 px-10 py-5 rounded-full text-xl font-bold hover:bg-gray-100 shadow-2xl transform hover:scale-105 transition">
-        <span>무료로 시작하기</span>
-        <span>→</span>
-      </a>
-      <p class="mt-6 text-sm opacity-90">
-        신용카드 등록 없음 · 언제든 탈퇴 가능
-      </p>
-    </div>
-  </section>
-
-  <!-- 푸터 -->
-  <footer class="bg-gray-900 text-white py-12">
-    <div class="container mx-auto px-4">
-      <div class="grid md:grid-cols-4 gap-8">
-        <div>
-          <div class="flex items-center space-x-2 mb-4">
-            <span class="text-3xl">🐜</span>
-            <span class="text-2xl font-bold">알비</span>
+    <!-- Footer -->
+    <footer style="background: var(--gray-900); color: white; padding: var(--space-2xl) 0;">
+      <div class="container">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <img src="/albi-mascot.svg" alt="알비" class="albi-mascot">
+              <span class="text-xl font-bold">알비</span>
+            </div>
+            <p style="color: var(--gray-500); font-size: var(--font-size-sm);">
+              알바하는 벌개미<br>
+              1시간 직장체험 플랫폼
+            </p>
           </div>
-          <p class="text-gray-400 text-sm">
-            알바하는 벌개미<br>
-            1시간 직장체험 플랫폼
-          </p>
+          
+          <div>
+            <h4 class="font-bold mb-3">서비스</h4>
+            <ul class="flex flex-col gap-2 text-sm" style="color: var(--gray-500);">
+              <li><a href="/jobs" class="hover:text-white">알바 찾기</a></li>
+              <li><a href="/community.html" class="hover:text-white">커뮤니티</a></li>
+              <li><a href="/chat.html" class="hover:text-white">AI 면접</a></li>
+              <li><a href="/calculator.html" class="hover:text-white">급여계산기</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-bold mb-3">법적 정보</h4>
+            <ul class="flex flex-col gap-2 text-sm" style="color: var(--gray-500);">
+              <li><a href="#" class="hover:text-white">이용약관</a></li>
+              <li><a href="#" class="hover:text-white">개인정보처리방침</a></li>
+              <li><a href="#" class="hover:text-white">전자계약서</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-bold mb-3">고객센터</h4>
+            <ul class="flex flex-col gap-2 text-sm" style="color: var(--gray-500);">
+              <li><i class="fas fa-phone"></i> 1588-0000</li>
+              <li><i class="fas fa-envelope"></i> help@albi.co.kr</li>
+              <li><i class="fas fa-comment"></i> 카카오톡: @알비</li>
+              <li style="color: var(--albi-red);"><i class="fas fa-exclamation-circle"></i> 긴급신고: 24시간</li>
+            </ul>
+          </div>
         </div>
-        <div>
-          <h4 class="font-bold mb-4">서비스</h4>
-          <ul class="space-y-2 text-sm text-gray-400">
-            <li><a href="/chat.html" class="hover:text-white">AI 면접</a></li>
-            <li><a href="/calculator.html" class="hover:text-white">급여계산기</a></li>
-            <li><a href="#features" class="hover:text-white">서비스 소개</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-bold mb-4">법적 정보</h4>
-          <ul class="space-y-2 text-sm text-gray-400">
-            <li><a href="#" class="hover:text-white">이용약관</a></li>
-            <li><a href="#" class="hover:text-white">개인정보처리방침</a></li>
-            <li><a href="#" class="hover:text-white">전자계약서</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="font-bold mb-4">고객센터</h4>
-          <ul class="space-y-2 text-sm text-gray-400">
-            <li>전화: 1588-0000</li>
-            <li>이메일: help@albi.co.kr</li>
-            <li>카카오톡: @알비</li>
-            <li class="text-red-400">긴급신고: 24시간</li>
-          </ul>
+        
+        <div style="border-top: 1px solid var(--gray-800); padding-top: var(--space-lg); text-center; font-size: var(--font-size-sm); color: var(--gray-600);">
+          <p>© 2025 알비(ALBI). All rights reserved.</p>
+          <p style="margin-top: var(--space-sm);">사업자등록번호: 000-00-00000 | 대표: 알비팀</p>
         </div>
       </div>
-      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
-        <p>© 2025 알비(ALBI). All rights reserved.</p>
-        <p class="mt-2">사업자등록번호: 000-00-00000 | 대표: 알비팀</p>
-      </div>
-    </div>
-  </footer>
+    </footer>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item active">
+      <i class="nav-item-icon fas fa-home"></i>
+      <span>홈</span>
+    </a>
+    <a href="/jobs" class="nav-item">
+      <i class="nav-item-icon fas fa-briefcase"></i>
+      <span>내주변</span>
+    </a>
+    <a href="/community.html" class="nav-item">
+      <i class="nav-item-icon fas fa-comments"></i>
+      <span>커뮤니티</span>
+    </a>
+    <a href="/store.html" class="nav-item">
+      <i class="nav-item-icon fas fa-store"></i>
+      <span>스토어</span>
+    </a>
+  </nav>
 </body>
 </html>
