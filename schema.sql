@@ -98,6 +98,67 @@ CREATE TABLE IF NOT EXISTS referrals (
 );
 
 -- ========================================
+-- 커뮤니티 게시판 테이블
+-- ========================================
+
+-- 게시글 테이블
+CREATE TABLE IF NOT EXISTS posts (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id TEXT,
+  author_name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT DEFAULT 'free' CHECK(category IN ('free', 'review', 'question', 'tip')),
+  views INTEGER DEFAULT 0,
+  likes_count INTEGER DEFAULT 0,
+  comments_count INTEGER DEFAULT 0,
+  is_featured INTEGER DEFAULT 0,
+  is_anonymous INTEGER DEFAULT 0,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch()),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- 댓글 테이블
+CREATE TABLE IF NOT EXISTS comments (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  post_id TEXT NOT NULL,
+  user_id TEXT,
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  parent_id TEXT,
+  is_anonymous INTEGER DEFAULT 0,
+  created_at INTEGER DEFAULT (unixepoch()),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+);
+
+-- 좋아요 테이블
+CREATE TABLE IF NOT EXISTS post_likes (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  post_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  created_at INTEGER DEFAULT (unixepoch()),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  UNIQUE(post_id, user_id)
+);
+
+-- 신고 테이블
+CREATE TABLE IF NOT EXISTS reports (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  reporter_id TEXT NOT NULL,
+  target_type TEXT NOT NULL CHECK(target_type IN ('post', 'comment')),
+  target_id TEXT NOT NULL,
+  reason TEXT NOT NULL CHECK(reason IN ('spam', 'abuse', 'inappropriate')),
+  description TEXT,
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'reviewed', 'resolved')),
+  created_at INTEGER DEFAULT (unixepoch()),
+  FOREIGN KEY (reporter_id) REFERENCES users(id)
+);
+
+-- ========================================
 -- 인덱스 생성
 -- ========================================
 
@@ -126,6 +187,15 @@ CREATE INDEX IF NOT EXISTS idx_jobs_location ON jobs(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_jobs_category ON jobs(category);
 CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(status) WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS idx_jobs_featured ON jobs(featured) WHERE featured = 1;
+
+-- 커뮤니티 인덱스
+CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category);
+CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_featured ON posts(is_featured) WHERE is_featured = 1;
+CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_likes_post ON post_likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_likes_user ON post_likes(user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 
 -- ========================================
 -- 샘플 데이터 (개발/테스트용)
@@ -167,6 +237,24 @@ INSERT OR IGNORE INTO point_transactions (id, user_id, amount, transaction_type,
 
 INSERT OR IGNORE INTO referrals (id, referrer_id, referee_id, referral_code, status, reward_given) VALUES
 ('ref001', 'user001', 'user003', 'ALBIA1B2C3', 'registered', 0);
+
+-- 커뮤니티 샘플 데이터
+INSERT OR IGNORE INTO posts (id, user_id, author_name, title, content, category, views, likes_count, comments_count) VALUES
+  ('post001', 'user001', '알바초보', '첫 카페 알바 체험 후기!', 
+   '오늘 홍대 카페에서 1시간 체험했는데 정말 좋았어요! 사장님도 친절하시고 동료분들도 다 좋으셨어요. 내일부터 출근하기로 했습니다 ㅎㅎ', 
+   'review', 45, 12, 5),
+  ('post002', 'user002', '걱정많은학생', '면접 때 뭐 물어보나요?',
+   '처음 알바 면접 보는데 너무 긴장돼요 ㅠㅠ 보통 어떤 질문 하시나요? 경험자분들 조언 부탁드려요!',
+   'question', 32, 8, 7),
+  ('post003', NULL, '익명', '편의점 야간알바 꿀팁 공유',
+   '편의점 야간 1년차입니다. 초보분들을 위해 꿀팁 몇 개 공유해요!
+
+1. 택배 정리는 새벽에 하는 게 제일 수월해요
+2. 발주는 체크리스트 만들어서 관리하세요
+3. 술취한 손님 응대법: 일단 공손하게, 위험하면 바로 112
+
+다들 화이팅이에요! 🎉',
+   'tip', 78, 25, 3);
 
 -- ========================================
 -- 완료 메시지

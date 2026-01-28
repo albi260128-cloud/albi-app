@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>게시글 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-2xl mx-auto min-h-screen bg-white shadow-xl pb-20">
+    <div id="loading" class="flex items-center justify-center min-h-screen">
+      <div class="text-center">
+        <div class="text-6xl mb-4 animate-bounce">🐜</div>
+        <p class="text-gray-600">게시글을 불러오는 중...</p>
+      </div>
+    </div>
+
+    <div id="postDetail" class="hidden">
+      <div class="sticky top-0 bg-white z-50 px-4 py-4 border-b flex items-center justify-between">
+        <button onclick="history.back()" class="text-gray-600 hover:text-gray-800">← 뒤로</button>
+        <div class="flex items-center space-x-2">
+          <button onclick="sharePost()" class="text-gray-600 hover:text-gray-800">📤 공유</button>
+          <button onclick="showReportModal()" class="text-gray-600 hover:text-gray-800">🚨 신고</button>
+        </div>
+      </div>
+
+      <div id="postContent" class="p-4"></div>
+
+      <div class="border-t p-4">
+        <h3 class="font-bold text-lg mb-4 flex items-center">
+          <span class="mr-2">💬</span>
+          <span>댓글 </span>
+          <span id="commentsCount" class="text-orange-500">0</span>
+        </h3>
+        <div id="commentsList" class="space-y-4 mb-4"></div>
+        <div id="noComments" class="text-center py-8 text-gray-500 hidden">첫 댓글을 작성해보세요! 💬</div>
+      </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg">
+      <div class="max-w-2xl mx-auto">
+        <div class="flex items-center space-x-2 mb-2">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="commentAnonymous" class="w-4 h-4 text-orange-500 rounded">
+            <span class="text-sm text-gray-600">익명</span>
+          </label>
+        </div>
+        <div class="flex space-x-3">
+          <input type="text" id="commentInput" placeholder="댓글을 입력하세요..."
+                 class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none">
+          <button onclick="submitComment()" id="commentBtn"
+                  class="px-6 py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 whitespace-nowrap">등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6">
+      <h3 class="text-lg font-bold mb-4 text-center">🚨 신고하기</h3>
+      <div class="space-y-3 mb-6">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input type="radio" name="reportReason" value="spam" class="text-orange-500">
+          <span class="text-sm">스팸/광고</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input type="radio" name="reportReason" value="abuse" class="text-orange-500">
+          <span class="text-sm">욕설/비방</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input type="radio" name="reportReason" value="inappropriate" class="text-orange-500">
+          <span class="text-sm">부적절한 내용</span>
+        </label>
+      </div>
+      <textarea id="reportDescription" placeholder="상세 내용 (선택)"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-4" rows="3"></textarea>
+      <div class="flex space-x-3">
+        <button onclick="closeReportModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-lg font-bold">취소</button>
+        <button onclick="submitReport()" class="flex-1 py-3 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600">신고하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const postId = urlParams.get('id');
+    let currentPost = null;
+    let currentUser = null;
+
+    window.onload = function() {
+      currentUser = JSON.parse(localStorage.getItem('albi_user_info') || '{}');
+      if (!postId) {
+        alert('잘못된 접근입니다.');
+        window.location.href = '/community.html';
+        return;
+      }
+      loadPostDetail();
+      loadComments();
+    };
+
+    async function loadPostDetail() {
+      try {
+        const response = await fetch(`/api/community/posts/${postId}`);
+        const data = await response.json();
+        if (data.success) {
+          currentPost = data.data;
+          renderPost(currentPost);
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        console.error('Load post error:', error);
+        alert('게시글을 불러올 수 없습니다.');
+        window.location.href = '/community.html';
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('postDetail').classList.remove('hidden');
+      }
+    }
+
+    function renderPost(post) {
+      const categoryIcons = { free: '🗣️', review: '📝', question: '❓', tip: '💡' };
+      const categoryNames = { free: '자유', review: '후기', question: '질문', tip: '꿀팁' };
+      
+      document.getElementById('postContent').innerHTML = `
+        <div class="mb-6">
+          <div class="flex items-center space-x-2 mb-3">
+            <span class="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold">
+              ${categoryIcons[post.category]} ${categoryNames[post.category]}
+            </span>
+            ${post.is_featured ? '<span class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-bold">🔥 인기</span>' : ''}
+          </div>
+          
+          <h1 class="text-2xl font-bold text-gray-900 mb-4">${escapeHtml(post.title)}</h1>
+          
+          <div class="flex items-center space-x-4 text-sm text-gray-600 mb-6">
+            <div class="flex items-center space-x-2">
+              <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">👤</div>
+              <span class="font-medium">${escapeHtml(post.author_name)}</span>
+            </div>
+            <span>🕐 ${post.timeAgo}</span>
+            <span>👁️ ${post.views}</span>
+          </div>
+        </div>
+
+        <div class="prose max-w-none mb-8">
+          <div class="text-gray-800 leading-relaxed whitespace-pre-wrap text-base">${escapeHtml(post.content)}</div>
+        </div>
+
+        <div class="flex items-center justify-center space-x-6 py-6 border-t border-b">
+          <button onclick="toggleLike()" id="likeBtn" 
+                  class="flex items-center space-x-2 px-6 py-3 rounded-full border border-gray-200 hover:bg-red-50 hover:border-red-200 transition">
+            <span class="text-xl" id="likeIcon">🤍</span>
+            <span class="font-bold" id="likeCount">${post.likes_count}</span>
+          </button>
+          <div class="flex items-center space-x-2 text-gray-600">
+            <span class="text-xl">💬</span>
+            <span class="font-bold">${post.comments_count}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadComments() {
+      try {
+        const response = await fetch(`/api/community/posts/${postId}/comments`);
+        const data = await response.json();
+        if (data.success) {
+          renderComments(data.data);
+          document.getElementById('commentsCount').textContent = data.data.length;
+        }
+      } catch (error) {
+        console.error('Load comments error:', error);
+      }
+    }
+
+    function renderComments(comments) {
+      const container = document.getElementById('commentsList');
+      const noComments = document.getElementById('noComments');
+      if (comments.length === 0) {
+        container.innerHTML = '';
+        noComments.classList.remove('hidden');
+        return;
+      }
+      noComments.classList.add('hidden');
+      container.innerHTML = comments.map(comment => `
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center space-x-2">
+              <div class="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-xs">👤</div>
+              <span class="font-bold text-sm">${escapeHtml(comment.author_name)}</span>
+            </div>
+            <span class="text-xs text-gray-500">${comment.timeAgo}</span>
+          </div>
+          <p class="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
+        </div>
+      `).join('');
+    }
+
+    async function submitComment() {
+      const input = document.getElementById('commentInput');
+      const content = input.value.trim();
+      const isAnonymous = document.getElementById('commentAnonymous').checked;
+      if (!content) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+      }
+      try {
+        document.getElementById('commentBtn').textContent = '등록중...';
+        document.getElementById('commentBtn').disabled = true;
+        const response = await fetch(`/api/community/posts/${postId}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUser.id || null,
+            authorName: currentUser.name || '알비사용자',
+            content,
+            isAnonymous
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          input.value = '';
+          loadComments();
+          loadPostDetail();
+        } else {
+          alert('오류: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Submit comment error:', error);
+        alert('댓글 작성 중 오류가 발생했습니다.');
+      } finally {
+        document.getElementById('commentBtn').textContent = '등록';
+        document.getElementById('commentBtn').disabled = false;
+      }
+    }
+
+    async function toggleLike() {
+      if (!currentUser.id) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+      try {
+        const response = await fetch(`/api/community/posts/${postId}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id })
+        });
+        const data = await response.json();
+        if (data.success) {
+          const likeBtn = document.getElementById('likeBtn');
+          const likeIcon = document.getElementById('likeIcon');
+          const likeCount = document.getElementById('likeCount');
+          if (data.action === 'liked') {
+            likeIcon.textContent = '❤️';
+            likeBtn.classList.add('bg-red-50', 'border-red-200');
+            likeCount.textContent = parseInt(likeCount.textContent) + 1;
+          } else {
+            likeIcon.textContent = '🤍';
+            likeBtn.classList.remove('bg-red-50', 'border-red-200');
+            likeCount.textContent = parseInt(likeCount.textContent) - 1;
+          }
+        }
+      } catch (error) {
+        console.error('Toggle like error:', error);
+        alert('좋아요 처리 중 오류가 발생했습니다.');
+      }
+    }
+
+    function showReportModal() {
+      if (!currentUser.id) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+      document.getElementById('reportModal').classList.remove('hidden');
+      document.getElementById('reportModal').classList.add('flex');
+    }
+
+    function closeReportModal() {
+      document.getElementById('reportModal').classList.add('hidden');
+      document.getElementById('reportModal').classList.remove('flex');
+    }
+
+    async function submitReport() {
+      const reason = document.querySelector('input[name="reportReason"]:checked')?.value;
+      const description = document.getElementById('reportDescription').value.trim();
+      if (!reason) {
+        alert('신고 사유를 선택해주세요.');
+        return;
+      }
+      try {
+        const response = await fetch('/api/community/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reporterId: currentUser.id,
+            targetType: 'post',
+            targetId: postId,
+            reason,
+            description
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          alert(data.message);
+          closeReportModal();
+        } else {
+          alert('오류: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Submit report error:', error);
+        alert('신고 처리 중 오류가 발생했습니다.');
+      }
+    }
+
+    function sharePost() {
+      if (!currentPost) return;
+      const shareData = {
+        title: currentPost.title,
+        text: `알비 커뮤니티: ${currentPost.title}`,
+        url: window.location.href
+      };
+      if (navigator.share) {
+        navigator.share(shareData);
+      } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert('게시글 링크가 복사되었습니다!');
+        });
+      }
+    }
+
+    document.getElementById('commentInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitComment();
+      }
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

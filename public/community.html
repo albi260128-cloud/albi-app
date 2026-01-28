@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>알비 커뮤니티 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .post-card { transition: all 0.2s ease; }
+    .post-card:active { transform: scale(0.98); }
+  </style>
+</head>
+<body class="bg-gray-50 pb-20">
+  <!-- 상단 헤더 -->
+  <header class="bg-white sticky top-0 z-50 shadow-sm">
+    <div class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="text-2xl">💬</span>
+        <h1 class="font-bold text-xl">알비 톡톡</h1>
+      </div>
+      <a href="/write-post.html" class="bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-orange-600 flex items-center space-x-1">
+        <span>✏️</span>
+        <span>글쓰기</span>
+      </a>
+    </div>
+
+    <!-- 카테고리 탭 -->
+    <div class="flex overflow-x-auto px-4 py-2 space-x-2 border-b">
+      <button onclick="filterCategory('all')" data-category="all"
+              class="category-tab px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white whitespace-nowrap">
+        전체
+      </button>
+      <button onclick="filterCategory('free')" data-category="free"
+              class="category-tab px-4 py-2 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 whitespace-nowrap">
+        🗣️ 자유
+      </button>
+      <button onclick="filterCategory('review')" data-category="review"
+              class="category-tab px-4 py-2 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 whitespace-nowrap">
+        📝 후기
+      </button>
+      <button onclick="filterCategory('question')" data-category="question"
+              class="category-tab px-4 py-2 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 whitespace-nowrap">
+        ❓ 질문
+      </button>
+      <button onclick="filterCategory('tip')" data-category="tip"
+              class="category-tab px-4 py-2 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 whitespace-nowrap">
+        💡 꿀팁
+      </button>
+    </div>
+
+    <!-- 정렬 옵션 -->
+    <div class="px-4 py-2 bg-gray-50 border-b">
+      <select id="sortSelect" onchange="loadPosts()" 
+              class="text-sm border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:border-orange-500">
+        <option value="latest">최신순</option>
+        <option value="popular">인기순</option>
+        <option value="views">조회순</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- 게시글 목록 -->
+  <main class="p-4">
+    <div id="loading" class="text-center py-12">
+      <div class="text-4xl mb-4 animate-bounce">🐜</div>
+      <p class="text-gray-600">게시글을 불러오는 중...</p>
+    </div>
+
+    <div id="postsList" class="space-y-3">
+      <!-- JavaScript로 동적 생성 -->
+    </div>
+
+    <div id="loadMore" class="text-center py-6 hidden">
+      <button onclick="loadMorePosts()" 
+              class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300">
+        더 보기
+      </button>
+    </div>
+
+    <div id="noResults" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">📝</div>
+      <h3 class="text-xl font-bold mb-2">아직 게시글이 없어요</h3>
+      <p class="text-gray-600 mb-6">첫 번째 글을 작성해보세요!</p>
+      <a href="/write-post.html" class="inline-block bg-orange-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-600">
+        글쓰기
+      </a>
+    </div>
+  </main>
+
+  <!-- 하단 네비게이션 -->
+  <nav class="fixed bottom-0 w-full bg-white border-t flex justify-around py-3 z-50">
+    <a href="/" class="flex flex-col items-center space-y-1 text-gray-500">
+      <span class="text-xl">🏠</span>
+      <span class="text-xs">홈</span>
+    </a>
+    <a href="/jobs.html" class="flex flex-col items-center space-y-1 text-gray-500">
+      <span class="text-xl">📍</span>
+      <span class="text-xs">내주변</span>
+    </a>
+    <a href="/community.html" class="flex flex-col items-center space-y-1 text-orange-500 font-bold">
+      <span class="text-xl">💬</span>
+      <span class="text-xs">커뮤니티</span>
+    </a>
+    <a href="/store.html" class="flex flex-col items-center space-y-1 text-gray-500">
+      <span class="text-xl">🎁</span>
+      <span class="text-xs">스토어</span>
+    </a>
+  </nav>
+
+  <script>
+    let currentCategory = 'all';
+    let currentPage = 1;
+    let isLoading = false;
+    let hasMore = true;
+
+    const categoryIcons = {
+      free: '🗣️',
+      review: '📝',
+      question: '❓',
+      tip: '💡'
+    };
+
+    const categoryNames = {
+      free: '자유',
+      review: '후기',
+      question: '질문',
+      tip: '꿀팁'
+    };
+
+    // 초기화
+    window.onload = function() {
+      loadPosts();
+    };
+
+    // 카테고리 필터
+    function filterCategory(category) {
+      currentCategory = category;
+      currentPage = 1;
+      hasMore = true;
+      document.getElementById('postsList').innerHTML = '';
+      
+      // 탭 활성화 상태 변경
+      document.querySelectorAll('.category-tab').forEach(tab => {
+        if (tab.dataset.category === category) {
+          tab.className = 'category-tab px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white whitespace-nowrap';
+        } else {
+          tab.className = 'category-tab px-4 py-2 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 whitespace-nowrap';
+        }
+      });
+
+      loadPosts();
+    }
+
+    // 게시글 로드
+    async function loadPosts() {
+      if (isLoading) return;
+      
+      isLoading = true;
+      document.getElementById('loading').classList.remove('hidden');
+
+      try {
+        const sort = document.getElementById('sortSelect').value;
+        const params = new URLSearchParams({
+          category: currentCategory,
+          sort,
+          page: currentPage.toString(),
+          limit: '20'
+        });
+
+        const response = await fetch(`/api/community/posts?${params}`);
+        const data = await response.json();
+
+        if (data.success) {
+          renderPosts(data.data.posts, currentPage === 1);
+          hasMore = data.data.hasMore;
+          
+          if (hasMore) {
+            document.getElementById('loadMore').classList.remove('hidden');
+          } else {
+            document.getElementById('loadMore').classList.add('hidden');
+          }
+
+          if (data.data.posts.length === 0 && currentPage === 1) {
+            document.getElementById('noResults').classList.remove('hidden');
+          } else {
+            document.getElementById('noResults').classList.add('hidden');
+          }
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        console.error('Load posts error:', error);
+        alert('게시글을 불러올 수 없습니다.');
+      } finally {
+        isLoading = false;
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    // 게시글 렌더링
+    function renderPosts(posts, clear = false) {
+      const container = document.getElementById('postsList');
+      
+      if (clear) {
+        container.innerHTML = '';
+      }
+
+      posts.forEach(post => {
+        const postCard = document.createElement('div');
+        postCard.className = 'post-card bg-white p-4 rounded-xl shadow-sm hover:shadow-md cursor-pointer transition';
+        postCard.onclick = () => viewPost(post.id);
+
+        postCard.innerHTML = `
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-bold">
+                ${categoryIcons[post.category]} ${categoryNames[post.category]}
+              </span>
+              ${post.is_featured ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold">🔥 인기</span>' : ''}
+            </div>
+            <span class="text-xs text-gray-500">${post.timeAgo}</span>
+          </div>
+          
+          <h3 class="font-bold text-gray-900 mb-2 line-clamp-2">${escapeHtml(post.title)}</h3>
+          <p class="text-sm text-gray-600 mb-3 line-clamp-2">${escapeHtml(post.preview)}</p>
+          
+          <div class="flex items-center justify-between text-xs text-gray-500">
+            <div class="flex items-center space-x-1">
+              <span class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">👤</span>
+              <span class="font-medium">${escapeHtml(post.author_name)}</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <span class="flex items-center space-x-1">
+                <span>👁️</span>
+                <span>${post.views}</span>
+              </span>
+              <span class="flex items-center space-x-1 text-red-500">
+                <span>❤️</span>
+                <span>${post.likes_count}</span>
+              </span>
+              <span class="flex items-center space-x-1 text-blue-500">
+                <span>💬</span>
+                <span>${post.comments_count}</span>
+              </span>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(postCard);
+      });
+    }
+
+    // 더 보기
+    function loadMorePosts() {
+      currentPage++;
+      loadPosts();
+    }
+
+    // 게시글 상세 보기
+    function viewPost(postId) {
+      window.location.href = `/post-detail.html?id=${postId}`;
+    }
+
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

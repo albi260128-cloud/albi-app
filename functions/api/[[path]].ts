@@ -238,6 +238,8 @@ app.get('/jobs', async (c) => {
   }
 });
 
+// [DEPRECATED] 아래 라우트는 위치 기반 API로 대체됨 - 주석 처리
+/*
 // 특정 구인 공고 조회
 app.get('/jobs/:id', async (c) => {
   try {
@@ -272,6 +274,8 @@ app.get('/jobs/:id', async (c) => {
     }, 500);
   }
 });
+*/
+
 
 // 체험 예약 생성
 app.post('/experiences', async (c) => {
@@ -844,6 +848,326 @@ app.post('/jobs', async (c) => {
 });
 
 // ========================================
+// 커뮤니티 게시판 API
+// ========================================
+
+// 유틸리티: 시간 경과 표시
+function formatTimeAgo(timestamp: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - timestamp;
+
+  if (diff < 60) return '방금 전';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
+  
+  return new Date(timestamp * 1000).toLocaleDateString('ko-KR');
+}
+
+// 1. 게시글 목록 조회
+app.get('/community/posts', async (c) => {
+  try {
+    const category = c.req.query('category') || 'all';
+    const sort = c.req.query('sort') || 'latest';
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '20');
+    const offset = (page - 1) * limit;
+
+    let query = 'SELECT * FROM posts';
+    const params: any[] = [];
+
+    if (category !== 'all') {
+      query += ' WHERE category = ?';
+      params.push(category);
+    }
+
+    // 정렬
+    switch (sort) {
+      case 'popular':
+        query += ' ORDER BY likes_count DESC, created_at DESC';
+        break;
+      case 'views':
+        query += ' ORDER BY views DESC, created_at DESC';
+        break;
+      default:
+        query += ' ORDER BY created_at DESC';
+    }
+
+    query += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    const posts = results.map((post: any) => ({
+      ...post,
+      timeAgo: formatTimeAgo(post.created_at),
+      preview: post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content
+    }));
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        posts,
+        hasMore: posts.length === limit,
+        page,
+        total: posts.length
+      }
+    });
+  } catch (error) {
+    console.error('Get posts error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '게시글 목록 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 2. 게시글 상세 조회
+app.get('/community/posts/:postId', async (c) => {
+  try {
+    const postId = c.req.param('postId');
+
+    // 조회수 증가
+    await c.env.DB.prepare('UPDATE posts SET views = views + 1 WHERE id = ?')
+      .bind(postId).run();
+
+    const post = await c.env.DB.prepare('SELECT * FROM posts WHERE id = ?')
+      .bind(postId).first();
+
+    if (!post) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '게시글을 찾을 수 없습니다.' 
+      }, 404);
+    }
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        ...post,
+        timeAgo: formatTimeAgo(post.created_at as number),
+        formattedDate: new Date((post.created_at as number) * 1000).toLocaleString('ko-KR')
+      }
+    });
+  } catch (error) {
+    console.error('Get post detail error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '게시글 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 3. 게시글 작성
+app.post('/community/posts', async (c) => {
+  try {
+    const { userId, authorName, title, content, category, isAnonymous } = await c.req.json();
+
+    if (!title || !content) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '제목과 내용을 모두 입력해주세요.' 
+      }, 400);
+    }
+
+    const postId = 'post-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const displayName = isAnonymous ? '익명' : (authorName || '알비사용자');
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const queries = [
+      c.env.DB.prepare(`
+        INSERT INTO posts (id, user_id, author_name, title, content, category, is_anonymous, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(postId, userId || null, displayName, title, content, category || 'free', 
+              isAnonymous ? 1 : 0, timestamp)
+    ];
+
+    // 로그인 사용자에게만 포인트 지급
+    if (userId) {
+      queries.push(
+        c.env.DB.prepare('UPDATE users SET albi_points = albi_points + 5 WHERE id = ?')
+          .bind(userId),
+        c.env.DB.prepare(`
+          INSERT INTO point_transactions (user_id, amount, transaction_type, description, balance_after, created_at)
+          SELECT ?, 5, 'community_post', '게시글 작성 보상', albi_points + 5, ?
+          FROM users WHERE id = ?
+        `).bind(userId, timestamp, userId)
+      );
+    }
+
+    await c.env.DB.batch(queries);
+
+    return c.json<ApiResponse>({
+      success: true,
+      data: { postId, reward: userId ? 5 : 0 }
+    });
+  } catch (error) {
+    console.error('Create post error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '게시글 작성 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 4. 댓글 목록 조회
+app.get('/community/posts/:postId/comments', async (c) => {
+  try {
+    const postId = c.req.param('postId');
+
+    const { results } = await c.env.DB.prepare(`
+      SELECT * FROM comments 
+      WHERE post_id = ? 
+      ORDER BY created_at ASC
+    `).bind(postId).all();
+
+    const comments = results.map((comment: any) => ({
+      ...comment,
+      timeAgo: formatTimeAgo(comment.created_at)
+    }));
+
+    return c.json<ApiResponse>({ 
+      success: true, 
+      data: comments 
+    });
+  } catch (error) {
+    console.error('Get comments error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '댓글 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 5. 댓글 작성
+app.post('/community/posts/:postId/comments', async (c) => {
+  try {
+    const postId = c.req.param('postId');
+    const { userId, authorName, content, isAnonymous } = await c.req.json();
+
+    if (!content) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '댓글 내용을 입력해주세요.' 
+      }, 400);
+    }
+
+    const commentId = 'comment-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const displayName = isAnonymous ? '익명' : (authorName || '알비사용자');
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    await c.env.DB.batch([
+      c.env.DB.prepare(`
+        INSERT INTO comments (id, post_id, user_id, author_name, content, is_anonymous, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(commentId, postId, userId || null, displayName, content, 
+              isAnonymous ? 1 : 0, timestamp),
+      c.env.DB.prepare('UPDATE posts SET comments_count = comments_count + 1 WHERE id = ?')
+        .bind(postId)
+    ]);
+
+    return c.json<ApiResponse>({ 
+      success: true, 
+      data: { commentId } 
+    });
+  } catch (error) {
+    console.error('Create comment error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '댓글 작성 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 6. 좋아요 토글
+app.post('/community/posts/:postId/like', async (c) => {
+  try {
+    const postId = c.req.param('postId');
+    const { userId } = await c.req.json();
+
+    if (!userId) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '로그인이 필요합니다.' 
+      }, 401);
+    }
+
+    const existingLike = await c.env.DB.prepare(`
+      SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?
+    `).bind(postId, userId).first();
+
+    if (existingLike) {
+      // 좋아요 취소
+      await c.env.DB.batch([
+        c.env.DB.prepare('DELETE FROM post_likes WHERE id = ?').bind(existingLike.id),
+        c.env.DB.prepare('UPDATE posts SET likes_count = likes_count - 1 WHERE id = ?')
+          .bind(postId)
+      ]);
+      return c.json<ApiResponse>({ 
+        success: true, 
+        action: 'unliked' 
+      });
+    } else {
+      // 좋아요 추가
+      const likeId = 'like-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      const timestamp = Math.floor(Date.now() / 1000);
+      
+      await c.env.DB.batch([
+        c.env.DB.prepare(`
+          INSERT INTO post_likes (id, post_id, user_id, created_at)
+          VALUES (?, ?, ?, ?)
+        `).bind(likeId, postId, userId, timestamp),
+        c.env.DB.prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?')
+          .bind(postId)
+      ]);
+      return c.json<ApiResponse>({ 
+        success: true, 
+        action: 'liked' 
+      });
+    }
+  } catch (error) {
+    console.error('Toggle like error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '좋아요 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 7. 신고하기
+app.post('/community/report', async (c) => {
+  try {
+    const { reporterId, targetType, targetId, reason, description } = await c.req.json();
+
+    if (!reporterId || !targetType || !targetId || !reason) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '필수 정보가 누락되었습니다.' 
+      }, 400);
+    }
+
+    const reportId = 'report-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    await c.env.DB.prepare(`
+      INSERT INTO reports (id, reporter_id, target_type, target_id, reason, description, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(reportId, reporterId, targetType, targetId, reason, description || '', timestamp).run();
+
+    return c.json<ApiResponse>({
+      success: true,
+      message: '신고가 접수되었습니다. 빠른 시일 내에 검토하겠습니다.'
+    });
+  } catch (error) {
+    console.error('Report error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '신고 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
 // 헬스체크 및 정보 API
 // ========================================
 
@@ -878,6 +1202,13 @@ app.get('/info', (c) => {
         'POST /api/referral/register - 친구 추천 등록',
         'POST /api/referral/reward - 채용 성공 보상',
         'GET /api/referral/stats/:userId - 추천 통계',
+        'GET /api/community/posts - 게시글 목록',
+        'GET /api/community/posts/:postId - 게시글 상세',
+        'POST /api/community/posts - 게시글 작성',
+        'GET /api/community/posts/:postId/comments - 댓글 목록',
+        'POST /api/community/posts/:postId/comments - 댓글 작성',
+        'POST /api/community/posts/:postId/like - 좋아요 토글',
+        'POST /api/community/report - 신고하기',
         'GET /api/health - 헬스체크',
         'GET /api/info - API 정보'
       ]
