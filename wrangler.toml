@@ -1,0 +1,18 @@
+name = "albi-app"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+# D1 데이터베이스 설정
+# 주의: database_id는 'wrangler d1 create albi-production' 실행 후 설정해야 합니다
+[[d1_databases]]
+binding = "DB"
+database_name = "albi-production"
+database_id = ""  # TODO: wrangler d1 create 후 실제 ID로 교체
+
+# Workers AI 바인딩
+[ai]
+binding = "AI"
+
+# 환경 변수
+[vars]
+ENVIRONMENT = "production"

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>급여계산기 - 알비</title>
+  <meta name="description" content="시급과 근무시간을 입력하면 주휴수당까지 자동 계산해드립니다">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <!-- 네비게이션 -->
+  <nav class="bg-white shadow-sm border-b">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-2">
+        <span class="text-3xl">🐜</span>
+        <span class="text-2xl font-bold text-orange-500">알비</span>
+      </a>
+      <a href="/" class="text-gray-600 hover:text-orange-500 transition">← 홈으로</a>
+    </div>
+  </nav>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="py-12">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <div class="text-6xl mb-4">🧮</div>
+        <h1 class="text-4xl font-bold mb-4">알비 급여계산기</h1>
+        <p class="text-gray-600 text-lg">시급과 근무시간을 입력하면 주휴수당까지 자동 계산해드립니다</p>
+      </div>
+
+      <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <span class="mr-2">💰</span>
+          주휴수당 계산기
+        </h2>
+        
+        <div class="space-y-6">
+          <!-- 시급 입력 -->
+          <div>
+            <label class="block font-bold mb-2">시급 (원)</label>
+            <input 
+              type="number" 
+              id="hourlyWage" 
+              value="10030" 
+              min="10030"
+              step="10"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition"
+            >
+            <p class="text-xs text-gray-500 mt-1">💡 2025년 최저시급: 10,030원</p>
+          </div>
+
+          <!-- 주간 근무시간 입력 -->
+          <div>
+            <label class="block font-bold mb-2">주간 근무시간 (시간)</label>
+            <input 
+              type="number" 
+              id="weeklyHours" 
+              value="20" 
+              min="0" 
+              max="168" 
+              step="0.5"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition"
+            >
+            <p class="text-xs text-gray-500 mt-1">💡 주 15시간 이상 근무 시 주휴수당 지급</p>
+          </div>
+
+          <!-- 계산 버튼 -->
+          <button 
+            onclick="calculate()" 
+            class="w-full bg-orange-500 text-white py-4 rounded-lg font-bold hover:bg-orange-600 transition text-lg">
+            계산하기
+          </button>
+        </div>
+
+        <!-- 결과 영역 -->
+        <div id="result" class="mt-8 space-y-4 hidden">
+          <!-- 주간 기본급 -->
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="text-sm text-gray-600 mb-1">주간 기본급</div>
+            <div class="text-2xl font-bold text-gray-900" id="weeklyBase">0원</div>
+          </div>
+          
+          <!-- 주휴수당 -->
+          <div id="holidaySection" class="bg-green-50 p-4 rounded-lg">
+            <div class="text-sm text-gray-600 mb-1">주휴수당</div>
+            <div class="text-2xl font-bold text-green-700" id="weeklyHoliday">0원</div>
+            <p id="holidayNote" class="text-xs text-gray-600 mt-2"></p>
+          </div>
+
+          <!-- 주급 합계 -->
+          <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+            <div class="text-sm text-blue-600 mb-1">주급 합계</div>
+            <div class="text-3xl font-bold text-blue-700" id="weeklyTotal">0원</div>
+          </div>
+
+          <!-- 예상 월급 -->
+          <div class="bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 rounded-lg">
+            <div class="text-sm mb-2 opacity-90">예상 월급 (4.345주 기준)</div>
+            <div class="text-4xl font-bold mb-2" id="monthlyTotal">0원</div>
+            <p class="text-xs opacity-75">※ 4대보험 및 세금 공제 전 금액입니다</p>
+          </div>
+
+          <!-- 상세 설명 -->
+          <div id="explanation" class="bg-blue-50 p-4 rounded-lg text-sm border border-blue-200">
+            <h4 class="font-bold mb-2 flex items-center">
+              <span class="mr-1">ℹ️</span>
+              상세 계산 방식
+            </h4>
+            <div id="explanationContent" class="text-gray-700 whitespace-pre-line"></div>
+          </div>
+        </div>
+
+        <!-- 에러 메시지 -->
+        <div id="error" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 hidden">
+          <div class="flex items-start">
+            <span class="mr-2">⚠️</span>
+            <span id="errorMessage"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 안내사항 -->
+      <div class="mt-12 max-w-4xl mx-auto bg-blue-50 border-2 border-blue-200 p-6 rounded-xl">
+        <h3 class="font-bold text-lg mb-3 text-blue-900 flex items-center">
+          <span class="mr-2">💡</span>
+          알아두세요!
+        </h3>
+        <ul class="space-y-2 text-sm text-blue-800">
+          <li class="flex items-start">
+            <span class="mr-2 font-bold">•</span>
+            <span>주휴수당은 주 15시간 이상 근무하고 1주일을 개근한 경우에만 지급됩니다.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 font-bold">•</span>
+            <span>주 40시간 이상 근무 시 주휴수당은 8시간분이 지급됩니다.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 font-bold">•</span>
+            <span>주 40시간 미만 근무 시 주휴수당은 (주 근로시간 ÷ 40) × 8시간으로 비례 계산됩니다.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 font-bold">•</span>
+            <span>월급 계산 시 평균 주수인 4.345주를 적용했습니다.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 font-bold">•</span>
+            <span>실제 급여에서는 4대보험(국민연금, 건강보험, 고용보험, 산재보험)과 소득세가 공제됩니다.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 font-bold">•</span>
+            <span>본 계산기는 참고용이며, 실제 급여는 사업장과 협의하여 결정해야 합니다.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function showError(message) {
+      const errorDiv = document.getElementById('error');
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.textContent = message;
+      errorDiv.classList.remove('hidden');
+      document.getElementById('result').classList.add('hidden');
+    }
+
+    function hideError() {
+      document.getElementById('error').classList.add('hidden');
+    }
+
+    async function calculate() {
+      hideError();
+      
+      const hourlyWage = parseFloat(document.getElementById('hourlyWage').value) || 0;
+      const weeklyHours = parseFloat(document.getElementById('weeklyHours').value) || 0;
+
+      // 클라이언트 측 검증
+      if (hourlyWage < 10030 && hourlyWage > 0) {
+        showError('최저시급(10,030원) 이상으로 입력해주세요.');
+        return;
+      }
+
+      if (weeklyHours < 0 || weeklyHours > 168) {
+        showError('주간 근무시간은 0-168시간 범위로 입력해주세요.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/calculator/wage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hourlyWage, weeklyHours })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const result = data.data;
+          
+          // 결과 표시
+          document.getElementById('weeklyBase').textContent = result.weeklyBasePay.toLocaleString() + '원';
+          document.getElementById('weeklyHoliday').textContent = result.hasHolidayPay 
+            ? '+' + result.weeklyHolidayPay.toLocaleString() + '원'
+            : '해당 없음';
+          document.getElementById('weeklyTotal').textContent = result.weeklyTotal.toLocaleString() + '원';
+          document.getElementById('monthlyTotal').textContent = result.monthlyEstimate.toLocaleString() + '원';
+          document.getElementById('explanationContent').textContent = result.explanation;
+
+          // 주휴수당 섹션 스타일 변경
+          const holidaySection = document.getElementById('holidaySection');
+          const holidayNote = document.getElementById('holidayNote');
+          
+          if (result.hasHolidayPay) {
+            holidaySection.className = 'bg-green-50 p-4 rounded-lg border-2 border-green-200';
+            holidayNote.textContent = '✓ 주휴수당이 적용되었습니다';
+            holidayNote.className = 'text-xs text-green-600 mt-2';
+          } else {
+            holidaySection.className = 'bg-gray-100 p-4 rounded-lg border-2 border-gray-200';
+            holidayNote.textContent = '주 15시간 이상 근무 시 주휴수당이 지급됩니다';
+            holidayNote.className = 'text-xs text-gray-600 mt-2';
+          }
+
+          // 결과 영역 표시
+          document.getElementById('result').classList.remove('hidden');
+          
+          // 결과로 스크롤
+          document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          
+        } else {
+          showError(data.error || '계산 중 오류가 발생했습니다.');
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        showError('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    }
+
+    // Enter 키로 계산 실행
+    document.getElementById('hourlyWage').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        calculate();
+      }
+    });
+    document.getElementById('weeklyHours').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        calculate();
+      }
+    });
+
+    // 페이지 로드 시 자동 계산
+    window.addEventListener('load', function() {
+      calculate();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Wrangler
+.wrangler/
+.dev.vars
+.mf/
+
+# Build outputs
+dist/
+.output/
+
+# Logs
+*.log
+logs/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.backup
+*.bak
+*.tar.gz
+*.zip
+
+# Testing
+coverage/
+.nyc_output/
