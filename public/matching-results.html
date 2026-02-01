@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매칭 결과 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    }
+    .match-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .personality-badge {
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- 네비게이션 -->
+  <nav class="bg-white shadow-sm border-b">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-2">
+        <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
+        <span class="text-2xl font-bold text-orange-500">알비</span>
+      </a>
+      <a href="/" class="text-gray-600 hover:text-orange-500 transition">
+        <i class="fas fa-home mr-1"></i> 홈으로
+      </a>
+    </div>
+  </nav>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 분석 완료 헤더 -->
+    <div class="text-center mb-8">
+      <div class="text-6xl mb-4">🎯</div>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">AI 분석 완료!</h1>
+      <p class="text-gray-600">당신의 성향을 분석하여 최적의 매칭 결과를 찾았습니다</p>
+    </div>
+
+    <!-- 사용자 프로필 카드 -->
+    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+      <div class="flex items-start gap-4 mb-6">
+        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center text-4xl">
+          👤
+        </div>
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold mb-2">당신의 프로필</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div class="bg-white bg-opacity-20 rounded-lg p-2">
+              <div class="text-xs opacity-80">관심 분야</div>
+              <div class="font-bold">카페 ☕</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-2">
+              <div class="text-xs opacity-80">성향</div>
+              <div class="font-bold">외향적</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-2">
+              <div class="text-xs opacity-80">경험</div>
+              <div class="font-bold">초보</div>
+            </div>
+            <div class="bg-white bg-opacity-20 rounded-lg p-2">
+              <div class="text-xs opacity-80">선호 시간</div>
+              <div class="font-bold">오후</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 성격 분석 -->
+      <div class="bg-white bg-opacity-10 rounded-lg p-4">
+        <h3 class="font-bold mb-3 flex items-center gap-2">
+          <i class="fas fa-brain"></i>
+          AI 성향 분석
+        </h3>
+        <div class="flex flex-wrap gap-2">
+          <span class="personality-badge px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
+            🗣️ 소통을 즐김
+          </span>
+          <span class="personality-badge px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
+            📚 학습 의지 높음
+          </span>
+          <span class="personality-badge px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
+            ⚡ 빠른 적응력
+          </span>
+          <span class="personality-badge px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm">
+            😊 친화력 우수
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 추천 일자리 섹션 -->
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i class="fas fa-star text-orange-500"></i>
+        당신에게 추천하는 일자리
+        <span class="text-sm font-normal text-gray-500">(매칭도 순)</span>
+      </h2>
+      
+      <div class="space-y-4">
+        <!-- 매칭 카드 1 - 최고 매칭 -->
+        <div class="match-card bg-white rounded-xl border-2 border-orange-500 shadow-lg p-6 transition-all cursor-pointer" onclick="viewJobDetail(1)">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="relative">
+              <div class="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center text-3xl">
+                ☕
+              </div>
+              <div class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                98%
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-bold">
+                  <i class="fas fa-crown"></i> 최적 매칭
+                </span>
+                <span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">
+                  <i class="fas fa-eye"></i> 1시간 체험 가능
+                </span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-1">스타벅스 강남점 바리스타</h3>
+              <div class="flex items-center gap-3 text-sm text-gray-600 mb-3">
+                <span><i class="fas fa-map-marker-alt text-orange-500"></i> 서울 강남구 (0.8km)</span>
+                <span><i class="fas fa-clock text-blue-500"></i> 평일 오후</span>
+                <span class="font-bold text-orange-500"><i class="fas fa-won-sign"></i> 시급 12,000원</span>
+              </div>
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <div class="font-bold text-blue-700 text-sm mb-1">🎯 이 일자리가 딱 맞는 이유</div>
+                <ul class="text-xs text-gray-700 space-y-1">
+                  <li>• 고객 응대를 즐기는 성향과 잘 맞아요</li>
+                  <li>• 교육 프로그램이 체계적이라 초보자도 괜찮아요</li>
+                  <li>• 오후 근무 가능하고 주말 시간대가 유연해요</li>
+                  <li>• 팀워크를 중요시하는 분위기라 친화력을 발휘할 수 있어요</li>
+                </ul>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="applyTrialExperience(1, event)" class="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition">
+                  <i class="fas fa-eye mr-2"></i>
+                  1시간 체험 신청
+                </button>
+                <button onclick="applyDirectly(1, event)" class="flex-1 px-4 py-3 border-2 border-orange-500 text-orange-500 rounded-lg font-bold hover:bg-orange-50 transition">
+                  <i class="fas fa-paper-plane mr-2"></i>
+                  바로 지원하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 매칭 카드 2 -->
+        <div class="match-card bg-white rounded-xl border border-gray-200 shadow-sm p-6 transition-all cursor-pointer" onclick="viewJobDetail(2)">
+          <div class="flex items-start gap-4">
+            <div class="relative">
+              <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-3xl">
+                ☕
+              </div>
+              <div class="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                92%
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold">
+                  높은 매칭도
+                </span>
+                <span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">
+                  <i class="fas fa-eye"></i> 1시간 체험 가능
+                </span>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 mb-1">투썸플레이스 역삼점 홀 스태프</h3>
+              <div class="flex items-center gap-3 text-sm text-gray-600 mb-2">
+                <span><i class="fas fa-map-marker-alt text-orange-500"></i> 서울 강남구 (1.2km)</span>
+                <span><i class="fas fa-clock text-blue-500"></i> 평일 오후/저녁</span>
+                <span class="font-bold text-orange-500"><i class="fas fa-won-sign"></i> 시급 11,500원</span>
+              </div>
+              <p class="text-xs text-gray-600 mb-3">• 고객 응대 중심 업무 • 친절한 사장님 • 유연한 스케줄</p>
+              <div class="flex items-center gap-2">
+                <button onclick="applyTrialExperience(2, event)" class="flex-1 px-3 py-2 bg-orange-500 text-white rounded-lg text-sm font-bold hover:bg-orange-600 transition">
+                  1시간 체험 신청
+                </button>
+                <button onclick="applyDirectly(2, event)" class="flex-1 px-3 py-2 border border-orange-500 text-orange-500 rounded-lg text-sm font-bold hover:bg-orange-50 transition">
+                  바로 지원하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 매칭 카드 3 -->
+        <div class="match-card bg-white rounded-xl border border-gray-200 shadow-sm p-6 transition-all cursor-pointer" onclick="viewJobDetail(3)">
+          <div class="flex items-start gap-4">
+            <div class="relative">
+              <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-3xl">
+                ☕
+              </div>
+              <div class="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                87%
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-bold">
+                  좋은 매칭
+                </span>
+                <span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">
+                  <i class="fas fa-eye"></i> 1시간 체험 가능
+                </span>
+              </div>
+              <h3 class="text-lg font-bold text-gray-800 mb-1">할리스커피 서초점 바리스타</h3>
+              <div class="flex items-center gap-3 text-sm text-gray-600 mb-2">
+                <span><i class="fas fa-map-marker-alt text-orange-500"></i> 서울 서초구 (2.3km)</span>
+                <span><i class="fas fa-clock text-blue-500"></i> 주말 포함</span>
+                <span class="font-bold text-orange-500"><i class="fas fa-won-sign"></i> 시급 12,500원</span>
+              </div>
+              <p class="text-xs text-gray-600 mb-3">• 커피 교육 제공 • 조용한 분위기 • 장기 근무 우대</p>
+              <div class="flex items-center gap-2">
+                <button onclick="applyTrialExperience(3, event)" class="flex-1 px-3 py-2 bg-orange-500 text-white rounded-lg text-sm font-bold hover:bg-orange-600 transition">
+                  1시간 체험 신청
+                </button>
+                <button onclick="applyDirectly(3, event)" class="flex-1 px-3 py-2 border border-orange-500 text-orange-500 rounded-lg text-sm font-bold hover:bg-orange-50 transition">
+                  바로 지원하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 다른 추천 버튼 -->
+    <div class="text-center space-x-4">
+      <a href="/jobs" class="inline-block px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition">
+        <i class="fas fa-list mr-2"></i>
+        전체 공고 보기
+      </a>
+      <a href="/chat.html" class="inline-block px-6 py-3 border-2 border-orange-500 text-orange-500 rounded-lg font-semibold hover:bg-orange-50 transition">
+        <i class="fas fa-redo mr-2"></i>
+        다시 분석하기
+      </a>
+    </div>
+  </main>
+
+  <!-- 푸터 -->
+  <footer class="bg-gray-800 text-gray-400 py-8 mt-12">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm">© 2025 ALBI. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    function viewJobDetail(jobId) {
+      window.location.href = `/job-detail.html?id=${jobId}`;
+    }
+
+    function applyTrialExperience(jobId, event) {
+      event.stopPropagation();
+      
+      // 1시간 체험 신청 모달 또는 페이지
+      if (confirm('1시간 체험을 신청하시겠습니까?\n\n체험 시간을 선택하고 방문 일정을 잡을 수 있습니다.')) {
+        window.location.href = `/trial-apply.html?jobId=${jobId}`;
+      }
+    }
+
+    function applyDirectly(jobId, event) {
+      event.stopPropagation();
+      
+      // 바로 지원하기
+      if (confirm('이 공고에 바로 지원하시겠습니까?\n\n지원서가 사업주에게 전달됩니다.')) {
+        window.location.href = `/apply.html?jobId=${jobId}`;
+      }
+    }
+
+    // 페이지 로드 시 애니메이션
+    window.addEventListener('load', function() {
+      const cards = document.querySelectorAll('.match-card');
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          card.style.transition = 'all 0.5s ease-out';
+          
+          setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+          }, 50);
+        }, index * 150);
+      });
+    });
+  </script>
+</body>
+</html>

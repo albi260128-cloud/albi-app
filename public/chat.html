@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>알비 AI 면접 - 알비</title>
-  <meta name="description" content="알비 AI와 친근한 대화로 진행하는 스마트 매칭">
+  <title>알비 AI 스마트 매칭 - 알비</title>
+  <meta name="description" content="AI가 당신의 성향을 분석하고 최적의 일자리를 추천합니다">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    }
     .chat-bubble-enter {
       animation: slideIn 0.3s ease-out;
     }
@@ -20,56 +24,127 @@
         transform: translateY(0);
       }
     }
+    .progress-step {
+      transition: all 0.3s;
+    }
+    .progress-step.active {
+      background: #FF6B35;
+      color: white;
+    }
+    .progress-step.completed {
+      background: #10B981;
+      color: white;
+    }
+    .quick-answer-btn:hover {
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
   <!-- 네비게이션 -->
-  <nav class="bg-white shadow-sm border-b">
+  <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
     <div class="container mx-auto px-4 py-4 flex items-center justify-between">
       <a href="/" class="flex items-center space-x-2">
         <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
-        <span class="text-2xl font-bold text-orange-500">알비</span>
+        <span class="text-2xl font-bold text-orange-500">알비 AI 매칭</span>
       </a>
-      <a href="/" class="text-gray-600 hover:text-orange-500 transition">← 홈으로</a>
+      <div class="flex items-center gap-3">
+        <a href="/jobs" class="text-sm text-gray-600 hover:text-orange-500 transition">
+          <i class="fas fa-briefcase mr-1"></i>
+          <span class="hidden sm:inline">알바 둘러보기</span>
+        </a>
+        <a href="/" class="text-sm text-gray-600 hover:text-orange-500 transition">
+          <i class="fas fa-arrow-left mr-1"></i>
+          홈으로
+        </a>
+      </div>
     </div>
   </nav>
 
   <!-- 메인 콘텐츠 -->
-  <main class="flex-1 flex flex-col max-w-4xl mx-auto w-full">
-    <!-- 헤더 -->
-    <div class="bg-white p-4 border-b">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <img src="/albi-mascot.svg" alt="알비" style="width: 48px; height: 48px;">
-          <div>
-            <h1 class="text-xl font-bold">알비 AI 면접관</h1>
-            <p class="text-sm text-gray-600">친근한 대화로 진행하는 스마트 매칭</p>
+  <main class="flex-1 flex flex-col max-w-5xl mx-auto w-full">
+    <!-- 헤더 & 진행 단계 -->
+    <div class="bg-white border-b">
+      <div class="p-4">
+        <!-- 사용자 타입 선택 -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <img src="/albi-mascot.svg" alt="알비" style="width: 48px; height: 48px;">
+            <div>
+              <h1 class="text-xl font-bold">AI 스마트 매칭</h1>
+              <p class="text-sm text-gray-600">당신에게 딱 맞는 일자리를 찾아드립니다</p>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button onclick="setUserType('jobseeker')" id="jobseekerBtn" 
+                    class="px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600">
+              구직자 👤
+            </button>
+            <button onclick="setUserType('employer')" id="employerBtn" 
+                    class="px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
+              구인자 🏪
+            </button>
           </div>
         </div>
-        <div class="flex space-x-2">
-          <button onclick="setUserType('jobseeker')" id="jobseekerBtn" 
-                  class="px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition">
-            구직자 👤
-          </button>
-          <button onclick="setUserType('employer')" id="employerBtn" 
-                  class="px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
-            구인자 🏪
-          </button>
+
+        <!-- 진행 단계 표시 -->
+        <div id="progressBar" class="flex items-center justify-between gap-2">
+          <div class="progress-step active flex-1 text-center py-2 rounded-lg text-xs font-bold transition">
+            1. 기본정보
+          </div>
+          <div class="progress-step flex-1 text-center py-2 rounded-lg text-xs font-bold bg-gray-200 text-gray-600 transition">
+            2. 성향분석
+          </div>
+          <div class="progress-step flex-1 text-center py-2 rounded-lg text-xs font-bold bg-gray-200 text-gray-600 transition">
+            3. 경험분석
+          </div>
+          <div class="progress-step flex-1 text-center py-2 rounded-lg text-xs font-bold bg-gray-200 text-gray-600 transition">
+            4. 매칭결과
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 채팅 영역 -->
     <div id="chatArea" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-      <!-- 초기 메시지 -->
+      <!-- 초기 환영 메시지 -->
       <div class="flex items-start space-x-3 chat-bubble-enter">
         <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
           <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
         </div>
         <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border max-w-[70%]">
-          <div>안녕하세요! 알비입니다 🐝<br><br>어떤 종류의 알바에 관심이 있으신가요?<br>편하게 말씀해주세요!</div>
+          <div class="font-bold text-orange-500 mb-2">안녕하세요! 알비 AI 매칭 시스템입니다 🐝</div>
+          <div class="mb-3">저는 당신의 <strong>성격, 성향, 경험</strong>을 종합적으로 분석하여<br>가장 잘 맞는 일자리를 찾아드립니다.</div>
+          <div class="bg-blue-50 p-3 rounded-lg text-sm mb-3">
+            <div class="font-bold text-blue-700 mb-1">✨ AI 매칭의 장점</div>
+            <ul class="text-xs text-gray-700 space-y-1">
+              <li>• 성향 분석으로 직장 분위기 궁합 예측</li>
+              <li>• 경험 기반 맞춤 추천</li>
+              <li>• 1시간 체험 자동 연계</li>
+            </ul>
+          </div>
+          <div>먼저, <strong>어떤 종류의 알바</strong>에 관심이 있으신가요?</div>
           <div class="text-xs text-gray-500 mt-2">방금 전</div>
         </div>
+      </div>
+
+      <!-- 빠른 답변 버튼 -->
+      <div id="quickAnswers" class="flex flex-wrap gap-2 px-4">
+        <button onclick="quickAnswer('카페')" class="quick-answer-btn px-4 py-2 bg-white border-2 border-orange-200 rounded-full text-sm hover:border-orange-500 hover:bg-orange-50 transition">
+          ☕ 카페
+        </button>
+        <button onclick="quickAnswer('편의점')" class="quick-answer-btn px-4 py-2 bg-white border-2 border-orange-200 rounded-full text-sm hover:border-orange-500 hover:bg-orange-50 transition">
+          🏪 편의점
+        </button>
+        <button onclick="quickAnswer('음식점')" class="quick-answer-btn px-4 py-2 bg-white border-2 border-orange-200 rounded-full text-sm hover:border-orange-500 hover:bg-orange-50 transition">
+          🍽️ 음식점
+        </button>
+        <button onclick="quickAnswer('매장/판매')" class="quick-answer-btn px-4 py-2 bg-white border-2 border-orange-200 rounded-full text-sm hover:border-orange-500 hover:bg-orange-50 transition">
+          👕 매장/판매
+        </button>
+        <button onclick="quickAnswer('배달')" class="quick-answer-btn px-4 py-2 bg-white border-2 border-orange-200 rounded-full text-sm hover:border-orange-500 hover:bg-orange-50 transition">
+          🛵 배달
+        </button>
       </div>
     </div>
 
@@ -87,11 +162,11 @@
           onclick="sendMessage()" 
           id="sendBtn" 
           class="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed">
-          전송
+          <i class="fas fa-paper-plane"></i>
         </button>
       </div>
       <div class="mt-2 text-xs text-gray-500 text-center">
-        알비 AI는 실수할 수 있습니다. 중요한 결정은 신중하게 해주세요.
+        💡 솔직하게 답변할수록 더 정확한 매칭이 가능합니다
       </div>
     </div>
   </main>
@@ -99,6 +174,58 @@
   <script>
     let userType = 'jobseeker';
     let isLoading = false;
+    let currentStep = 0; // 0: 기본정보, 1: 성향분석, 2: 경험분석, 3: 매칭결과
+    let userProfile = {
+      interests: [],
+      personality: {},
+      experience: {},
+      preferences: {}
+    };
+    let conversationHistory = [];
+
+    // AI 질문 시나리오
+    const interviewQuestions = {
+      jobseeker: {
+        basic: [
+          "어떤 업종에 관심이 있으신가요?",
+          "희망 근무 시간대는 언제인가요? (예: 오전, 오후, 야간, 주말)",
+          "어느 지역에서 일하고 싶으신가요?",
+          "희망 시급이나 급여 조건이 있으신가요?"
+        ],
+        personality: [
+          "사람들과 대화하는 것을 좋아하시나요? 아니면 혼자 집중해서 일하는 것을 선호하시나요?",
+          "새로운 일을 배우는 것을 좋아하시나요? 반복적인 업무가 더 편하신가요?",
+          "빠르게 변화하는 환경이 좋으신가요? 안정적인 환경을 선호하시나요?",
+          "체력적으로 활동적인 일과 정적인 일 중 어떤 것이 더 맞으신가요?"
+        ],
+        experience: [
+          "알바 경험이 있으신가요? 있다면 어떤 일을 하셨나요?",
+          "이전 알바에서 가장 좋았던 점과 힘들었던 점은 무엇인가요?",
+          "특별히 잘하시는 것이나 자신 있는 분야가 있나요?",
+          "피하고 싶은 업무나 환경이 있다면 말씀해주세요."
+        ]
+      },
+      employer: {
+        basic: [
+          "어떤 업종의 사업장이신가요?",
+          "필요한 근무 시간대와 요일을 알려주세요.",
+          "제공할 수 있는 시급은 얼마인가요?",
+          "급구인가요? 언제부터 근무 가능한 분을 찾으시나요?"
+        ],
+        personality: [
+          "어떤 성격의 직원과 함께 일하고 싶으신가요?",
+          "매장이나 사업장의 분위기는 어떤가요? (활발함, 조용함, 체계적, 자유로움 등)",
+          "경험이 중요한가요? 아니면 배우려는 의지가 더 중요한가요?",
+          "빠른 적응력과 꼼꼼함 중 무엇이 더 중요한가요?"
+        ],
+        requirements: [
+          "주요 업무 내용을 자세히 설명해주세요.",
+          "신입도 지원 가능한가요? 교육은 제공되나요?",
+          "장기 근무를 원하시나요? 단기도 괜찮으신가요?",
+          "추가로 제공할 수 있는 혜택이 있나요? (식사, 교통비 등)"
+        ]
+      }
+    };
 
     function setUserType(type) {
       userType = type;
@@ -106,12 +233,40 @@
       const empBtn = document.getElementById('employerBtn');
       
       if (type === 'jobseeker') {
-        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition';
+        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600';
         empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
       } else {
         jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
-        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition';
+        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
       }
+      
+      // 타입 변경 시 초기화
+      resetInterview();
+    }
+
+    function resetInterview() {
+      currentStep = 0;
+      userProfile = {
+        interests: [],
+        personality: {},
+        experience: {},
+        preferences: {}
+      };
+      conversationHistory = [];
+      updateProgressBar();
+    }
+
+    function updateProgressBar() {
+      const steps = document.querySelectorAll('.progress-step');
+      steps.forEach((step, index) => {
+        if (index < currentStep) {
+          step.className = 'progress-step completed flex-1 text-center py-2 rounded-lg text-xs font-bold transition';
+        } else if (index === currentStep) {
+          step.className = 'progress-step active flex-1 text-center py-2 rounded-lg text-xs font-bold transition';
+        } else {
+          step.className = 'progress-step flex-1 text-center py-2 rounded-lg text-xs font-bold bg-gray-200 text-gray-600 transition';
+        }
+      });
     }
 
     function getTimeString() {
@@ -119,7 +274,7 @@
       return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function addMessage(role, content) {
+    function addMessage(role, content, withCard = null) {
       const chatArea = document.getElementById('chatArea');
       const messageDiv = document.createElement('div');
       messageDiv.className = 'chat-bubble-enter';
@@ -143,7 +298,8 @@
               <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
             </div>
             <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border max-w-[70%]">
-              <div>${escapeHtml(content)}</div>
+              <div>${content}</div>
+              ${withCard ? withCard : ''}
               <div class="text-xs text-gray-500 mt-2">${getTimeString()}</div>
             </div>
           </div>
@@ -152,6 +308,12 @@
       
       chatArea.appendChild(messageDiv);
       chatArea.scrollTop = chatArea.scrollHeight;
+      
+      // 빠른 답변 버튼 숨기기
+      if (role === 'user') {
+        const quickAnswers = document.getElementById('quickAnswers');
+        if (quickAnswers) quickAnswers.remove();
+      }
     }
 
     function showLoading() {
@@ -166,7 +328,7 @@
         <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border">
           <div class="flex items-center space-x-2">
             <div class="animate-spin">⏳</div>
-            <span class="text-gray-600">알비가 생각중...</span>
+            <span class="text-gray-600">알비가 분석중...</span>
           </div>
         </div>
       `;
@@ -177,6 +339,12 @@
     function hideLoading() {
       const loading = document.getElementById('loading');
       if (loading) loading.remove();
+    }
+
+    function quickAnswer(answer) {
+      const input = document.getElementById('messageInput');
+      input.value = answer;
+      sendMessage();
     }
 
     async function sendMessage() {
@@ -191,6 +359,7 @@
       
       // 사용자 메시지 표시
       addMessage('user', message);
+      conversationHistory.push({ role: 'user', content: message });
       input.value = '';
       isLoading = true;
       document.getElementById('sendBtn').disabled = true;
@@ -199,10 +368,16 @@
       showLoading();
       
       try {
-        const response = await fetch('/api/chat', {
+        // API 호출
+        const response = await fetch('/api/ai-matching/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, userType })
+          body: JSON.stringify({ 
+            message, 
+            userType,
+            currentStep,
+            conversationHistory
+          })
         });
         
         if (!response.ok) {
@@ -213,19 +388,63 @@
         hideLoading();
         
         if (data.success && data.data) {
-          addMessage('assistant', data.data.content);
+          // AI 응답 표시
+          addMessage('assistant', data.data.content, data.data.card);
+          conversationHistory.push({ role: 'assistant', content: data.data.content });
+          
+          // 단계 업데이트
+          if (data.data.nextStep !== undefined) {
+            currentStep = data.data.nextStep;
+            updateProgressBar();
+          }
+          
+          // 매칭 완료 시 결과 페이지로 이동
+          if (data.data.matchingComplete) {
+            setTimeout(() => {
+              window.location.href = `/matching-results?profileId=${data.data.profileId}`;
+            }, 2000);
+          }
         } else {
-          addMessage('assistant', data.error || '오류가 발생했습니다. 🐝');
+          throw new Error(data.error || '응답 처리 실패');
         }
         
       } catch (error) {
         console.error('Error:', error);
         hideLoading();
-        addMessage('assistant', '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요. 🐝');
+        
+        // 폴백: 간단한 규칙 기반 응답
+        const fallbackResponse = generateFallbackResponse(message);
+        addMessage('assistant', fallbackResponse);
+        conversationHistory.push({ role: 'assistant', content: fallbackResponse });
       } finally {
         isLoading = false;
         document.getElementById('sendBtn').disabled = false;
         input.focus();
+      }
+    }
+
+    function generateFallbackResponse(message) {
+      const lowerMsg = message.toLowerCase();
+      
+      // 간단한 키워드 기반 응답
+      if (lowerMsg.includes('카페') || lowerMsg.includes('커피')) {
+        currentStep = Math.min(currentStep + 1, 3);
+        updateProgressBar();
+        return '카페 알바에 관심이 있으시군요! ☕<br><br>카페는 고객 응대가 많은 편이에요. <strong>사람들과 대화하는 것을 좋아하시나요?</strong>';
+      } else if (lowerMsg.includes('편의점')) {
+        currentStep = Math.min(currentStep + 1, 3);
+        updateProgressBar();
+        return '편의점 알바에 관심이 있으시군요! 🏪<br><br>편의점은 다양한 업무를 동시에 해야 해요. <strong>멀티태스킹이 가능하신가요?</strong>';
+      } else if (lowerMsg.includes('좋아') || lowerMsg.includes('괜찮') || lowerMsg.includes('가능')) {
+        currentStep = Math.min(currentStep + 1, 3);
+        updateProgressBar();
+        return '좋아요! 그렇다면 <strong>이전에 알바 경험이 있으신가요?</strong> 있다면 어떤 일을 하셨는지 알려주세요.';
+      } else if (lowerMsg.includes('없') || lowerMsg.includes('처음')) {
+        currentStep = Math.min(currentStep + 1, 3);
+        updateProgressBar();
+        return '알겠습니다. 처음이시라면 교육이 잘 되어 있는 곳이 좋겠네요!<br><br><strong>체력적으로 활동적인 일</strong>과 <strong>정적인 일</strong> 중 어떤 것이 더 맞으실 것 같나요?';
+      } else {
+        return '답변 감사합니다! 더 자세히 알려주시면 더 정확한 추천이 가능해요. 😊';
       }
     }
 
