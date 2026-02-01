@@ -364,6 +364,16 @@
       padding: 32px;
       border-radius: 8px;
       text-align: center;
+      text-decoration: none;
+      color: #222;
+      display: block;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(255, 107, 53, 0.15);
     }
     
     .feature-icon {
@@ -691,27 +701,29 @@
     <div class="container">
       <h2 class="section-title" style="text-align: center; margin-bottom: 40px;">알비만의 특별한 시스템</h2>
       <div class="features-grid">
-        <div class="feature-card">
+        <a href="/jobs" class="feature-card">
           <div class="feature-icon">👀</div>
           <div class="feature-title">1시간 시각체험</div>
           <div class="feature-desc">
             일하지 않고 관찰만! 직장 분위기를 미리 확인하고 결정하세요.
           </div>
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="/chat.html" class="feature-card">
           <div class="feature-icon">🤖</div>
           <div class="feature-title">AI 스마트 매칭</div>
           <div class="feature-desc">
             AI가 성향과 조건을 분석해 최적의 일자리를 추천해드립니다.
           </div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🪙</div>
+        </a>
+        <a href="/store.html" class="feature-card">
+          <div class="feature-icon">
+            <img src="/albi-coin.png" alt="알비포인트" style="width: 56px; height: 56px; object-fit: contain;">
+          </div>
           <div class="feature-title">알비포인트</div>
           <div class="feature-desc">
             일하면 포인트 적립! 스타벅스 기프티콘으로 즉시 교환 가능.
           </div>
-        </div>
+        </a>
       </div>
     </div>
   </section>
