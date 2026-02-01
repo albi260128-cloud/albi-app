@@ -2,644 +2,514 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="알비">
+  
   <title>알비 - 1시간 직장체험 플랫폼</title>
-  <meta name="description" content="알바, 1시간만 구경하고 결정하세요. 면접 부담 없이, 텃세 걱정 없이.">
+  <meta name="description" content="하루만 알바가 필요할 때, 알비와 함께하세요. AI 면접, 1시간 체험, 알비포인트로 스마트하게 시작하세요.">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="/albi-mascot.svg">
+  <link rel="apple-touch-icon" href="/albi-mascot.svg">
+  
+  <!-- Styles -->
   <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  
   <style>
-    /* Hero Section Animations */
+    /* Premium Hero Section */
+    .hero-section {
+      position: relative;
+      background: linear-gradient(135deg, #FF6B35 0%, #FF8856 50%, #FFB627 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+    
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    }
+    
+    .hero-pattern {
+      position: absolute;
+      inset: 0;
+      opacity: 0.05;
+      background-image: 
+        repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,.1) 35px, rgba(255,255,255,.1) 70px);
+    }
+    
     @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
     }
     
-    @keyframes gradient-shift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
     }
     
-    @keyframes floatSlow {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(10px, -10px) rotate(5deg); }
-      66% { transform: translate(-10px, 10px) rotate(-5deg); }
+    .animate-fadeInUp {
+      animation: fadeInUp 0.8s ease-out forwards;
     }
     
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
     
-    .hero-gradient {
-      background: linear-gradient(-45deg, #FF6B35, #FF8B5F, #FFB627, #FFC947);
-      background-size: 400% 400%;
-      animation: gradient-shift 15s ease infinite;
-    }
-    
-    .mascot-float {
-      animation: float 3s ease-in-out infinite;
-    }
-    
-    /* Feature Card Hover Effects */
+    /* Feature Card Premium */
     .feature-card {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      background: white;
+      border-radius: var(--radius-2xl);
+      padding: var(--space-8);
+      box-shadow: var(--shadow-lg);
+      transition: all var(--transition-slow);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--albi-primary-gradient);
+      transform: scaleX(0);
+      transition: transform var(--transition-base);
+    }
+    
+    .feature-card:hover::before {
+      transform: scaleX(1);
     }
     
     .feature-card:hover {
       transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-2xl);
     }
     
-    /* Job Category Icons */
-    .job-category-icon {
-      font-size: 3rem;
-      display: inline-block;
-      transition: transform 0.3s;
-      cursor: pointer;
+    /* Stats Counter Premium */
+    .stats-section {
+      background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+      position: relative;
+      overflow: hidden;
     }
     
-    .job-category-icon:hover {
-      animation: bounce 0.6s ease;
-    }
-    
-    /* Floating Icons */
-    .floating-icon {
+    .stats-pattern {
       position: absolute;
-      font-size: 2rem;
-      opacity: 0.15;
-      animation: floatSlow 8s ease-in-out infinite;
+      inset: 0;
+      opacity: 0.1;
+      background-image: 
+        radial-gradient(circle at 20% 50%, white 1px, transparent 1px),
+        radial-gradient(circle at 80% 80%, white 1px, transparent 1px);
+      background-size: 50px 50px;
     }
     
-    .floating-icon:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
-    .floating-icon:nth-child(2) { top: 20%; right: 8%; animation-delay: 1s; }
-    .floating-icon:nth-child(3) { top: 40%; left: 10%; animation-delay: 2s; }
-    .floating-icon:nth-child(4) { top: 60%; right: 12%; animation-delay: 3s; }
-    .floating-icon:nth-child(5) { top: 80%; left: 8%; animation-delay: 4s; }
-    .floating-icon:nth-child(6) { bottom: 15%; right: 10%; animation-delay: 5s; }
-    
-    /* Counter Animation */
-    @keyframes countUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      transition: all var(--transition-base);
     }
     
-    .stat-number {
-      animation: countUp 0.6s ease-out;
+    .stat-card:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
     }
     
-    /* Section Spacing */
-    .section-spacing {
-      padding: 80px 0;
-    }
-    
+    /* Mobile Optimizations */
     @media (max-width: 768px) {
-      .section-spacing {
-        padding: 40px 0;
+      .hero-section {
+        min-height: auto;
+        padding: var(--space-20) 0 var(--space-16);
       }
       
-      .job-category-icon {
-        font-size: 2rem;
-      }
-      
-      .floating-icon {
-        font-size: 1.5rem;
-      }
-    }
-    
-    /* Top Navigation Fix */
-    .top-navbar {
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      padding: 12px 0;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    
-    /* Mobile Menu */
-    .mobile-menu-btn {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--gray-700);
-      cursor: pointer;
-    }
-    
-    @media (max-width: 768px) {
-      .mobile-menu-btn {
-        display: block;
-      }
-      
-      .desktop-nav {
-        display: none;
-      }
-      
-      .top-navbar {
-        padding: 10px 0;
-      }
-      
-      .navbar-brand {
-        font-size: 1.2rem !important;
-      }
-      
-      .navbar-brand .albi-mascot {
-        width: 28px !important;
-        height: 28px !important;
+      .feature-card {
+        padding: var(--space-6);
       }
     }
   </style>
 </head>
-<body class="bg-gray-100">
-  <!-- Top Navigation -->
-  <nav class="top-navbar">
-    <div class="container" style="max-width: 1200px;">
+<body>
+  <!-- Premium Navigation -->
+  <nav class="navbar">
+    <div class="container">
       <div class="flex items-center justify-between">
-        <!-- Left: Logo -->
+        <!-- Logo -->
         <a href="/" class="navbar-brand">
-          <img src="/albi-mascot.svg" alt="알비" class="albi-mascot">
-          <span style="font-size: 1.5rem; font-weight: 700;">알비</span>
+          <img src="/albi-mascot.svg" alt="알비" style="width: 36px; height: 36px;">
+          <span>알비</span>
         </a>
         
-        <!-- Center: Categories (Desktop) -->
-        <div class="desktop-nav hidden md:flex items-center gap-8">
-          <a href="/jobs" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
+        <!-- Desktop Nav -->
+        <div class="hidden md:flex items-center gap-6">
+          <a href="/jobs" class="nav-link">
             <i class="fas fa-briefcase"></i>
             <span>알바찾기</span>
           </a>
-          <a href="/community.html" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
+          <a href="/community.html" class="nav-link">
             <i class="fas fa-comments"></i>
             <span>커뮤니티</span>
           </a>
-          <a href="/chat.html" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
+          <a href="/chat.html" class="nav-link">
             <i class="fas fa-robot"></i>
             <span>AI 면접</span>
           </a>
-          <a href="/calculator.html" class="flex items-center gap-2" style="color: var(--gray-700); font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--albi-orange)'" onmouseout="this.style.color='var(--gray-700)'">
+          <a href="/calculator.html" class="nav-link">
             <i class="fas fa-calculator"></i>
             <span>급여계산</span>
           </a>
         </div>
         
-        <!-- Right: Actions -->
-        <div class="flex items-center gap-2">
-          <a href="/referral" class="hidden sm:flex btn btn-outline btn-sm">
-            <i class="fas fa-gift"></i>
-            <span class="hidden lg:inline">친구 초대</span>
-            <span class="badge badge-orange" style="margin-left: 4px;">+20P</span>
-          </a>
-          <a href="/signup.html" class="btn btn-primary btn-sm">
-            시작하기
+        <!-- CTA Buttons -->
+        <div class="flex items-center gap-3">
+          <a href="/signup.html" class="btn btn-primary">
+            <span>시작하기</span>
+            <i class="fas fa-arrow-right"></i>
           </a>
         </div>
       </div>
     </div>
   </nav>
 
-  <div class="main-content">
-    <!-- Hero Section -->
-    <section class="hero-gradient text-white relative overflow-hidden section-spacing">
-      <div class="absolute inset-0 bg-black/5"></div>
-      
-      <!-- Floating Background Icons -->
-      <div class="floating-icon">🏪</div>
-      <div class="floating-icon">☕</div>
-      <div class="floating-icon">🍕</div>
-      <div class="floating-icon">👕</div>
-      <div class="floating-icon">🍜</div>
-      <div class="floating-icon">🎵</div>
-      
-      <div class="container container-md relative z-10 text-center">
-        <div class="mascot-float mb-5">
-          <img src="/albi-mascot.svg" alt="알비 마스코트" class="albi-mascot-xl mx-auto">
+  <!-- Premium Hero Section -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-pattern"></div>
+    
+    <div class="container" style="position: relative; z-index: 10;">
+      <div class="text-center">
+        <!-- Mascot -->
+        <div class="animate-float mb-8">
+          <img src="/albi-mascot.svg" alt="알비" style="width: 120px; height: 120px; margin: 0 auto;">
         </div>
         
-        <h1 class="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 leading-tight px-4">
+        <!-- Main Heading -->
+        <h1 class="animate-fadeInUp stagger-1" style="font-size: clamp(2rem, 8vw, 4rem); color: white; margin-bottom: var(--space-6); font-weight: 800; letter-spacing: -0.03em;">
           하루만 알바가 필요할 때
         </h1>
         
-        <p class="text-base sm:text-lg md:text-xl mb-5 opacity-95 px-4" style="line-height: 1.8;">
-          알바의 시작과 끝을<br>
-          알비와 함께 해보세요!
+        <p class="animate-fadeInUp stagger-2" style="font-size: clamp(1rem, 3vw, 1.5rem); color: rgba(255,255,255,0.95); margin-bottom: var(--space-10); max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+          AI 면접, 1시간 체험, 알비포인트로<br>
+          스마트하게 시작하세요
         </p>
         
-        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-5 px-4">
-          <a href="/jobs" class="btn btn-lg w-full sm:w-auto" style="background: white; color: var(--albi-orange); box-shadow: var(--shadow-xl); min-width: 200px;">
-            <i class="fas fa-user"></i>
-            <span>알바 구하기</span>
+        <!-- CTA Buttons -->
+        <div class="animate-fadeInUp stagger-3 flex flex-col sm:flex-row gap-4 justify-center mb-10">
+          <a href="/jobs" class="btn btn-xl" style="background: white; color: var(--albi-primary); box-shadow: var(--shadow-xl);">
+            <i class="fas fa-search"></i>
+            <span>알바 찾기</span>
           </a>
-          <a href="/post-job.html" class="btn btn-lg w-full sm:w-auto" style="background: var(--albi-blue); color: white; box-shadow: var(--shadow-xl); min-width: 200px;">
-            <i class="fas fa-briefcase"></i>
-            <span>구인하기</span>
+          <a href="/post-job.html" class="btn btn-xl btn-secondary" style="border-color: white; color: white;">
+            <i class="fas fa-plus-circle"></i>
+            <span>구인 등록</span>
           </a>
         </div>
         
-        <!-- Job Category Icons with Motion -->
-        <div class="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-5 px-4">
-          <div class="job-category-icon" title="편의점">🏪</div>
-          <div class="job-category-icon" title="카페">☕</div>
-          <div class="job-category-icon" title="음식점">🍕</div>
-          <div class="job-category-icon" title="패스트푸드">🍔</div>
-          <div class="job-category-icon" title="중국집">🍜</div>
-          <div class="job-category-icon" title="옷가게">👕</div>
-          <div class="job-category-icon" title="배달">🛵</div>
-          <div class="job-category-icon" title="마트">🛒</div>
-        </div>
-        
-        <div class="albi-points albi-points-lg mx-auto px-4" style="max-width: fit-content;">
-          <i class="fas fa-gift"></i>
-          <span class="text-sm sm:text-base">가입하면 20 알비포인트 무료 증정!</span>
+        <!-- Trust Indicators -->
+        <div class="animate-fadeInUp stagger-4 flex flex-wrap justify-center gap-6 text-white" style="font-size: var(--text-sm); opacity: 0.9;">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle"></i>
+            <span>AI 자동 매칭</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fas fa-shield-alt"></i>
+            <span>안전한 거래</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fas fa-star"></i>
+            <span>평점 4.8/5.0</span>
+          </div>
         </div>
       </div>
-      
-      <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Features Section -->
-    <section id="features" class="section-spacing bg-white">
-      <div class="container px-4" style="max-width: 1200px;">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-3">
-          알비는 이렇게 다릅니다
+  <!-- Features Section -->
+  <section style="padding: var(--space-20) 0; background: var(--gray-50);">
+    <div class="container">
+      <div class="text-center mb-12">
+        <h2 style="font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--gray-900); margin-bottom: var(--space-4); font-weight: 800;">
+          알비만의 특별한 경험
         </h2>
-        <p class="text-center text-gray mb-5 text-sm sm:text-base md:text-lg px-4">
-          기존 구인구직 플랫폼과는 완전히 다른 경험을 제공합니다
+        <p style="font-size: var(--text-lg); color: var(--gray-600); max-width: 600px; margin: 0 auto;">
+          기존 구인구직 플랫폼과는 완전히 다른 혁신적인 시스템
         </p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          <!-- Feature 1: 1시간 시각체험 -->
-          <div class="feature-card card relative" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 2px solid #3B82F6;">
-            <div class="card-body text-center">
-              <div style="font-size: 2.5rem; margin-bottom: var(--space-md);">👀</div>
-              <h3 class="text-lg sm:text-xl font-bold mb-3">1시간 시각체험</h3>
-              <p class="text-gray-700 mb-4 text-sm sm:text-base" style="line-height: 1.6;">
-                일하지 않고 관찰만! 직장 분위기를 미리 확인하고 마음에 들면 바로 시작하세요.
-              </p>
-              <ul class="flex flex-col gap-2">
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>실제 업무 환경 관찰</span>
-                </li>
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>동료와 사장님 성향 파악</span>
-                </li>
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>거절해도 페널티 없음</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Feature 2: AI 면접 -->
-          <div class="feature-card card relative" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%); border: 2px solid #8B5CF6;">
-            <div class="card-body text-center">
-              <div style="font-size: 2.5rem; margin-bottom: var(--space-md);">🤖</div>
-              <h3 class="text-lg sm:text-xl font-bold mb-3">AI 면접 완료</h3>
-              <p class="text-gray-700 mb-4 text-sm sm:text-base" style="line-height: 1.6;">
-                알비 AI가 미리 심층 면접을 진행합니다. 사장님은 검증된 사람만 만나보세요.
-              </p>
-              <ul class="flex flex-col gap-2">
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>5분 AI 면접으로 시간 절약</span>
-                </li>
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>성향 분석 기반 매칭</span>
-                </li>
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>면접 스트레스 제로</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Feature 3: 알비포인트 -->
-          <div class="feature-card card relative" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border: 2px solid #F59E0B;">
-            <div class="card-body text-center">
-              <div style="font-size: 2.5rem; margin-bottom: var(--space-md);">🪙</div>
-              <h3 class="text-lg sm:text-xl font-bold mb-3">알비포인트 적립</h3>
-              <p class="text-gray-700 mb-4 text-sm sm:text-base" style="line-height: 1.6;">
-                체험하고, 일하고, 미션 달성하면 알비포인트가 쌓여요. 기프티콘으로 교환!
-              </p>
-              <ul class="flex flex-col gap-2">
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>체험 완료 시 15P 지급</span>
-                </li>
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>1개월 근무 시 100P 보너스</span>
-                </li>
-                <li class="flex items-start text-xs sm:text-sm text-gray-700">
-                  <i class="fas fa-check-circle text-green mr-2" style="margin-top: 2px;"></i>
-                  <span>스타벅스 기프티콘 교환</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Stats Section with Counter -->
-    <section class="section-spacing" style="background: linear-gradient(135deg, #FF6B35 0%, #FFB627 100%); position: relative; overflow: hidden;">
-      <div class="container px-4" style="max-width: 1200px; position: relative; z-index: 10;">
-        <div class="text-center mb-5">
-          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">알비와 함께한 성과</h2>
-          <p class="text-white opacity-90 text-sm sm:text-base">실시간으로 증가하는 알비의 기록</p>
-        </div>
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 text-center" style="border: 2px solid rgba(255,255,255,0.3);">
-            <div class="text-white">
-              <div class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2" id="stat-experiences">0</div>
-              <div class="text-xs sm:text-sm md:text-base opacity-90">누적 체험 건수</div>
-            </div>
-          </div>
-          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 text-center" style="animation-delay: 0.1s; border: 2px solid rgba(255,255,255,0.3);">
-            <div class="text-white">
-              <div class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2" id="stat-salary">0</div>
-              <div class="text-xs sm:text-sm md:text-base opacity-90">창출 임금</div>
-            </div>
-          </div>
-          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 text-center" style="animation-delay: 0.2s; border: 2px solid rgba(255,255,255,0.3);">
-            <div class="text-white">
-              <div class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2" id="stat-hires">0</div>
-              <div class="text-xs sm:text-sm md:text-base opacity-90">채용 성공</div>
-            </div>
-          </div>
-          <div class="stat-number bg-white/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 text-center" style="animation-delay: 0.3s; border: 2px solid rgba(255,255,255,0.3);">
-            <div class="text-white">
-              <div class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2" id="stat-rating">0</div>
-              <div class="text-xs sm:text-sm md:text-base opacity-90">평균 평점</div>
-            </div>
-          </div>
-        </div>
       </div>
       
-      <!-- Background Pattern -->
-      <div class="hidden md:block" style="position: absolute; top: 0; right: 0; font-size: 15rem; opacity: 0.1; transform: rotate(-15deg);">📊</div>
-      <div class="hidden md:block" style="position: absolute; bottom: 0; left: 0; font-size: 10rem; opacity: 0.1; transform: rotate(15deg);">🎯</div>
-    </section>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-6);">
+            <span style="font-size: 2rem;">👀</span>
+          </div>
+          <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4); color: var(--gray-900);">
+            1시간 시각체험
+          </h3>
+          <p style="color: var(--gray-600); line-height: 1.8; margin-bottom: var(--space-4);">
+            일하지 않고 관찰만! 직장 분위기를 미리 확인하고 결정하세요.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-3);">
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>실제 업무 환경 관찰</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>동료와 사장님 성향 파악</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>거절해도 페널티 없음</span>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-6);">
+            <span style="font-size: 2rem;">🤖</span>
+          </div>
+          <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4); color: var(--gray-900);">
+            AI 스마트 매칭
+          </h3>
+          <p style="color: var(--gray-600); line-height: 1.8; margin-bottom: var(--space-4);">
+            AI가 성향과 조건을 분석해 최적의 일자리를 찾아드립니다.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-3);">
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>5분 AI 면접으로 시간 절약</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>성향 분석 기반 매칭</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>면접 스트레스 제로</span>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-6);">
+            <span style="font-size: 2rem;">🪙</span>
+          </div>
+          <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4); color: var(--gray-900);">
+            알비포인트 리워드
+          </h3>
+          <p style="color: var(--gray-600); line-height: 1.8; margin-bottom: var(--space-4);">
+            일하면 포인트가 쌓여요. 기프티콘으로 바로 교환 가능!
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-3);">
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>체험 완료 시 15P 지급</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>1개월 근무 시 100P 보너스</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: var(--space-2); color: var(--gray-700);">
+              <i class="fas fa-check-circle" style="color: var(--albi-success);"></i>
+              <span>스타벅스 기프티콘 교환</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section" style="padding: var(--space-20) 0; position: relative; overflow: hidden;">
+    <div class="stats-pattern"></div>
     
-    <script>
-      // Counter Animation
-      function animateCounter(id, target, suffix = '', duration = 2000) {
-        const element = document.getElementById(id);
-        if (!element) return;
-        
-        const start = 0;
-        const increment = target / (duration / 16);
-        let current = start;
-        
-        const timer = setInterval(() => {
-          current += increment;
-          if (current >= target) {
-            element.textContent = target + suffix;
-            clearInterval(timer);
-          } else {
-            element.textContent = Math.floor(current).toLocaleString('ko-KR') + suffix;
-          }
-        }, 16);
-      }
-      
-      // Intersection Observer for triggering counter
-      const statsSection = document.querySelector('section[style*="linear-gradient(135deg, #FF6B35"]');
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            animateCounter('stat-experiences', 600000, '건+');
-            animateCounter('stat-salary', 300, '억+');
-            animateCounter('stat-hires', 100000, '건+');
-            animateCounter('stat-rating', 4.8, '★');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.3 });
-      
-      if (statsSection) {
-        observer.observe(statsSection);
-      }
-    </script>
-
-    <!-- User Reviews Section -->
-    <section class="section-spacing bg-white">
-      <div class="container px-4" style="max-width: 1200px;">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4">알비 회원님의 이용후기</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="card">
-            <div class="card-body">
-              <div class="mb-3">
-                <i class="fas fa-quote-left text-orange" style="font-size: 2rem; opacity: 0.3;"></i>
-              </div>
-              <p class="mb-4 text-sm sm:text-base" style="line-height: 1.6;">
-                1시간 체험 제도 덕분에 직접 보고 결정할 수 있어서 너무 좋았어요. 
-                면접 부담도 없고 일하기 전에 미리 분위기를 파악할 수 있어요!
-              </p>
-              <div class="flex items-center gap-2">
-                <div style="width: 40px; height: 40px; background: var(--gray-300); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                  👤
-                </div>
-                <div>
-                  <div class="font-bold">김지원 님</div>
-                  <div class="text-xs text-gray">알바회원</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card">
-            <div class="card-body">
-              <div class="mb-3">
-                <i class="fas fa-quote-left text-orange" style="font-size: 2rem; opacity: 0.3;"></i>
-              </div>
-              <p class="mb-4" style="line-height: 1.6;">
-                급하게 직원이 필요했는데 알비로 빠르게 구할 수 있었어요. 
-                AI 면접으로 미리 검증된 분들이라 믿고 채용할 수 있었습니다.
-              </p>
-              <div class="flex items-center gap-2">
-                <div style="width: 40px; height: 40px; background: var(--gray-300); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                  👤
-                </div>
-                <div>
-                  <div class="font-bold">홍대 카페 사장님</div>
-                  <div class="text-xs text-gray">고용주</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card">
-            <div class="card-body">
-              <div class="mb-3">
-                <i class="fas fa-quote-left text-orange" style="font-size: 2rem; opacity: 0.3;"></i>
-              </div>
-              <p class="mb-4" style="line-height: 1.6;">
-                알비포인트로 스타벅스 기프티콘 받았어요! 
-                일하면서 포인트 쌓이는 재미가 있어서 더 열심히 하게 돼요.
-              </p>
-              <div class="flex items-center gap-2">
-                <div style="width: 40px; height: 40px; background: var(--gray-300); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                  👤
-                </div>
-                <div>
-                  <div class="font-bold">이준호 님</div>
-                  <div class="text-xs text-gray">알바회원</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Quick Links Section -->
-    <section class="section-spacing bg-gray-100">
-      <div class="container px-4" style="max-width: 1200px;">
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4">빠른 메뉴</h2>
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <a href="/jobs" class="card text-center" style="cursor: pointer;">
-            <div class="card-body">
-              <i class="fas fa-briefcase text-orange" style="font-size: 1.5rem; margin-bottom: var(--space-sm);"></i>
-              <h3 class="font-bold text-sm sm:text-base">알바 찾기</h3>
-              <p class="text-xs text-gray mt-1">내 주변 3km 검색</p>
-            </div>
-          </a>
-          
-          <a href="/community.html" class="card text-center" style="cursor: pointer;">
-            <div class="card-body">
-              <i class="fas fa-comments text-blue" style="font-size: 1.5rem; margin-bottom: var(--space-sm);"></i>
-              <h3 class="font-bold text-sm sm:text-base">커뮤니티</h3>
-              <p class="text-xs text-gray mt-1">알바 후기 & 꿀팁</p>
-            </div>
-          </a>
-          
-          <a href="/chat.html" class="card text-center" style="cursor: pointer;">
-            <div class="card-body">
-              <i class="fas fa-robot text-orange" style="font-size: 1.5rem; margin-bottom: var(--space-sm);"></i>
-              <h3 class="font-bold text-sm sm:text-base">AI 면접</h3>
-              <p class="text-xs text-gray mt-1">5분 완성</p>
-            </div>
-          </a>
-          
-          <a href="/store.html" class="card text-center" style="cursor: pointer;">
-            <div class="card-body">
-              <i class="fas fa-gift text-orange" style="font-size: 1.5rem; margin-bottom: var(--space-sm);"></i>
-              <h3 class="font-bold text-sm sm:text-base">스토어</h3>
-              <p class="text-xs text-gray mt-1">포인트 교환</p>
-            </div>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Final CTA -->
-    <section class="hero-gradient text-white section-spacing">
-      <div class="container text-center px-4">
-        <img src="/albi-mascot.svg" alt="알비" class="albi-mascot-lg mx-auto mb-4 mascot-float">
-        
-        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3">
-          지금 바로 시작해보세요!
+    <div class="container" style="position: relative; z-index: 10;">
+      <div class="text-center mb-12">
+        <h2 style="font-size: clamp(1.5rem, 5vw, 2.5rem); color: white; margin-bottom: var(--space-4); font-weight: 800;">
+          알비와 함께한 성과
         </h2>
-        <p class="text-base sm:text-lg mb-4 opacity-95">
-          첫 100명에게는 평생 수수료 50% 할인 혜택! 🎉
+        <p style="font-size: var(--text-lg); color: rgba(255,255,255,0.9);">
+          실시간으로 증가하는 알비의 기록
         </p>
-        
-        <a href="/signup.html" class="btn btn-lg w-full sm:w-auto" style="background: white; color: var(--albi-orange); box-shadow: var(--shadow-xl);">
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="stat-card text-center">
+          <div style="font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800; color: white; margin-bottom: var(--space-2);" id="stat-experiences">0</div>
+          <div style="font-size: var(--text-base); color: rgba(255,255,255,0.9);">누적 체험</div>
+        </div>
+        <div class="stat-card text-center">
+          <div style="font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800; color: white; margin-bottom: var(--space-2);" id="stat-salary">0</div>
+          <div style="font-size: var(--text-base); color: rgba(255,255,255,0.9);">창출 임금</div>
+        </div>
+        <div class="stat-card text-center">
+          <div style="font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800; color: white; margin-bottom: var(--space-2);" id="stat-hires">0</div>
+          <div style="font-size: var(--text-base); color: rgba(255,255,255,0.9);">채용 성공</div>
+        </div>
+        <div class="stat-card text-center">
+          <div style="font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800; color: white; margin-bottom: var(--space-2);" id="stat-rating">0</div>
+          <div style="font-size: var(--text-base); color: rgba(255,255,255,0.9);">평균 평점</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section style="padding: var(--space-20) 0; background: white;">
+    <div class="container text-center">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <h2 style="font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--gray-900); margin-bottom: var(--space-6); font-weight: 800;">
+          지금 바로 시작하세요
+        </h2>
+        <p style="font-size: var(--text-lg); color: var(--gray-600); margin-bottom: var(--space-8); line-height: 1.8;">
+          가입하면 20 알비포인트 무료 증정!<br>
+          신용카드 등록 없음 · 언제든 탈퇴 가능
+        </p>
+        <a href="/signup.html" class="btn btn-xl btn-primary">
           <span>무료로 시작하기</span>
           <i class="fas fa-arrow-right"></i>
         </a>
-        
-        <p class="mt-3 text-xs sm:text-sm opacity-90">
-          신용카드 등록 없음 · 언제든 탈퇴 가능
-        </p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer style="background: var(--gray-900); color: white; padding: var(--space-xl) 0;">
-      <div class="container px-4" style="max-width: 1200px;">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-4">
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <img src="/albi-mascot.svg" alt="알비" class="albi-mascot">
-              <span class="text-xl font-bold">알비</span>
-            </div>
-            <p style="color: var(--gray-500); font-size: var(--font-size-sm);">
-              알바하는 벌개미<br>
-              1시간 직장체험 플랫폼
-            </p>
+  <!-- Footer -->
+  <footer style="background: var(--gray-900); color: white; padding: var(--space-12) 0;">
+    <div class="container">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-3 mb-4">
+            <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
+            <span style="font-size: var(--text-xl); font-weight: 700;">알비</span>
           </div>
-          
-          <div>
-            <h4 class="font-bold mb-3">서비스</h4>
-            <ul class="flex flex-col gap-2 text-sm" style="color: var(--gray-500);">
-              <li><a href="/jobs" class="hover:text-white">알바 찾기</a></li>
-              <li><a href="/community.html" class="hover:text-white">커뮤니티</a></li>
-              <li><a href="/chat.html" class="hover:text-white">AI 면접</a></li>
-              <li><a href="/calculator.html" class="hover:text-white">급여계산기</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 class="font-bold mb-3">법적 정보</h4>
-            <div class="flex flex-wrap gap-3 text-sm" style="color: var(--gray-500);">
-              <a href="/terms.html" class="hover:text-white">이용약관</a>
-              <span style="color: var(--gray-700);">|</span>
-              <a href="/privacy.html" class="hover:text-white">개인정보처리방침</a>
-              <span style="color: var(--gray-700);">|</span>
-              <a href="/contract.html" class="hover:text-white">전자계약서</a>
-            </div>
-          </div>
-          
-          <div>
-            <h4 class="font-bold mb-3">고객센터</h4>
-            <ul class="flex flex-col gap-2 text-sm" style="color: var(--gray-500);">
-              <li><i class="fas fa-phone"></i> 1588-0000</li>
-              <li><i class="fas fa-envelope"></i> help@albi.co.kr</li>
-              <li><i class="fas fa-comment"></i> 카카오톡: @알비</li>
-              <li style="color: var(--albi-red);"><i class="fas fa-exclamation-circle"></i> 긴급신고: 24시간</li>
-            </ul>
-          </div>
+          <p style="color: var(--gray-400); font-size: var(--text-sm); line-height: 1.6;">
+            1시간 직장체험 플랫폼<br>
+            스마트한 알바 문화를 만들어갑니다
+          </p>
         </div>
         
-        <div style="border-top: 1px solid var(--gray-800); padding-top: var(--space-lg); text-center; font-size: var(--font-size-sm); color: var(--gray-600);">
-          <p>© 2025 알비(ALBI). All rights reserved.</p>
-          <p style="margin-top: var(--space-sm);">사업자등록번호: 000-00-00000 | 대표: 알비팀</p>
+        <div>
+          <h4 style="font-weight: 600; margin-bottom: var(--space-4);">서비스</h4>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); color: var(--gray-400);">
+            <li><a href="/jobs" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">알바 찾기</a></li>
+            <li><a href="/community.html" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">커뮤니티</a></li>
+            <li><a href="/chat.html" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">AI 면접</a></li>
+            <li><a href="/calculator.html" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">급여계산기</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 style="font-weight: 600; margin-bottom: var(--space-4);">법적 정보</h4>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); color: var(--gray-400);">
+            <li><a href="/terms.html" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">이용약관</a></li>
+            <li><a href="/privacy.html" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">개인정보처리방침</a></li>
+            <li><a href="/contract.html" style="color: inherit; text-decoration: none; transition: color var(--transition-base);" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--gray-400)'">전자계약서</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 style="font-weight: 600; margin-bottom: var(--space-4);">고객센터</h4>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-sm); color: var(--gray-400);">
+            <li><i class="fas fa-phone"></i> 1588-0000</li>
+            <li><i class="fas fa-envelope"></i> help@albi.co.kr</li>
+            <li><i class="fas fa-comment"></i> 카카오톡: @알비</li>
+          </ul>
         </div>
       </div>
-    </footer>
-  </div>
+      
+      <div style="border-top: 1px solid var(--gray-800); padding-top: var(--space-6); text-align: center; font-size: var(--text-sm); color: var(--gray-500);">
+        <p>© 2025 알비(ALBI). All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
 
-  <!-- Bottom Navigation -->
+  <!-- Mobile Bottom Navigation -->
   <nav class="bottom-nav">
-    <a href="/" class="nav-item active">
-      <i class="nav-item-icon fas fa-home"></i>
+    <a href="/" class="bottom-nav-item active">
+      <i class="bottom-nav-icon fas fa-home"></i>
       <span>홈</span>
     </a>
-    <a href="/jobs" class="nav-item">
-      <i class="nav-item-icon fas fa-briefcase"></i>
-      <span>내주변</span>
+    <a href="/jobs" class="bottom-nav-item">
+      <i class="bottom-nav-icon fas fa-briefcase"></i>
+      <span>알바찾기</span>
     </a>
-    <a href="/community.html" class="nav-item">
-      <i class="nav-item-icon fas fa-comments"></i>
+    <a href="/community.html" class="bottom-nav-item">
+      <i class="bottom-nav-icon fas fa-comments"></i>
       <span>커뮤니티</span>
     </a>
-    <a href="/store.html" class="nav-item">
-      <i class="nav-item-icon fas fa-store"></i>
+    <a href="/store.html" class="bottom-nav-item">
+      <i class="bottom-nav-icon fas fa-store"></i>
       <span>스토어</span>
     </a>
   </nav>
+
+  <!-- Counter Animation Script -->
+  <script>
+    // Counter Animation
+    function animateCounter(id, target, suffix = '', duration = 2000) {
+      const element = document.getElementById(id);
+      if (!element) return;
+      
+      const start = 0;
+      const increment = target / (duration / 16);
+      let current = start;
+      
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          element.textContent = target.toLocaleString('ko-KR') + suffix;
+          clearInterval(timer);
+        } else {
+          element.textContent = Math.floor(current).toLocaleString('ko-KR') + suffix;
+        }
+      }, 16);
+    }
+    
+    // Intersection Observer for stats
+    const statsSection = document.querySelector('.stats-section');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounter('stat-experiences', 600000, '건+');
+          animateCounter('stat-salary', 300, '억+');
+          animateCounter('stat-hires', 100000, '건+');
+          animateCounter('stat-rating', 4.8, '★');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    
+    if (statsSection) {
+      observer.observe(statsSection);
+    }
+  </script>
 </body>
 </html>
