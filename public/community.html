@@ -3,114 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>알비 커뮤니티 - 알비</title>
-  <link href="/styles.css" rel="stylesheet">
+  <title>커뮤니티 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
-    .category-chip {
-      transition: all var(--transition-fast);
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    }
+    .post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .filter-chip {
+      transition: all 0.2s;
+    }
+    .filter-chip.active {
+      background: #FF6B35;
+      color: white;
+      font-weight: 600;
     }
   </style>
 </head>
-<body class="bg-gray-50 pb-20">
-  <!-- Top Navigation -->
-  <nav class="navbar">
-    <div class="container flex items-center justify-between" style="max-width: 1200px;">
-      <a href="/community.html" class="navbar-brand">
-        <i class="fas fa-comments text-orange" style="font-size: 1.5rem;"></i>
-        <span>알비 톡톡</span>
+<body class="bg-gray-50">
+  <!-- 상단 네비게이션 -->
+  <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between max-w-1200px">
+      <a href="/" class="flex items-center space-x-2">
+        <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
+        <span class="text-2xl font-bold text-orange-500">알비 커뮤니티</span>
       </a>
-      
-      <a href="/write-post.html" class="btn btn-primary btn-sm">
+      <a href="/write-post.html" class="px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition flex items-center gap-2">
         <i class="fas fa-pencil-alt"></i>
-        글쓰기
+        <span class="hidden sm:inline">글쓰기</span>
       </a>
     </div>
   </nav>
 
-  <div class="main-content">
-    <!-- Category Tabs -->
-    <div class="bg-white border-b" style="position: sticky; top: 60px; z-index: var(--z-sticky);">
-      <div class="container" style="max-width: 1200px; padding: var(--space-md) var(--space-lg);">
-        <div class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: none;">
-          <button onclick="filterCategory('all')" data-category="all" class="filter-chip active">
-            전체
-          </button>
-          <button onclick="filterCategory('free')" data-category="free" class="filter-chip">
-            🗣️ 자유
-          </button>
-          <button onclick="filterCategory('review')" data-category="review" class="filter-chip">
-            📝 후기
-          </button>
-          <button onclick="filterCategory('question')" data-category="question" class="filter-chip">
-            ❓ 질문
-          </button>
-          <button onclick="filterCategory('tip')" data-category="tip" class="filter-chip">
-            💡 꿀팁
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sort Options -->
-    <div class="bg-gray-100 border-b" style="position: sticky; top: 112px; z-index: var(--z-sticky);">
-      <div class="container" style="max-width: 1200px; padding: var(--space-sm) var(--space-lg);">
-        <select id="sortSelect" onchange="loadPosts()" class="form-select" style="width: auto; padding: var(--space-xs) var(--space-md);">
-          <option value="latest">최신순</option>
-          <option value="popular">인기순</option>
-          <option value="views">조회순</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Posts List -->
-    <div class="container container-md" style="padding-top: var(--space-lg);">
-      <div id="loading" class="empty-state">
-        <img src="/albi-mascot.svg" alt="로딩" class="albi-mascot-lg mx-auto mb-3 mascot-float">
-        <p class="text-gray">게시글을 불러오는 중...</p>
-      </div>
-
-      <div id="postsList" class="grid gap-3">
-        <!-- JavaScript로 동적 생성 -->
-      </div>
-
-      <div id="loadMore" class="text-center py-4 hidden">
-        <button onclick="loadMorePosts()" class="btn btn-outline">
-          <i class="fas fa-chevron-down"></i>
-          더 보기
+  <!-- 카테고리 필터 -->
+  <div class="bg-white border-b sticky top-16 z-40">
+    <div class="container mx-auto px-4 py-3 max-w-1200px">
+      <div class="flex gap-2 overflow-x-auto scrollbar-hide">
+        <button onclick="filterCategory('all')" data-category="all" class="filter-chip active px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap">
+          전체
         </button>
-      </div>
-
-      <div id="noResults" class="hidden empty-state">
-        <div class="empty-state-icon">📝</div>
-        <h3 class="text-xl font-bold mb-2">아직 게시글이 없어요</h3>
-        <p class="text-gray mb-4">첫 번째 글을 작성해보세요!</p>
-        <a href="/write-post.html" class="btn btn-primary">
-          <i class="fas fa-pencil-alt"></i>
-          글쓰기
-        </a>
+        <button onclick="filterCategory('free')" data-category="free" class="filter-chip px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap">
+          🗣️ 자유
+        </button>
+        <button onclick="filterCategory('review')" data-category="review" class="filter-chip px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap">
+          📝 후기
+        </button>
+        <button onclick="filterCategory('question')" data-category="question" class="filter-chip px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap">
+          ❓ 질문
+        </button>
+        <button onclick="filterCategory('tip')" data-category="tip" class="filter-chip px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap">
+          💡 꿀팁
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="/" class="nav-item">
-      <i class="nav-item-icon fas fa-home"></i>
-      <span>홈</span>
-    </a>
-    <a href="/jobs" class="nav-item">
-      <i class="nav-item-icon fas fa-briefcase"></i>
-      <span>내주변</span>
-    </a>
-    <a href="/community.html" class="nav-item active">
-      <i class="nav-item-icon fas fa-comments"></i>
-      <span>커뮤니티</span>
-    </a>
-    <a href="/store.html" class="nav-item">
-      <i class="nav-item-icon fas fa-store"></i>
-      <span>스토어</span>
-    </a>
+  <!-- 정렬 옵션 -->
+  <div class="bg-gray-100 border-b">
+    <div class="container mx-auto px-4 py-2 max-w-1200px">
+      <select id="sortSelect" onchange="loadPosts()" class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        <option value="latest">최신순</option>
+        <option value="popular">인기순</option>
+        <option value="views">조회순</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 메인 컨텐츠 -->
+  <main class="container mx-auto px-4 py-6 max-w-1200px mb-20">
+    <!-- 로딩 상태 -->
+    <div id="loading" class="text-center py-12">
+      <img src="/albi-mascot.svg" alt="로딩" class="w-16 h-16 mx-auto mb-4 animate-bounce">
+      <p class="text-gray-600">게시글을 불러오는 중...</p>
+    </div>
+
+    <!-- 게시글 리스트 -->
+    <div id="postsList" class="space-y-4">
+      <!-- JavaScript로 동적 생성 -->
+    </div>
+
+    <!-- 더보기 버튼 -->
+    <div id="loadMore" class="text-center py-6 hidden">
+      <button onclick="loadMorePosts()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition">
+        <i class="fas fa-chevron-down mr-2"></i>
+        더 보기
+      </button>
+    </div>
+
+    <!-- 게시글 없음 -->
+    <div id="noResults" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">📝</div>
+      <h3 class="text-2xl font-bold text-gray-800 mb-2">아직 게시글이 없어요</h3>
+      <p class="text-gray-600 mb-6">첫 번째 글을 작성해보세요!</p>
+      <a href="/write-post.html" class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition">
+        <i class="fas fa-pencil-alt"></i>
+        글쓰기
+      </a>
+    </div>
+  </main>
+
+  <!-- 하단 네비게이션 -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
+    <div class="grid grid-cols-4">
+      <a href="/" class="flex flex-col items-center py-3 text-gray-600 hover:text-orange-500">
+        <i class="fas fa-home text-xl mb-1"></i>
+        <span class="text-xs">홈</span>
+      </a>
+      <a href="/jobs" class="flex flex-col items-center py-3 text-gray-600 hover:text-orange-500">
+        <i class="fas fa-briefcase text-xl mb-1"></i>
+        <span class="text-xs">알바찾기</span>
+      </a>
+      <a href="/community.html" class="flex flex-col items-center py-3 text-orange-500">
+        <i class="fas fa-comments text-xl mb-1"></i>
+        <span class="text-xs">커뮤니티</span>
+      </a>
+      <a href="/mypage.html" class="flex flex-col items-center py-3 text-gray-600 hover:text-orange-500">
+        <i class="fas fa-user text-xl mb-1"></i>
+        <span class="text-xs">MY</span>
+      </a>
+    </div>
   </nav>
 
   <script>
@@ -138,14 +153,14 @@
       loadPosts();
     };
 
-    // Filter category with chip UI
+    // 카테고리 필터
     function filterCategory(category) {
       currentCategory = category;
       currentPage = 1;
       hasMore = true;
       document.getElementById('postsList').innerHTML = '';
       
-      // Update active state for filter chips
+      // 필터 칩 활성화 상태 업데이트
       document.querySelectorAll('.filter-chip').forEach(chip => {
         if (chip.dataset.category === category) {
           chip.classList.add('active');
@@ -196,14 +211,85 @@
         }
       } catch (error) {
         console.error('Load posts error:', error);
-        alert('게시글을 불러올 수 없습니다.');
+        // 목업 데이터로 대체
+        renderMockPosts(currentPage === 1);
       } finally {
         isLoading = false;
         document.getElementById('loading').classList.add('hidden');
       }
     }
 
-    // Render posts with new card design
+    // 목업 데이터로 게시글 렌더링 (API 없을 때)
+    function renderMockPosts(clear = false) {
+      const mockPosts = [
+        {
+          id: 1,
+          category: 'review',
+          title: '스타벅스 알바 3개월 후기입니다',
+          preview: '안녕하세요~ 스타벅스에서 3개월 동안 일한 후기 남깁니다. 처음에는 힘들었지만 지금은...',
+          author_name: '알비유저123',
+          timeAgo: '2시간 전',
+          views: 1234,
+          likes_count: 45,
+          comments_count: 23,
+          is_featured: true
+        },
+        {
+          id: 2,
+          category: 'question',
+          title: '편의점 알바 면접 때 뭐 물어보나요?',
+          preview: '내일 편의점 면접인데 처음이라 너무 떨려요. 보통 뭐 물어보나요?',
+          author_name: '알바초보',
+          timeAgo: '5시간 전',
+          views: 892,
+          likes_count: 12,
+          comments_count: 18,
+          is_featured: false
+        },
+        {
+          id: 3,
+          category: 'tip',
+          title: '알바생이 꼭 알아야 할 근로기준법 5가지',
+          preview: '알바하면서 알아두면 유용한 근로기준법 정리해봤어요. 1. 최저임금은...',
+          author_name: '법잘알',
+          timeAgo: '1일 전',
+          views: 2341,
+          likes_count: 156,
+          comments_count: 42,
+          is_featured: true
+        },
+        {
+          id: 4,
+          category: 'free',
+          title: '오늘 첫 알바 끝났어요!',
+          preview: '오늘 첫 알바 끝났는데 너무 뿌듯하네요 ㅎㅎ 사장님도 친절하시고...',
+          author_name: '신입알비',
+          timeAgo: '1일 전',
+          views: 456,
+          likes_count: 34,
+          comments_count: 15,
+          is_featured: false
+        },
+        {
+          id: 5,
+          category: 'review',
+          title: '카페 알바 vs 편의점 알바 비교',
+          preview: '둘 다 해봤는데 확실히 차이가 있더라구요. 제 경험 공유합니다...',
+          author_name: '알바경험자',
+          timeAgo: '2일 전',
+          views: 1567,
+          likes_count: 89,
+          comments_count: 56,
+          is_featured: false
+        }
+      ];
+
+      renderPosts(mockPosts, clear);
+      hasMore = false;
+      document.getElementById('loadMore').classList.add('hidden');
+    }
+
+    // 게시글 렌더링
     function renderPosts(posts, clear = false) {
       const container = document.getElementById('postsList');
       
@@ -213,44 +299,40 @@
 
       posts.forEach(post => {
         const postCard = document.createElement('div');
-        postCard.className = 'post-card';
+        postCard.className = 'post-card bg-white rounded-lg border border-gray-200 p-5 cursor-pointer transition-all';
         postCard.onclick = () => viewPost(post.id);
 
         postCard.innerHTML = `
-          <div class="post-card-header">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="badge badge-orange">
-                ${categoryIcons[post.category]} ${categoryNames[post.category]}
-              </span>
-              ${post.is_featured ? '<span class="badge badge-green"><i class="fas fa-fire"></i> 인기</span>' : ''}
-              <span class="text-xs text-gray" style="margin-left: auto;">${post.timeAgo}</span>
-            </div>
-            
-            <h3 class="post-card-title" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(post.title)}</h3>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-semibold">
+              ${categoryIcons[post.category]} ${categoryNames[post.category]}
+            </span>
+            ${post.is_featured ? '<span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-semibold"><i class="fas fa-fire"></i> 인기</span>' : ''}
+            <span class="text-xs text-gray-500 ml-auto">${post.timeAgo}</span>
           </div>
           
-          <div class="post-card-content" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-            ${escapeHtml(post.preview)}
-          </div>
+          <h3 class="text-lg font-bold text-gray-800 mb-2 line-clamp-2">${escapeHtml(post.title)}</h3>
           
-          <div class="post-card-footer">
-            <div class="flex items-center gap-1">
-              <div style="width: 24px; height: 24px; background: var(--gray-300); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">👤</div>
-              <span class="text-sm font-medium">${escapeHtml(post.author_name)}</span>
+          <p class="text-gray-600 text-sm mb-4 line-clamp-2">${escapeHtml(post.preview)}</p>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs">👤</div>
+              <span class="text-sm font-medium text-gray-700">${escapeHtml(post.author_name)}</span>
             </div>
-            <div class="flex items-center gap-3" style="margin-left: auto;">
-              <div class="post-stats">
+            <div class="flex items-center gap-4 text-sm text-gray-500">
+              <span class="flex items-center gap-1">
                 <i class="fas fa-eye"></i>
-                <span>${post.views}</span>
-              </div>
-              <div class="post-stats" style="color: var(--albi-red);">
+                ${post.views}
+              </span>
+              <span class="flex items-center gap-1 text-red-500">
                 <i class="fas fa-heart"></i>
-                <span>${post.likes_count}</span>
-              </div>
-              <div class="post-stats" style="color: var(--albi-blue);">
+                ${post.likes_count}
+              </span>
+              <span class="flex items-center gap-1 text-blue-500">
                 <i class="fas fa-comment"></i>
-                <span>${post.comments_count}</span>
-              </div>
+                ${post.comments_count}
+              </span>
             </div>
           </div>
         `;
