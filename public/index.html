@@ -508,6 +508,11 @@
       </ul>
       
       <div class="nav-actions">
+        <a href="/referral" class="btn btn-outline" style="display: flex; align-items: center; gap: 6px;">
+          <i class="fas fa-gift"></i>
+          <span>친구초대</span>
+          <span style="background: #FF6B35; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: 600;">+20P</span>
+        </a>
         <a href="/login.html" class="btn btn-outline">로그인</a>
         <a href="/signup.html" class="btn btn-primary">회원가입</a>
       </div>
@@ -750,5 +755,33 @@
       </a>
     </div>
   </nav>
+
+  <script>
+    // 검색 기능
+    const searchInput = document.querySelector('.search-input');
+    const searchBtn = document.querySelector('.search-btn');
+    
+    function performSearch() {
+      const keyword = searchInput.value.trim();
+      if (keyword) {
+        window.location.href = `/jobs?keyword=${encodeURIComponent(keyword)}`;
+      }
+    }
+    
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        performSearch();
+      }
+    });
+    
+    // 빠른 태그 검색
+    document.querySelectorAll('.tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        const tagText = tag.textContent.replace('#', '');
+        window.location.href = `/jobs?keyword=${encodeURIComponent(tagText)}`;
+      });
+    });
+  </script>
 </body>
 </html>

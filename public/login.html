@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 - 알비</title>
+  <link href="/styles.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .login-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+    }
+    
+    .login-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 8px;
+    }
+    
+    .login-subtitle {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+    }
+    
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    
+    .form-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .form-checkbox label {
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+    }
+    
+    .btn-login {
+      width: 100%;
+      padding: 16px;
+      background: #FF6B35;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    
+    .btn-login:hover {
+      background: #E55A2B;
+    }
+    
+    .divider {
+      text-align: center;
+      margin: 24px 0;
+      position: relative;
+    }
+    
+    .divider::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: #e5e5e5;
+    }
+    
+    .divider span {
+      position: relative;
+      background: white;
+      padding: 0 16px;
+      font-size: 13px;
+      color: #999;
+    }
+    
+    .social-login {
+      display: grid;
+      gap: 10px;
+    }
+    
+    .btn-social {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: white;
+    }
+    
+    .btn-social:hover {
+      background: #f8f9fa;
+      border-color: #ccc;
+    }
+    
+    .btn-kakao {
+      background: #FEE500;
+      border-color: #FEE500;
+      color: #000;
+    }
+    
+    .btn-kakao:hover {
+      background: #FDDC3F;
+    }
+    
+    .btn-naver {
+      background: #03C75A;
+      border-color: #03C75A;
+      color: white;
+    }
+    
+    .btn-naver:hover {
+      background: #02B350;
+    }
+    
+    .btn-google {
+      background: white;
+      border: 1px solid #ddd;
+      color: #333;
+    }
+    
+    .login-links {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+    
+    .login-links a {
+      color: #666;
+      text-decoration: none;
+    }
+    
+    .login-links a:hover {
+      color: #FF6B35;
+    }
+    
+    .login-links span {
+      color: #ddd;
+    }
+    
+    .signup-link {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e5e5;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .signup-link a {
+      color: #FF6B35;
+      text-decoration: none;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 32px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <img src="/albi-mascot.svg" alt="알비" class="login-logo">
+      <h1 class="login-title">알비 로그인</h1>
+      <p class="login-subtitle">AI가 추천하는 내 주변 알바</p>
+    </div>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">이메일 또는 휴대폰번호</label>
+        <input type="text" class="form-input" id="username" placeholder="example@email.com" required>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input type="password" class="form-input" id="password" placeholder="비밀번호를 입력하세요" required>
+      </div>
+      
+      <div class="form-checkbox">
+        <input type="checkbox" id="remember">
+        <label for="remember">로그인 상태 유지</label>
+      </div>
+      
+      <button type="submit" class="btn-login">로그인</button>
+    </form>
+    
+    <div class="login-links">
+      <a href="/find-id.html">아이디 찾기</a>
+      <span>|</span>
+      <a href="/find-password.html">비밀번호 찾기</a>
+    </div>
+    
+    <div class="divider">
+      <span>또는 간편 로그인</span>
+    </div>
+    
+    <div class="social-login">
+      <button class="btn-social btn-kakao" onclick="socialLogin('kakao')">
+        <i class="fas fa-comment"></i>
+        <span>카카오로 시작하기</span>
+      </button>
+      <button class="btn-social btn-naver" onclick="socialLogin('naver')">
+        <span style="font-weight: 700;">N</span>
+        <span>네이버로 시작하기</span>
+      </button>
+      <button class="btn-social btn-google" onclick="socialLogin('google')">
+        <i class="fab fa-google"></i>
+        <span>Google로 시작하기</span>
+      </button>
+    </div>
+    
+    <div class="signup-link">
+      아직 회원이 아니신가요?
+      <a href="/signup.html">회원가입</a>
+    </div>
+  </div>
+  
+  <script>
+    // 로그인 폼 제출
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const remember = document.getElementById('remember').checked;
+      
+      try {
+        // TODO: 실제 API 연동
+        console.log('로그인 시도:', { username, remember });
+        alert('로그인 기능은 곧 추가됩니다!');
+        
+        // 임시: 메인으로 이동
+        // window.location.href = '/';
+      } catch (error) {
+        alert('로그인 중 오류가 발생했습니다.');
+      }
+    });
+    
+    // 소셜 로그인
+    function socialLogin(provider) {
+      console.log(`${provider} 로그인 시도`);
+      alert(`${provider} 로그인 기능은 곧 추가됩니다!`);
+    }
+  </script>
+</body>
+</html>
