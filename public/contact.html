@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고객센터 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    }
+    .faq-item {
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .faq-item:hover {
+      background-color: #FFF5F0;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .faq-answer.active {
+      max-height: 500px;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- 네비게이션 -->
+  <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between max-w-1200px">
+      <a href="/" class="flex items-center space-x-2">
+        <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
+        <span class="text-2xl font-bold text-orange-500">알비</span>
+      </a>
+      <a href="/" class="text-gray-600 hover:text-orange-500 transition flex items-center gap-2">
+        <i class="fas fa-arrow-left"></i>
+        홈으로
+      </a>
+    </div>
+  </nav>
+
+  <!-- 히어로 섹션 -->
+  <section class="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-16">
+    <div class="container mx-auto px-4 text-center">
+      <i class="fas fa-headset text-6xl mb-4"></i>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">고객센터</h1>
+      <p class="text-xl text-orange-100">
+        무엇을 도와드릴까요? 궁금한 점을 해결해드립니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- 빠른 문의 -->
+  <section class="py-12 bg-white">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">빠른 문의</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <a href="tel:1588-0000" class="p-6 border-2 border-gray-200 rounded-lg text-center hover:border-orange-500 transition">
+          <i class="fas fa-phone text-4xl text-orange-500 mb-3"></i>
+          <h3 class="text-lg font-bold text-gray-800 mb-2">전화 상담</h3>
+          <p class="text-gray-600 text-sm mb-2">평일 09:00 - 18:00</p>
+          <p class="text-orange-500 font-bold">1588-0000</p>
+        </a>
+        <a href="mailto:help@albi.co.kr" class="p-6 border-2 border-gray-200 rounded-lg text-center hover:border-orange-500 transition">
+          <i class="fas fa-envelope text-4xl text-orange-500 mb-3"></i>
+          <h3 class="text-lg font-bold text-gray-800 mb-2">이메일 문의</h3>
+          <p class="text-gray-600 text-sm mb-2">24시간 접수 가능</p>
+          <p class="text-orange-500 font-bold">help@albi.co.kr</p>
+        </a>
+        <a href="/chat.html" class="p-6 border-2 border-gray-200 rounded-lg text-center hover:border-orange-500 transition">
+          <i class="fas fa-comments text-4xl text-orange-500 mb-3"></i>
+          <h3 class="text-lg font-bold text-gray-800 mb-2">AI 챗봇</h3>
+          <p class="text-gray-600 text-sm mb-2">즉시 답변 제공</p>
+          <p class="text-orange-500 font-bold">24시간 운영</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 자주 묻는 질문 -->
+  <section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">자주 묻는 질문</h2>
+      
+      <div class="space-y-4">
+        <!-- FAQ 1 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="faq-item p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-question-circle text-2xl text-orange-500"></i>
+              <h3 class="text-lg font-bold text-gray-800">1시간 체험은 어떻게 진행되나요?</h3>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </div>
+          <div class="faq-answer px-6 pb-6">
+            <p class="text-gray-700 leading-relaxed">
+              1시간 체험은 실제로 일하지 않고 <strong>직장 분위기를 관찰</strong>하는 시간입니다.<br><br>
+              체험 신청 후 해당 업체를 방문하여 실제 업무 환경, 직원들의 분위기, 매장 상황 등을 직접 확인할 수 있습니다.<br>
+              체험 후 만족스러우면 근로계약을 진행하고, 그렇지 않으면 부담 없이 다른 곳을 찾을 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="faq-item p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-question-circle text-2xl text-orange-500"></i>
+              <h3 class="text-lg font-bold text-gray-800">알비포인트는 어떻게 사용하나요?</h3>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </div>
+          <div class="faq-answer px-6 pb-6">
+            <p class="text-gray-700 leading-relaxed">
+              알비포인트는 일을 할 때마다 자동으로 적립되며, <strong>기프티콘 스토어</strong>에서 다양한 상품으로 교환할 수 있습니다.<br><br>
+              - 스타벅스 아메리카노: 4,500P<br>
+              - 편의점 상품권: 10,000P<br>
+              - 배달앱 쿠폰: 5,000P<br><br>
+              포인트는 마이페이지에서 확인하고, 스토어 탭에서 바로 사용할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="faq-item p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-question-circle text-2xl text-orange-500"></i>
+              <h3 class="text-lg font-bold text-gray-800">AI 스마트 매칭은 어떻게 작동하나요?</h3>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </div>
+          <div class="faq-answer px-6 pb-6">
+            <p class="text-gray-700 leading-relaxed">
+              AI가 회원님의 <strong>성향, 선호 업종, 근무 가능 시간, 위치</strong> 등을 분석하여 최적의 일자리를 추천합니다.<br><br>
+              AI면접 탭에서 간단한 대화를 나누면, 알비 AI가 회원님에게 가장 잘 맞는 알바를 찾아드립니다.<br>
+              면접 부담 없이 편하게 대화하듯이 진행하시면 됩니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="faq-item p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-question-circle text-2xl text-orange-500"></i>
+              <h3 class="text-lg font-bold text-gray-800">급여는 언제 받을 수 있나요?</h3>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </div>
+          <div class="faq-answer px-6 pb-6">
+            <p class="text-gray-700 leading-relaxed">
+              급여 지급일은 <strong>근로계약서에 명시된 날짜</strong>에 따라 지급됩니다.<br><br>
+              대부분 매월 말일 또는 익월 초에 지급되며, 알비 플랫폼을 통해 근무 내역과 급여 내역을 실시간으로 확인할 수 있습니다.<br>
+              급여 지연이나 미지급 시에는 고객센터로 즉시 연락주시면 신속하게 도와드립니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 5 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="faq-item p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-question-circle text-2xl text-orange-500"></i>
+              <h3 class="text-lg font-bold text-gray-800">전자계약서는 법적 효력이 있나요?</h3>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </div>
+          <div class="faq-answer px-6 pb-6">
+            <p class="text-gray-700 leading-relaxed">
+              네, 알비의 전자계약서는 <strong>전자서명법</strong>과 <strong>근로기준법</strong>에 따라 작성되어 법적 효력을 가집니다.<br><br>
+              근로자와 사업주 양측의 전자서명으로 체결되며, 계약 내용은 블록체인 기술로 안전하게 보관됩니다.<br>
+              언제든지 마이페이지에서 계약서를 다운로드하고 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 6 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="faq-item p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-question-circle text-2xl text-orange-500"></i>
+              <h3 class="text-lg font-bold text-gray-800">회원탈퇴는 어떻게 하나요?</h3>
+            </div>
+            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </div>
+          <div class="faq-answer px-6 pb-6">
+            <p class="text-gray-700 leading-relaxed">
+              마이페이지 > 설정 > 회원탈퇴 메뉴에서 언제든지 탈퇴할 수 있습니다.<br><br>
+              단, 진행 중인 근로계약이 있거나 미지급 급여가 있는 경우에는 모두 처리된 후 탈퇴 가능합니다.<br>
+              탈퇴 시 보유하신 알비포인트는 자동으로 소멸되니 미리 사용해주세요.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1:1 문의 -->
+  <section class="py-12 bg-white">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">1:1 문의하기</h2>
+      <div class="bg-gray-50 rounded-lg p-8">
+        <form class="space-y-6">
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">이름</label>
+              <input type="text" placeholder="홍길동" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">이메일</label>
+              <input type="email" placeholder="example@email.com" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">문의 유형</label>
+            <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+              <option>서비스 이용 문의</option>
+              <option>급여 관련 문의</option>
+              <option>계약서 관련 문의</option>
+              <option>포인트 관련 문의</option>
+              <option>신고/제재 문의</option>
+              <option>기타 문의</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">제목</label>
+            <input type="text" placeholder="문의 제목을 입력하세요" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">문의 내용</label>
+            <textarea rows="6" placeholder="문의하실 내용을 자세히 작성해주세요" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"></textarea>
+          </div>
+          <div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" class="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500">
+              <span class="text-sm text-gray-700">개인정보 수집 및 이용에 동의합니다.</span>
+            </label>
+          </div>
+          <div class="text-center">
+            <button type="submit" class="px-12 py-4 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition">
+              <i class="fas fa-paper-plane mr-2"></i>
+              문의하기
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 운영 시간 -->
+  <section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="bg-white rounded-lg shadow-sm p-8">
+        <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">고객센터 운영 시간</h3>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-clock text-2xl text-orange-500"></i>
+              <span class="font-bold text-gray-800">평일</span>
+            </div>
+            <span class="text-gray-700">09:00 - 18:00</span>
+          </div>
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-coffee text-2xl text-orange-500"></i>
+              <span class="font-bold text-gray-800">점심시간</span>
+            </div>
+            <span class="text-gray-700">12:00 - 13:00</span>
+          </div>
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-calendar-times text-2xl text-gray-400"></i>
+              <span class="font-bold text-gray-800">주말/공휴일</span>
+            </div>
+            <span class="text-gray-700">휴무 (이메일 문의는 24시간 가능)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 푸터 -->
+  <footer class="bg-gray-800 text-gray-400 py-8">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="flex flex-wrap gap-4 justify-center mb-4">
+        <a href="/terms.html" class="hover:text-white transition">이용약관</a>
+        <span>|</span>
+        <a href="/privacy.html" class="hover:text-white transition">개인정보처리방침</a>
+        <span>|</span>
+        <a href="/contract.html" class="hover:text-white transition">전자계약서</a>
+        <span>|</span>
+        <a href="/company.html" class="hover:text-white transition">회사소개</a>
+        <span>|</span>
+        <a href="/contact.html" class="hover:text-white transition">고객센터</a>
+      </div>
+      <div class="text-center text-sm">
+        <p>(주)알비 | 대표: 알비팀 | 사업자등록번호: 000-00-00000</p>
+        <p>서울특별시 강남구 테헤란로 123 | 전화: 1588-0000 | 이메일: help@albi.co.kr</p>
+        <p class="mt-2">© 2025 ALBI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleFaq(element) {
+      const answer = element.nextElementSibling;
+      const icon = element.querySelector('.fa-chevron-down');
+      
+      // Close all other FAQs
+      document.querySelectorAll('.faq-answer').forEach(item => {
+        if (item !== answer) {
+          item.classList.remove('active');
+        }
+      });
+      document.querySelectorAll('.fa-chevron-down').forEach(item => {
+        if (item !== icon) {
+          item.style.transform = 'rotate(0deg)';
+        }
+      });
+      
+      // Toggle current FAQ
+      answer.classList.toggle('active');
+      if (answer.classList.contains('active')) {
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+  </script>
+</body>
+</html>
