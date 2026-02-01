@@ -3,162 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>내 주변 알바 - 알비</title>
-  <link href="/styles.css" rel="stylesheet">
+  <title>알바찾기 - 알비</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services"></script>
   <style>
-    #map { width: 100%; height: calc(100vh - 200px); }
-    .map-info-window {
-      padding: var(--space-sm);
-      min-width: 200px;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
     }
-    .view-tab {
-      transition: all var(--transition-fast);
+    #map { 
+      width: 100%; 
+      height: calc(100vh - 200px); 
     }
-    .filter-chip {
-      padding: var(--space-xs) var(--space-md);
-      border-radius: var(--radius-full);
-      font-size: var(--font-size-sm);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      border: 2px solid transparent;
+    .job-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     .filter-chip.active {
-      background: var(--albi-orange);
+      background: #FF6B35;
       color: white;
-      border-color: var(--albi-orange);
-    }
-    .filter-chip:not(.active) {
-      background: var(--gray-200);
-      color: var(--gray-700);
-    }
-    .filter-chip:not(.active):hover {
-      background: var(--gray-300);
+      border-color: #FF6B35;
     }
   </style>
 </head>
-<body class="bg-gray-50 pb-20">
-  <!-- Top Navigation -->
-  <nav class="navbar">
-    <div class="container flex items-center justify-between" style="max-width: 1200px;">
-      <a href="/" class="navbar-brand">
-        <img src="/albi-mascot.svg" alt="알비" class="albi-mascot">
+<body class="bg-gray-50">
+  <!-- 상단 네비게이션 -->
+  <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between max-w-1200px">
+      <a href="/" class="flex items-center space-x-2">
+        <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
         <div class="flex flex-col">
-          <span style="font-size: var(--font-size-lg);">내 주변 알바</span>
-          <span id="locationStatus" class="text-xs text-gray">위치 찾는 중...</span>
+          <span class="text-xl font-bold text-gray-800">내 주변 알바</span>
+          <span id="locationStatus" class="text-xs text-gray-500">위치 찾는 중...</span>
         </div>
       </a>
-      
-      <a href="/post-job" class="btn btn-primary btn-sm">
+      <a href="/post-job" class="px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition flex items-center gap-2">
         <i class="fas fa-plus"></i>
-        공고 올리기
+        <span class="hidden sm:inline">공고올리기</span>
       </a>
     </div>
   </nav>
 
-  <div class="main-content">
-    <!-- View Toggle Tabs -->
-    <div class="bg-white border-b flex" style="position: sticky; top: 60px; z-index: var(--z-sticky);">
-      <button onclick="switchView('list')" id="listTab" class="view-tab flex-1 py-3 text-sm font-bold text-orange border-b-2" style="border-color: var(--albi-orange);">
-        <i class="fas fa-list"></i> 리스트
+  <!-- 뷰 토글 탭 -->
+  <div class="bg-white border-b sticky top-16 z-40">
+    <div class="container mx-auto px-4 max-w-1200px flex">
+      <button onclick="switchView('list')" id="listTab" class="flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition">
+        <i class="fas fa-list mr-1"></i> 리스트
       </button>
-      <button onclick="switchView('map')" id="mapTab" class="view-tab flex-1 py-3 text-sm font-bold text-gray">
-        <i class="fas fa-map"></i> 지도
+      <button onclick="switchView('map')" id="mapTab" class="flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent transition hover:text-orange-500">
+        <i class="fas fa-map mr-1"></i> 지도
       </button>
     </div>
+  </div>
 
-    <!-- Filter Bar -->
-    <div class="bg-white px-4 py-3 border-b" style="position: sticky; top: 108px; z-index: var(--z-sticky);">
-      <div class="flex items-center gap-2 overflow-x-auto pb-2" style="scrollbar-width: none;">
-        <!-- Category Filters -->
-        <div class="flex gap-2">
-          <button onclick="filterByCategory('all')" data-category="all" class="filter-chip active">
-            전체
-          </button>
-          <button onclick="filterByCategory('cafe')" data-category="cafe" class="filter-chip">
-            ☕ 카페
-          </button>
-          <button onclick="filterByCategory('convenience')" data-category="convenience" class="filter-chip">
-            🏪 편의점
-          </button>
-          <button onclick="filterByCategory('restaurant')" data-category="restaurant" class="filter-chip">
-            🍽️ 음식점
-          </button>
-          <button onclick="filterByCategory('retail')" data-category="retail" class="filter-chip">
-            👕 매장
-          </button>
-        </div>
-
-        <div style="width: 1px; height: 24px; background: var(--gray-300); margin: 0 var(--space-sm);"></div>
+  <!-- 필터 바 -->
+  <div class="bg-white px-4 py-3 border-b sticky top-28 z-40">
+    <div class="container mx-auto max-w-1200px">
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <!-- 카테고리 필터 -->
+        <button onclick="filterByCategory('all')" data-category="all" class="filter-chip active px-4 py-2 rounded-full border-2 text-sm whitespace-nowrap transition">
+          전체
+        </button>
+        <button onclick="filterByCategory('cafe')" data-category="cafe" class="filter-chip px-4 py-2 rounded-full border-2 border-gray-300 text-sm whitespace-nowrap transition">
+          ☕ 카페
+        </button>
+        <button onclick="filterByCategory('convenience')" data-category="convenience" class="filter-chip px-4 py-2 rounded-full border-2 border-gray-300 text-sm whitespace-nowrap transition">
+          🏪 편의점
+        </button>
+        <button onclick="filterByCategory('restaurant')" data-category="restaurant" class="filter-chip px-4 py-2 rounded-full border-2 border-gray-300 text-sm whitespace-nowrap transition">
+          🍽️ 음식점
+        </button>
+        <button onclick="filterByCategory('retail')" data-category="retail" class="filter-chip px-4 py-2 rounded-full border-2 border-gray-300 text-sm whitespace-nowrap transition">
+          👕 매장
+        </button>
         
-        <!-- Sort Filter -->
-        <select id="sortFilter" onchange="filterJobs()" class="form-select" style="width: auto; padding: var(--space-xs) var(--space-md);">
+        <div class="w-px h-6 bg-gray-300 mx-2"></div>
+        
+        <!-- 정렬 필터 -->
+        <select id="sortFilter" onchange="filterJobs()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
           <option value="distance">가까운순</option>
           <option value="wage">높은시급순</option>
           <option value="views">인기순</option>
         </select>
 
-        <button onclick="getCurrentLocation()" id="locationBtn" class="btn btn-sm btn-secondary" style="margin-left: auto;">
-          <i class="fas fa-location-arrow"></i>
+        <button onclick="getCurrentLocation()" id="locationBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-semibold hover:bg-blue-600 transition ml-auto whitespace-nowrap">
+          <i class="fas fa-location-arrow mr-1"></i>
           현위치
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- List View -->
-    <div id="listView" class="p-4">
-      <div id="loading" class="text-center py-12">
-        <img src="/albi-mascot.svg" alt="로딩" class="albi-mascot-lg mx-auto mb-3 mascot-float">
-        <p class="text-gray">주변 알바를 찾고 있어요...</p>
-      </div>
-      
-      <div id="jobsList" class="grid gap-3">
-        <!-- JavaScript로 동적 생성 -->
-      </div>
-
-      <div id="noResults" class="hidden empty-state">
-        <div class="empty-state-icon">😢</div>
-        <h3 class="text-xl font-bold mb-2">주변에 공고가 없어요</h3>
-        <p class="text-gray mb-4">검색 반경을 넓히거나 다른 지역을 확인해보세요</p>
-        <button onclick="getCurrentLocation()" class="btn btn-primary">
-          <i class="fas fa-redo"></i>
-          다시 검색
-        </button>
-      </div>
+  <!-- 리스트 뷰 -->
+  <div id="listView" class="container mx-auto px-4 py-6 max-w-1200px mb-20">
+    <!-- 로딩 상태 -->
+    <div id="loading" class="text-center py-12">
+      <img src="/albi-mascot.svg" alt="로딩" class="w-16 h-16 mx-auto mb-4 animate-bounce">
+      <p class="text-gray-600">주변 알바를 찾고 있어요...</p>
+    </div>
+    
+    <!-- 공고 리스트 -->
+    <div id="jobsList" class="space-y-4">
+      <!-- JavaScript로 동적 생성 -->
     </div>
 
-    <!-- Map View -->
-    <div id="mapView" class="hidden relative">
-      <div id="map"></div>
-      <div class="card" style="position: absolute; top: var(--space-lg); left: var(--space-lg); z-index: var(--z-dropdown); padding: var(--space-sm) var(--space-md);">
-        <p class="text-xs text-gray flex items-center gap-2">
-          <span class="badge badge-blue" style="width: 12px; height: 12px; padding: 0;"></span> 내 위치
-          <span class="badge badge-orange" style="width: 12px; height: 12px; padding: 0;"></span> 알바 공고
-        </p>
-      </div>
+    <!-- 결과 없음 -->
+    <div id="noResults" class="hidden text-center py-12">
+      <div class="text-6xl mb-4">😢</div>
+      <h3 class="text-2xl font-bold text-gray-800 mb-2">주변에 공고가 없어요</h3>
+      <p class="text-gray-600 mb-6">검색 반경을 넓히거나 다른 지역을 확인해보세요</p>
+      <button onclick="getCurrentLocation()" class="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition">
+        <i class="fas fa-redo mr-2"></i>
+        다시 검색
+      </button>
     </div>
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="/" class="nav-item">
-      <i class="nav-item-icon fas fa-home"></i>
-      <span>홈</span>
-    </a>
-    <a href="/jobs" class="nav-item active">
-      <i class="nav-item-icon fas fa-briefcase"></i>
-      <span>내주변</span>
-    </a>
-    <a href="/community.html" class="nav-item">
-      <i class="nav-item-icon fas fa-comments"></i>
-      <span>커뮤니티</span>
-    </a>
-    <a href="/store.html" class="nav-item">
-      <i class="nav-item-icon fas fa-store"></i>
-      <span>스토어</span>
-    </a>
+  <!-- 지도 뷰 -->
+  <div id="mapView" class="hidden relative">
+    <div id="map"></div>
+    <div class="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-3 z-10">
+      <p class="text-xs text-gray-600 flex items-center gap-2">
+        <span class="w-3 h-3 bg-blue-500 rounded-full"></span> 내 위치
+        <span class="w-3 h-3 bg-orange-500 rounded-full ml-2"></span> 알바 공고
+      </p>
+    </div>
+  </div>
+
+  <!-- 하단 네비게이션 -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
+    <div class="grid grid-cols-4">
+      <a href="/" class="flex flex-col items-center py-3 text-gray-600 hover:text-orange-500">
+        <i class="fas fa-home text-xl mb-1"></i>
+        <span class="text-xs">홈</span>
+      </a>
+      <a href="/jobs" class="flex flex-col items-center py-3 text-orange-500">
+        <i class="fas fa-briefcase text-xl mb-1"></i>
+        <span class="text-xs">알바찾기</span>
+      </a>
+      <a href="/community.html" class="flex flex-col items-center py-3 text-gray-600 hover:text-orange-500">
+        <i class="fas fa-comments text-xl mb-1"></i>
+        <span class="text-xs">커뮤니티</span>
+      </a>
+      <a href="/mypage.html" class="flex flex-col items-center py-3 text-gray-600 hover:text-orange-500">
+        <i class="fas fa-user text-xl mb-1"></i>
+        <span class="text-xs">MY</span>
+      </a>
+    </div>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -174,6 +165,7 @@
       convenience: '🏪', 
       restaurant: '🍽️',
       retail: '👕',
+      delivery: '🛵',
       etc: '💼'
     };
 
@@ -182,7 +174,7 @@
       getCurrentLocation();
     };
 
-    // View toggle (updated for new UI)
+    // 뷰 전환
     function switchView(view) {
       currentView = view;
       const listView = document.getElementById('listView');
@@ -193,26 +185,21 @@
       if (view === 'list') {
         listView.classList.remove('hidden');
         mapView.classList.add('hidden');
-        listTab.className = 'view-tab flex-1 py-3 text-sm font-bold text-orange border-b-2';
-        listTab.style.borderColor = 'var(--albi-orange)';
-        mapTab.className = 'view-tab flex-1 py-3 text-sm font-bold text-gray';
-        mapTab.style.borderColor = 'transparent';
+        listTab.className = 'flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition';
+        mapTab.className = 'flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent transition hover:text-orange-500';
       } else {
         listView.classList.add('hidden');
         mapView.classList.remove('hidden');
-        listTab.className = 'view-tab flex-1 py-3 text-sm font-bold text-gray';
-        listTab.style.borderColor = 'transparent';
-        mapTab.className = 'view-tab flex-1 py-3 text-sm font-bold text-orange border-b-2';
-        mapTab.style.borderColor = 'var(--albi-orange)';
+        listTab.className = 'flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent transition hover:text-orange-500';
+        mapTab.className = 'flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition';
         
         if (!map) initMap();
         else if (map.relayout) map.relayout();
       }
     }
     
-    // Category filter with new chip UI
+    // 카테고리 필터
     function filterByCategory(category) {
-      // Update active state
       document.querySelectorAll('.filter-chip').forEach(chip => {
         if (chip.dataset.category === category) {
           chip.classList.add('active');
@@ -221,25 +208,20 @@
         }
       });
       
-      // Update category filter value
-      const categoryFilter = document.getElementById('categoryFilter');
-      if (categoryFilter) categoryFilter.value = category;
-      
-      // Reload jobs
       filterJobs();
     }
 
-    // Get current location
+    // 현재 위치 가져오기
     function getCurrentLocation() {
       const btn = document.getElementById('locationBtn');
       const status = document.getElementById('locationStatus');
       
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인중...';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 확인중...';
       btn.disabled = true;
 
       if (!navigator.geolocation) {
         alert('위치 서비스를 지원하지 않는 브라우저입니다.');
-        btn.innerHTML = '<i class="fas fa-location-arrow"></i> 현위치';
+        btn.innerHTML = '<i class="fas fa-location-arrow mr-1"></i> 현위치';
         btn.disabled = false;
         loadJobs();
         return;
@@ -252,10 +234,9 @@
             lng: position.coords.longitude
           };
           
-          status.textContent = `반경 3km 내 공고`;
-          btn.innerHTML = '<i class="fas fa-check-circle"></i> 현위치';
-          btn.className = 'btn btn-sm' + ' ' + 'text-white';
-          btn.style.background = 'var(--albi-green)';
+          status.textContent = '반경 3km 내 공고';
+          btn.innerHTML = '<i class="fas fa-check-circle mr-1"></i> 현위치';
+          btn.className = 'px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold ml-auto whitespace-nowrap';
           btn.disabled = false;
           
           loadJobs();
@@ -263,19 +244,18 @@
         (error) => {
           console.error('Geolocation error:', error);
           status.textContent = '위치 권한이 필요합니다';
-          btn.innerHTML = '<i class="fas fa-location-arrow"></i> 현위치';
+          btn.innerHTML = '<i class="fas fa-location-arrow mr-1"></i> 현위치';
           btn.disabled = false;
-          loadJobs(); // Load with default location
+          loadJobs(); // 기본 위치로 로드
         }
       );
     }
 
-    // Load jobs data
+    // 공고 데이터 로드
     async function loadJobs() {
       try {
         document.getElementById('loading').classList.remove('hidden');
         
-        // Get active category from chip
         const activeChip = document.querySelector('.filter-chip.active');
         const category = activeChip ? activeChip.dataset.category : 'all';
         const sort = document.getElementById('sortFilter').value;
@@ -299,11 +279,64 @@
         }
       } catch (error) {
         console.error('Load jobs error:', error);
-        document.getElementById('loading').innerHTML = 
-          '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>데이터를 불러올 수 없습니다</p></div>';
+        // 목업 데이터로 대체
+        renderMockJobs();
       } finally {
         document.getElementById('loading').classList.add('hidden');
       }
+    }
+
+    // 목업 데이터로 공고 렌더링
+    function renderMockJobs() {
+      const mockJobs = [
+        {
+          id: 1,
+          category: 'cafe',
+          title: '스타벅스 강남점 바리스타',
+          location: '서울 강남구',
+          distance: 0.8,
+          hourly_wage: 12000,
+          tags: ['장기', '주말', '오전'],
+          views: 234,
+          has_trial: true
+        },
+        {
+          id: 2,
+          category: 'convenience',
+          title: 'CU 역삼점 야간 알바',
+          location: '서울 강남구',
+          distance: 1.2,
+          hourly_wage: 13500,
+          tags: ['야간', '단기가능', '급구'],
+          views: 456,
+          has_trial: true
+        },
+        {
+          id: 3,
+          category: 'restaurant',
+          title: '한식당 홀서빙',
+          location: '서울 강남구',
+          distance: 1.5,
+          hourly_wage: 11000,
+          tags: ['장기', '식사제공', '주중'],
+          views: 189,
+          has_trial: true
+        },
+        {
+          id: 4,
+          category: 'retail',
+          title: '의류매장 판매직',
+          location: '서울 강남구',
+          distance: 2.1,
+          hourly_wage: 12500,
+          tags: ['주말', '장기', '인센티브'],
+          views: 345,
+          has_trial: true
+        }
+      ];
+
+      allJobs = mockJobs;
+      renderJobs();
     }
 
     // 공고 리스트 렌더링
@@ -319,46 +352,37 @@
 
       noResults.classList.add('hidden');
       
-      container.innerHTML = allJobs.map(job => {
-        const tags = JSON.parse(job.tags || '[]');
-        const workDays = JSON.parse(job.work_days || '[]');
-        
-        return `
-          <div onclick="viewJobDetail('${job.id}')" class="job-card">
-            <div class="job-card-header">
-              <div class="flex items-center gap-3">
-                <div style="width: 56px; height: 56px; background: var(--gray-200); border-radius: var(--radius-lg); display: flex; align-items: center; justify-center; font-size: 2rem; flex-shrink: 0;">
-                  ${categoryIcons[job.category] || '💼'}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="job-card-title truncate">${job.title}</h3>
-                  <div class="flex items-center gap-2 text-sm text-gray">
-                    <i class="fas fa-map-marker-alt text-orange"></i>
-                    <span>${job.location}</span>
-                    ${job.distance ? `<span class="badge badge-blue">${job.distance}km</span>` : ''}
-                  </div>
-                </div>
-              </div>
-              <div class="job-card-wage">
-                ${job.hourly_wage.toLocaleString()}<span style="font-size: var(--font-size-sm); font-weight: 500;">원</span>
+      container.innerHTML = allJobs.map(job => `
+        <div onclick="viewJobDetail('${job.id}')" class="job-card bg-white rounded-lg border border-gray-200 p-5 cursor-pointer transition-all">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
+              ${categoryIcons[job.category] || '💼'}
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-bold text-gray-800 mb-1 truncate">${job.title}</h3>
+              <div class="flex items-center gap-2 text-sm text-gray-600">
+                <i class="fas fa-map-marker-alt text-orange-500"></i>
+                <span>${job.location}</span>
+                ${job.distance ? `<span class="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold">${job.distance}km</span>` : ''}
               </div>
             </div>
-            
-            <div class="job-card-footer">
-              <span class="badge badge-orange">
-                <i class="fas fa-eye"></i>
-                1시간 체험가능
-              </span>
-              ${tags.slice(0, 3).map(tag => `
-                <span class="badge badge-gray">#${tag}</span>
-              `).join('')}
-              <span class="badge badge-outline" style="margin-left: auto;">
-                <i class="fas fa-eye"></i> ${job.views || 0}
-              </span>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-orange-500">${job.hourly_wage.toLocaleString()}<span class="text-sm font-medium text-gray-600">원</span></div>
+              <div class="text-xs text-gray-500">시급</div>
             </div>
           </div>
-        `;
-      }).join('');
+          
+          <div class="flex items-center gap-2 flex-wrap">
+            ${job.has_trial ? '<span class="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-semibold"><i class="fas fa-eye mr-1"></i>1시간 체험</span>' : ''}
+            ${(job.tags || []).slice(0, 3).map(tag => `
+              <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">#${tag}</span>
+            `).join('')}
+            <span class="px-2 py-1 text-gray-500 text-xs ml-auto flex items-center gap-1">
+              <i class="fas fa-eye"></i> ${job.views || 0}
+            </span>
+          </div>
+        </div>
+      `).join('');
     }
 
     // 지도 초기화
@@ -366,7 +390,7 @@
       if (!window.kakao || !window.kakao.maps) {
         console.warn('Kakao Maps API 없음 - 지도 기능 비활성화');
         document.getElementById('mapView').innerHTML = 
-          '<div class="flex items-center justify-center h-full"><p class="text-gray-500">지도 서비스를 사용할 수 없습니다</p></div>';
+          '<div class="flex items-center justify-center h-screen"><p class="text-gray-500">지도 서비스를 사용할 수 없습니다</p></div>';
         return;
       }
 
@@ -384,11 +408,9 @@
     function updateMap() {
       if (!map || !window.kakao) return;
 
-      // 기존 마커 제거
       markers.forEach(marker => marker.setMap(null));
       markers = [];
 
-      // 내 위치 마커
       const myPosition = new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
       const myMarker = new kakao.maps.Marker({
         position: myPosition,
@@ -396,7 +418,6 @@
       });
       markers.push(myMarker);
 
-      // 공고 마커들
       allJobs.forEach(job => {
         if (!job.latitude || !job.longitude) return;
 
@@ -406,7 +427,6 @@
           map: map
         });
 
-        // 인포윈도우
         const infoWindow = new kakao.maps.InfoWindow({
           content: `
             <div style="padding:10px; min-width:200px; text-align:center;">
@@ -440,7 +460,7 @@
 
     // 공고 상세 페이지로 이동
     function viewJobDetail(jobId) {
-      window.location.href = `/job-detail?id=${jobId}`;
+      window.location.href = `/job-detail.html?id=${jobId}`;
     }
   </script>
 </body>
