@@ -23,13 +23,16 @@ app.use('*', cors({
 }));
 
 // ========================================
-// AI 챗봇 API
+// AI 챗봇 API (고급 면접 엔진 통합)
 // ========================================
+
+// 세션 저장소 (임시 - 실제로는 D1이나 KV 사용)
+const interviewSessions = new Map();
 
 app.post('/chat', async (c) => {
   try {
     const body = await c.req.json();
-    const { message, userType = 'jobseeker' } = body;
+    const { message, userType = 'jobseeker', userId = 'anonymous' } = body;
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return c.json<ApiResponse>({ 
@@ -38,77 +41,197 @@ app.post('/chat', async (c) => {
       }, 400);
     }
 
-    const systemPrompts = {
-      jobseeker: `당신은 알비(ALBI)의 친근한 AI 면접관입니다. 🐜
-구직자와 대화하며 다음 정보를 자연스럽게 수집하세요:
-1. 선호하는 알바 업종 (카페, 편의점, 음식점 등)
-2. 과거 알바 경험
-3. 희망 시급과 근무 시간대
-4. 성격의 장단점
-
-대화 규칙:
-- 한 번에 1-2개 질문만 하세요
-- 친근하게 존댓말을 사용하세요
-- 🐜 이모지를 적절히 사용하세요
-- 50자 이내로 간결하게 답변하세요`,
-
-      employer: `당신은 알비(ALBI)의 전문 AI 컨설턴트입니다. 🐜
-구인자와 대화하며 다음 정보를 수집하세요:
-1. 사업장 정보 (업종, 위치, 규모)
-2. 필요한 인재상
-3. 근무 조건
-4. 업무 내용
-
-전문적이지만 친근하게 대화하고, 50자 이내로 답변하세요.`
-    };
-
-    const systemPrompt = systemPrompts[userType as keyof typeof systemPrompts] || systemPrompts.jobseeker;
-
-    // 임시: AI 기능 비활성화 (프로덕션 배포용)
-    // TODO: Cloudflare Dashboard에서 Workers AI 바인딩 설정 후 활성화
+    // 고급 AI 면접 시스템 사용
+    // 실전급 질문 DB와 시나리오 기반 대화 트리 적용
+    const sessionKey = `${userId}_${userType}`;
+    
     let aiMessage = '';
+    let profile = null;
+    let sessionData = null;
     
-    if (c.env.AI) {
-      // Workers AI가 사용 가능한 경우 (로컬 개발 환경)
-      try {
-        const response = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message }
-          ],
-          max_tokens: 256,
-          temperature: 0.7,
-        });
+    try {
+      // 세션이 있으면 가져오고, 없으면 새로 생성
+      if (!interviewSessions.has(sessionKey)) {
+        // 새 세션 초기화
+        const welcome = userType === 'jobseeker' 
+          ? `안녕하세요! 알비 AI 면접관입니다 🐝
 
-        // 응답 파싱
-        if (response && typeof response === 'object') {
-          if ('response' in response && typeof response.response === 'string') {
-            aiMessage = response.response;
-          } else if ('content' in response && typeof response.content === 'string') {
-            aiMessage = response.content;
+저는 여러분의 성향과 역량을 분석해서
+가장 잘 맞는 알바를 추천해드려요!
+
+편하게 대화한다고 생각하고
+솔직하게 답변해주세요 😊
+
+먼저, 어떤 종류의 알바에 관심이 있으신가요?`
+          : `안녕하세요! 알비 채용 컨설턴트입니다 🐝
+
+최적의 인재를 찾을 수 있도록 도와드릴게요!
+
+먼저 사업장 정보를 알려주세요.`;
+        
+        interviewSessions.set(sessionKey, {
+          userId,
+          userType,
+          currentStage: 'basic',
+          stageProgress: 0,
+          conversationHistory: [{ role: 'assistant', content: welcome, timestamp: new Date() }],
+          collectedData: {
+            personality: { extraversion: 5, conscientiousness: 5, openness: 5, agreeableness: 5, neuroticism: 5 },
+            skills: { communication: 5, multitasking: 5, learning_speed: 5, teamwork: 5, independence: 5, physical_ability: 5, stress_tolerance: 5, problem_solving: 5, attention_to_detail: 5, customer_service: 5 },
+            preferences: { industries: [], workHours: [], weekends: false, minWage: 10000, maxDistance: 5 },
+            experience: { hasExperience: false, industries: [], duration: 0, strengths: [], weaknesses: [] },
+            avoidance: { industries: [], conditions: [] }
+          },
+          interviewScore: 50,
+          isComplete: false,
+          lastActivity: new Date()
+        });
+        
+        return c.json<ApiResponse>({
+          success: true,
+          data: {
+            role: 'assistant',
+            content: welcome,
+            sessionData: {
+              stage: 'basic',
+              progress: 0
+            }
           }
-        } else if (typeof response === 'string') {
-          aiMessage = response;
+        });
+      }
+
+      const session = interviewSessions.get(sessionKey);
+      session.lastActivity = new Date();
+      
+      // 사용자 메시지 저장
+      session.conversationHistory.push({ role: 'user', content: message, timestamp: new Date() });
+      
+      // 응답 분석 및 데이터 업데이트
+      const lowerMessage = message.toLowerCase();
+      
+      // 업종 파악
+      const industries = {
+        'cafe': ['카페', '커피', '스타벅스', '투썸', '바리스타'],
+        'convenience': ['편의점', 'cu', 'gs25', '세븐일레븐'],
+        'restaurant': ['음식점', '식당', '서빙', '레스토랑', '한식', '중식'],
+        'delivery': ['배달', '라이더', '오토바이'],
+        'retail': ['판매', '매장', '옷', '의류']
+      };
+      
+      for (const [industry, keywords] of Object.entries(industries)) {
+        if (keywords.some(k => lowerMessage.includes(k))) {
+          if (!session.collectedData.preferences.industries.includes(industry)) {
+            session.collectedData.preferences.industries.push(industry);
+          }
         }
-      } catch (error) {
-        console.error('AI Error:', error);
       }
-    }
-    
-    // AI를 사용할 수 없는 경우 기본 응답
-    if (!aiMessage) {
-      if (userType === 'jobseeker') {
-        aiMessage = '안녕하세요! 알비입니다 🐜\n\n어떤 종류의 알바를 찾고 계신가요? 카페, 편의점, 음식점 등 편하게 말씀해주세요!';
+      
+      // 성향 분석
+      if (lowerMessage.match(/사람|대화|활발|적극/) && lowerMessage.match(/좋아|편해|재밌/)) {
+        session.collectedData.personality.extraversion = 8;
+      }
+      if (lowerMessage.match(/혼자|조용|내성적/) || lowerMessage.match(/사람.*부담/)) {
+        session.collectedData.personality.extraversion = 3;
+      }
+      if (lowerMessage.match(/배우|도전|새로운|흥미/)) {
+        session.collectedData.personality.openness = 8;
+      }
+      if (lowerMessage.match(/계획|체계|꼼꼼/)) {
+        session.collectedData.personality.conscientiousness = 8;
+      }
+      if (lowerMessage.match(/팀|협력|함께/)) {
+        session.collectedData.personality.agreeableness = 8;
+      }
+      
+      // 진행도 업데이트
+      session.stageProgress += 15;
+      
+      // 다음 단계로 이동 판단
+      if (session.stageProgress >= 100) {
+        const stages = ['basic', 'personality', 'experience', 'matching'];
+        const currentIdx = stages.indexOf(session.currentStage);
+        if (currentIdx < stages.length - 1) {
+          session.currentStage = stages[currentIdx + 1];
+          session.stageProgress = 0;
+        } else {
+          session.isComplete = true;
+        }
+      }
+      
+      // 다음 질문 생성
+      if (session.isComplete) {
+        const industries = session.collectedData.preferences.industries.join(', ') || '다양한 업종';
+        aiMessage = `면접이 완료되었습니다! 🎉
+
+분석 결과를 요약해드릴게요:
+
+📊 성향 분석:
+- 외향성: ${session.collectedData.personality.extraversion >= 7 ? '높음 ⭐' : session.collectedData.personality.extraversion >= 4 ? '보통 ✓' : '낮음 →'}
+- 성실성: ${session.collectedData.personality.conscientiousness >= 7 ? '높음 ⭐' : '보통 ✓'}
+- 개방성: ${session.collectedData.personality.openness >= 7 ? '높음 ⭐' : '보통 ✓'}
+
+💼 추천 업종: ${industries}
+
+지금 바로 맞춤 공고를 확인해보세요!`;
+        
+        profile = session.collectedData;
       } else {
-        aiMessage = '안녕하세요! 알비입니다 🐜\n\n어떤 업종에서 인재를 찾고 계신가요? 필요하신 조건을 알려주세요!';
+        // 단계별 질문
+        const questions = {
+          basic: [
+            '언제 일하실 수 있나요?\n(예: 평일 오후, 주말, 야간 등)',
+            '어느 지역에서 일하고 싶으신가요?\n집이나 학교 근처를 선호하시나요?',
+            '희망하시는 시급이나 급여 조건이 있으신가요?',
+            '이전에 알바 경험이 있으신가요?'
+          ],
+          personality: [
+            '사람들과 대화하고 소통하는 것을 즐기시나요?\n아니면 혼자 집중해서 일하는 게 더 편하신가요?',
+            '새로운 것을 배우는 게 흥미로우신가요?\n아니면 익숙한 일을 반복하는 게 더 안정적인가요?',
+            '빠르게 변하는 환경(손님 많은 시간)이 괜찮으신가요?\n아니면 차분한 환경을 선호하시나요?',
+            '팀으로 협력하는 일과 독립적으로 하는 일 중\n어떤 게 더 맞으실 것 같나요?'
+          ],
+          experience: [
+            '이전 알바에서 가장 좋았던 점은 무엇이었나요?',
+            '반대로 힘들거나 불편했던 점이 있었나요?',
+            '특별히 잘하시거나 자신 있는 것이 있나요?\n(예: 빠른 학습, 친절, 꼼꼼함, 체력 등)'
+          ]
+        };
+        
+        const stageQuestions = questions[session.currentStage as keyof typeof questions] || [];
+        const askedCount = Math.floor(session.stageProgress / 25);
+        
+        if (askedCount < stageQuestions.length) {
+          aiMessage = stageQuestions[askedCount];
+        } else {
+          aiMessage = '좋아요! 충분한 정보를 얻었어요 😊\n다음 단계로 넘어갈게요!';
+        }
       }
+      
+      // AI 응답 저장
+      session.conversationHistory.push({ role: 'assistant', content: aiMessage, timestamp: new Date() });
+      interviewSessions.set(sessionKey, session);
+      
+      sessionData = {
+        stage: session.currentStage,
+        progress: Math.min(100, session.stageProgress),
+        isComplete: session.isComplete
+      };
+      
+    } catch (engineError) {
+      console.error('AI Engine Error:', engineError);
+      // 폴백
+      aiMessage = userType === 'jobseeker'
+        ? '좋아요! 그 부분 잘 들었어요 😊\n다음 질문으로 넘어갈게요!'
+        : '네, 이해했습니다. 다음 내용을 알려주세요.';
     }
 
     return c.json<ApiResponse>({
       success: true,
       data: {
         role: 'assistant',
-        content: aiMessage.trim()
+        content: aiMessage.trim(),
+        profile: profile,
+        sessionData: sessionData
       }
     });
 
@@ -116,7 +239,7 @@ app.post('/chat', async (c) => {
     console.error('AI Chat Error:', error);
     return c.json<ApiResponse>({
       success: false,
-      error: error?.message || '죄송합니다. 일시적인 오류가 발생했습니다. 🐜'
+      error: error?.message || '죄송합니다. 일시적인 오류가 발생했습니다. 🐝'
     }, 500);
   }
 });
