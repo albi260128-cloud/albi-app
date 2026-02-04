@@ -28,6 +28,24 @@
         transform: translateY(0);
       }
     }
+    /* 타이핑 커서 애니메이션 */
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    .typing-cursor::after {
+      content: '|';
+      animation: blink 1s infinite;
+    }
+    /* 로딩 점 애니메이션 */
+    @keyframes bounce {
+      0%, 80%, 100% { 
+        transform: translateY(0);
+      }
+      40% { 
+        transform: translateY(-10px);
+      }
+    }
     .progress-step {
       transition: all 0.3s;
     }
@@ -288,6 +306,9 @@
       return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
     }
 
+    // ========================================
+    // ✨ 타이핑 효과로 메시지 추가
+    // ========================================
     function addMessage(role, content, withCard = null) {
       const chatArea = document.getElementById('chatArea');
       const messageDiv = document.createElement('div');
@@ -305,23 +326,27 @@
             </div>
           </div>
         `;
+        chatArea.appendChild(messageDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;
       } else {
+        // AI 메시지는 타이핑 효과
         messageDiv.innerHTML = `
           <div class="flex items-start space-x-3">
             <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
               <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
             </div>
             <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border max-w-[70%]">
-              <div>${content}</div>
+              <div id="typing-content"></div>
               ${withCard ? withCard : ''}
               <div class="text-xs text-gray-500 mt-2">${getTimeString()}</div>
             </div>
           </div>
         `;
+        chatArea.appendChild(messageDiv);
+        
+        // 타이핑 효과 시작
+        typeMessage(content, messageDiv.querySelector('#typing-content'));
       }
-      
-      chatArea.appendChild(messageDiv);
-      chatArea.scrollTop = chatArea.scrollHeight;
       
       // 빠른 답변 버튼 숨기기
       if (role === 'user') {
@@ -330,19 +355,69 @@
       }
     }
 
+    // ========================================
+    // ⌨️ 타이핑 효과 함수
+    // ========================================
+    function typeMessage(content, element) {
+      let index = 0;
+      const speed = 20; // 타이핑 속도 (ms)
+      
+      // HTML 태그를 보존하면서 타이핑
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      const textContent = tempDiv.textContent || tempDiv.innerText || '';
+      
+      element.textContent = ''; // 초기화
+      
+      function type() {
+        if (index < textContent.length) {
+          element.textContent += textContent.charAt(index);
+          index++;
+          
+          // 스크롤 자동 이동
+          const chatArea = document.getElementById('chatArea');
+          chatArea.scrollTop = chatArea.scrollHeight;
+          
+          setTimeout(type, speed);
+        } else {
+          // 타이핑 완료 후 HTML 적용 (줄바꿈 등)
+          element.innerHTML = content;
+        }
+      }
+      
+      type();
+    }
+
+    // ========================================
+    // ⏳ 개선된 로딩 표시
+    // ========================================
     function showLoading() {
       const chatArea = document.getElementById('chatArea');
       const loadingDiv = document.createElement('div');
       loadingDiv.id = 'loading';
       loadingDiv.className = 'flex items-start space-x-3 chat-bubble-enter';
+      
+      const loadingMessages = [
+        '알비가 생각하고 있어요...',
+        '답변을 준비하고 있어요...',
+        '면접 질문을 고르는 중...',
+        '프로필을 분석하고 있어요...',
+        '잠시만 기다려주세요...'
+      ];
+      const randomMessage = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+      
       loadingDiv.innerHTML = `
         <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-          <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
+          <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;" class="animate-pulse">
         </div>
         <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border">
           <div class="flex items-center space-x-2">
-            <div class="animate-spin">⏳</div>
-            <span class="text-gray-600">알비가 분석중...</span>
+            <div class="flex space-x-1">
+              <div class="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+              <div class="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+              <div class="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+            </div>
+            <span class="text-gray-600 text-sm">${randomMessage}</span>
           </div>
         </div>
       `;
