@@ -357,7 +357,7 @@
     
     .file-upload-btn {
       width: 100%;
-      padding: 16px;
+      padding: 24px 16px;
       background: white;
       border: 2px dashed #ddd;
       border-radius: 8px;
@@ -366,6 +366,10 @@
       color: #666;
       font-size: 14px;
       transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     
     .file-upload-btn:hover {
@@ -514,8 +518,8 @@
           <input type="file" id="businessRegistrationFile" class="file-upload-input" accept="image/*,.pdf" onchange="handleFileUpload(event)">
           <label for="businessRegistrationFile" class="file-upload-btn">
             <i class="fas fa-upload"></i>
-            <div style="margin-top: 8px; font-weight: 600;">사업자등록증 파일 업로드</div>
-            <small style="color: #999;">이미지 또는 PDF 파일 (최대 5MB)</small>
+            <div style="margin-top: 12px; font-weight: 600; color: #333;">사업자등록증 파일 업로드</div>
+            <div style="margin-top: 4px; font-size: 12px; color: #999;">이미지 또는 PDF 파일 (최대 5MB)</div>
           </label>
         </div>
         
