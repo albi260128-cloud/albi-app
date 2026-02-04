@@ -364,6 +364,10 @@
               <i class="fas fa-clipboard-list"></i>
               <span>면접 결과</span>
             </div>
+            <div class="nav-item" id="navMatching" onclick="showTab('matching')">
+              <i class="fas fa-handshake"></i>
+              <span id="navMatchingLabel">매칭 히스토리</span>
+            </div>
             <div class="nav-item" onclick="showTab('profile')">
               <i class="fas fa-user-edit"></i>
               <span>프로필 수정</span>
@@ -450,6 +454,19 @@
             </form>
           </div>
         </div>
+        
+        <!-- 매칭 히스토리 탭 -->
+        <div id="tabMatching" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-handshake"></i>
+              <span id="matchingTitle">매칭 히스토리</span>
+            </div>
+            <div id="matchingHistory">
+              <!-- 매칭 히스토리가 여기에 표시됩니다 -->
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -479,9 +496,13 @@
       if (userType === 'employer') {
         badge.textContent = '구인자';
         badge.className = 'user-type-badge employer';
+        // 매칭 탭 레이블 업데이트
+        document.getElementById('navMatchingLabel').textContent = '보낸 제안';
       } else {
         badge.textContent = '구직자';
         badge.className = 'user-type-badge jobseeker';
+        // 매칭 탭 레이블 업데이트
+        document.getElementById('navMatchingLabel').textContent = '받은 제안';
       }
       
       // 프로필 정보 로드
@@ -645,6 +666,229 @@
       }
     }
     
+    // ========================================
+    // 매칭 히스토리 로드
+    // ========================================
+    async function loadMatchingHistory() {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        
+        let apiUrl = '';
+        if (userType === 'jobseeker') {
+          apiUrl = '/api/proposals/received';
+          document.getElementById('matchingTitle').innerHTML = '<i class="fas fa-inbox"></i> 받은 제안';
+          document.getElementById('navMatchingLabel').textContent = '받은 제안';
+        } else {
+          apiUrl = '/api/proposals/sent';
+          document.getElementById('matchingTitle').innerHTML = '<i class="fas fa-paper-plane"></i> 보낸 제안';
+          document.getElementById('navMatchingLabel').textContent = '보낸 제안';
+        }
+        
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        const data = await response.json();
+        const container = document.getElementById('matchingHistory');
+        
+        if (data.success && data.data && data.data.length > 0) {
+          container.innerHTML = data.data.map(proposal => renderProposalCard(proposal)).join('');
+        } else {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-handshake"></i>
+              <div style="font-size: 16px; margin-top: 8px;">
+                ${userType === 'jobseeker' ? '받은 제안이 없습니다' : '보낸 제안이 없습니다'}
+              </div>
+              <div style="font-size: 14px; margin-top: 8px;">
+                ${userType === 'jobseeker' ? 'AI 면접을 완료하면 구인자가 제안을 보낼 수 있습니다' : '매칭된 구직자에게 면접 제안을 보내보세요'}
+              </div>
+              ${userType === 'employer' ? `
+                <a href="/chat.html" class="btn btn-primary" style="margin-top: 20px;">
+                  <i class="fas fa-search"></i>
+                  구직자 찾기
+                </a>
+              ` : ''}
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('매칭 히스토리 로드 실패:', error);
+      }
+    }
+    
+    // 제안 카드 렌더링
+    function renderProposalCard(proposal) {
+      const date = new Date(proposal.created_at).toLocaleDateString('ko-KR');
+      const expiryDate = new Date(proposal.expires_at).toLocaleDateString('ko-KR');
+      
+      const statusBadge = {
+        'pending': '<span style="color: #FF6B35; font-weight: 600;">⏳ 대기 중</span>',
+        'accepted': '<span style="color: #10B981; font-weight: 600;">✅ 수락됨</span>',
+        'rejected': '<span style="color: #6B7280; font-weight: 600;">❌ 거절됨</span>',
+        'expired': '<span style="color: #9CA3AF; font-weight: 600;">⌛ 만료됨</span>'
+      };
+      
+      const gradeColors = {
+        'S': 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;',
+        'A': 'background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;',
+        'B': 'background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white;',
+        'C': 'background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white;',
+        'F': 'background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); color: white;'
+      };
+      
+      if (userType === 'jobseeker') {
+        // 구직자: 받은 제안
+        return `
+          <div class="result-card">
+            <div class="result-header">
+              <div>
+                <div style="font-size: 18px; font-weight: 700; color: #333;">
+                  ${proposal.business_name || proposal.employer_name || '회사명 없음'}
+                </div>
+                <div style="margin-top: 8px; font-size: 14px; color: #666;">
+                  ${proposal.job_type === 'cafe' ? '카페' : 
+                    proposal.job_type === 'cvs' ? '편의점' : 
+                    proposal.job_type === 'restaurant' ? '음식점' : 
+                    proposal.job_type === 'retail' ? '매장/판매' : '패스트푸드'} • ${proposal.region || '지역 미상'}
+                </div>
+              </div>
+              <div>
+                ${statusBadge[proposal.status] || statusBadge['pending']}
+              </div>
+            </div>
+            
+            ${proposal.message ? `
+              <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; margin-top: 16px; font-size: 14px; color: #555; line-height: 1.6;">
+                ${proposal.message}
+              </div>
+            ` : ''}
+            
+            <div class="score-grid" style="margin-top: 16px;">
+              ${proposal.proposed_wage ? `
+                <div class="score-item">
+                  <div class="score-label">제안 시급</div>
+                  <div class="score-value">${proposal.proposed_wage.toLocaleString()}원</div>
+                </div>
+              ` : ''}
+              ${proposal.proposed_hours ? `
+                <div class="score-item">
+                  <div class="score-label">근무 시간</div>
+                  <div class="score-value">${proposal.proposed_hours}</div>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #666;">
+              <div>제안일: ${date}</div>
+              <div>만료일: ${expiryDate}</div>
+            </div>
+            
+            ${proposal.status === 'pending' ? `
+              <div style="margin-top: 16px; display: flex; gap: 8px;">
+                <button onclick="handleProposal('${proposal.id}', 'accepted')" 
+                  class="btn btn-primary" style="flex: 1;">
+                  <i class="fas fa-check"></i> 수락
+                </button>
+                <button onclick="handleProposal('${proposal.id}', 'rejected')" 
+                  class="btn" style="flex: 1; background: #6B7280; color: white;">
+                  <i class="fas fa-times"></i> 거절
+                </button>
+              </div>
+            ` : ''}
+            
+            ${proposal.status === 'accepted' && proposal.employer_contact ? `
+              <div style="margin-top: 16px; padding: 12px; background: #D1FAE5; border-radius: 8px; font-size: 14px;">
+                <div style="font-weight: 600; color: #065F46; margin-bottom: 4px;">📞 연락처 공유됨</div>
+                <div style="color: #047857;">${proposal.employer_contact}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        // 구인자: 보낸 제안
+        return `
+          <div class="result-card">
+            <div class="result-header">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                ${proposal.jobseeker_grade ? `
+                  <span style="padding: 8px 16px; border-radius: 8px; font-size: 16px; font-weight: 700; ${gradeColors[proposal.jobseeker_grade] || ''}">
+                    ${proposal.jobseeker_grade}급
+                  </span>
+                ` : ''}
+                <div>
+                  <div style="font-size: 14px; color: #666;">후보자 #${proposal.jobseeker_id.substring(0, 8)}</div>
+                  ${proposal.jobseeker_score ? `
+                    <div style="font-size: 14px; color: #666; margin-top: 4px;">총점: ${proposal.jobseeker_score}점</div>
+                  ` : ''}
+                </div>
+              </div>
+              <div>
+                ${statusBadge[proposal.status] || statusBadge['pending']}
+              </div>
+            </div>
+            
+            ${proposal.match_score ? `
+              <div style="margin-top: 16px; padding: 12px; background: #FEF3C7; border-radius: 8px;">
+                <div style="font-size: 13px; color: #92400E;">매칭 점수</div>
+                <div style="font-size: 20px; font-weight: 700; color: #B45309; margin-top: 4px;">
+                  ${proposal.match_score}점
+                </div>
+              </div>
+            ` : ''}
+            
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #666;">
+              <div>제안일: ${date}</div>
+              <div>만료일: ${expiryDate}</div>
+            </div>
+            
+            ${proposal.status === 'accepted' && proposal.jobseeker_contact ? `
+              <div style="margin-top: 16px; padding: 12px; background: #D1FAE5; border-radius: 8px; font-size: 14px;">
+                <div style="font-weight: 600; color: #065F46; margin-bottom: 4px;">📞 연락처 공유됨</div>
+                <div style="color: #047857;">${proposal.jobseeker_contact}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+    }
+    
+    // 제안 수락/거절
+    async function handleProposal(proposalId, status) {
+      try {
+        const confirmMsg = status === 'accepted' 
+          ? '이 제안을 수락하시겠어요? 구인자에게 연락처가 공유됩니다.' 
+          : '이 제안을 거절하시겠어요?';
+          
+        if (!confirm(confirmMsg)) {
+          return;
+        }
+        
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch(`/api/proposals/${proposalId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({ status })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert(status === 'accepted' ? '✅ 제안을 수락했습니다!' : '제안을 거절했습니다.');
+          loadMatchingHistory();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        alert('처리 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+    
     // 탭 전환
     function showTab(tabName) {
       // 모든 탭 숨기기
@@ -662,6 +906,11 @@
       
       // 선택된 네비게이션 활성화
       event.target.closest('.nav-item').classList.add('active');
+      
+      // 매칭 히스토리 탭이 선택되면 데이터 로드
+      if (tabName === 'matching') {
+        loadMatchingHistory();
+      }
     }
     
     // 프로필 수정 폼 제출
