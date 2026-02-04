@@ -161,6 +161,48 @@ app.post('/chat', async (c) => {
         };
         profile = response.result;
         
+        // 🔥 구직자 프로필을 D1 Database에 저장
+        try {
+          const profileId = crypto.randomUUID();
+          await c.env.DB.prepare(`
+            INSERT INTO jobseeker_profiles (
+              id, user_id, interview_id, job_type,
+              region, expected_wage,
+              final_grade, total_score,
+              reliability_score, job_fit_score, service_mind_score, logistics_score,
+              recommendation, trial_focus, one_liner,
+              strengths, concerns,
+              interview_duration, question_count,
+              is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+          `).bind(
+            profileId,
+            userId,
+            response.result.interview_id || crypto.randomUUID(),
+            jobType,
+            region || null,
+            expectedWage || null,
+            response.result.final_grade,
+            response.result.total_score,
+            response.result.scores?.reliability || 0,
+            response.result.scores?.job_fit || 0,
+            response.result.scores?.service_mind || 0,
+            response.result.scores?.logistics || 0,
+            response.result.recommendation || '',
+            response.result.trial_focus || '',
+            response.result.one_liner || '',
+            JSON.stringify(response.result.strengths || []),
+            JSON.stringify(response.result.concerns || []),
+            response.result.interview_duration || 0,
+            response.result.question_count || 0
+          ).run();
+          
+          console.log('✅ 구직자 프로필 저장 성공:', profileId);
+        } catch (dbError) {
+          console.error('❌ 프로필 저장 실패:', dbError);
+          // 에러가 발생해도 면접 결과는 반환합니다
+        }
+        
         // 완료된 세션 정리 (선택사항)
         // interviewSessionsV2.delete(sessionKey);
       } else if (response.status === 'rejected') {
@@ -281,6 +323,111 @@ app.post('/calculator/wage', async (c) => {
 
 // ========================================
 // 데이터베이스 API (D1 사용)
+// ========================================
+
+// ========================================
+// 🐝 구직자 프로필 API
+// ========================================
+
+// 1. 구직자 프로필 목록 조회 (구인자가 사용)
+app.get('/jobseekers', async (c) => {
+  try {
+    const jobType = c.req.query('job_type');
+    const region = c.req.query('region');
+    const minGrade = c.req.query('min_grade') || 'F';
+    const limit = parseInt(c.req.query('limit') || '20');
+    
+    let query = `
+      SELECT * FROM jobseeker_profiles 
+      WHERE is_active = 1
+    `;
+    const params: any[] = [];
+    
+    // 필터링
+    if (jobType && jobType !== 'all') {
+      query += ' AND job_type = ?';
+      params.push(jobType);
+    }
+    
+    if (region && region !== 'all') {
+      query += ' AND region = ?';
+      params.push(region);
+    }
+    
+    // 등급 필터 (S > A > B > C > F)
+    const gradeOrder = ['S', 'A', 'B', 'C', 'F'];
+    const minGradeIndex = gradeOrder.indexOf(minGrade);
+    if (minGradeIndex >= 0) {
+      const acceptedGrades = gradeOrder.slice(0, minGradeIndex + 1);
+      const placeholders = acceptedGrades.map(() => '?').join(',');
+      query += ` AND final_grade IN (${placeholders})`;
+      params.push(...acceptedGrades);
+    }
+    
+    // 정렬: 총점 높은 순
+    query += ' ORDER BY total_score DESC, created_at DESC LIMIT ?';
+    params.push(limit);
+    
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+    
+    // JSON 파싱
+    const jobseekers = results.map((js: any) => ({
+      ...js,
+      strengths: JSON.parse(js.strengths || '[]'),
+      concerns: JSON.parse(js.concerns || '[]')
+    }));
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: { jobseekers, count: jobseekers.length }
+    });
+  } catch (error: any) {
+    console.error('Get jobseekers error:', error);
+    return c.json<ApiResponse>({
+      success: false,
+      error: error?.message || '구직자 조회 중 오류가 발생했습니다.'
+    }, 500);
+  }
+});
+
+// 2. 특정 구직자 프로필 상세 조회
+app.get('/jobseekers/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    
+    const jobseeker = await c.env.DB.prepare(`
+      SELECT * FROM jobseeker_profiles WHERE id = ?
+    `).bind(id).first();
+    
+    if (!jobseeker) {
+      return c.json<ApiResponse>({
+        success: false,
+        error: '구직자를 찾을 수 없습니다.'
+      }, 404);
+    }
+    
+    // JSON 파싱
+    const result = {
+      ...jobseeker,
+      strengths: JSON.parse((jobseeker as any).strengths || '[]'),
+      concerns: JSON.parse((jobseeker as any).concerns || '[]')
+    };
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: result
+    });
+  } catch (error: any) {
+    console.error('Get jobseeker detail error:', error);
+    return c.json<ApiResponse>({
+      success: false,
+      error: error?.message || '구직자 조회 중 오류가 발생했습니다.'
+    }, 500);
+  }
+});
+
+// ========================================
+// 기존 사용자 API
 // ========================================
 
 // 사용자 목록 조회
