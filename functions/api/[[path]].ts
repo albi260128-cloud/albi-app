@@ -12,6 +12,59 @@ import type { Env, ApiResponse, WageCalculation } from '../../src/types';
 const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
 // ========================================
+// 헬퍼 함수: 매칭 스코어 계산
+// ========================================
+
+/**
+ * 구인자 요구사항과 구직자 프로필의 매칭 스코어 계산 (0-100)
+ */
+function calculateMatchScore(requirement: any, jobseeker: any): number {
+  let score = 0;
+  
+  // 1. 업종 매칭 (필수, 30점)
+  if (requirement.job_type === jobseeker.job_type) {
+    score += 30;
+  }
+  
+  // 2. 지역 매칭 (20점)
+  if (requirement.region && jobseeker.region) {
+    if (requirement.region === jobseeker.region) {
+      score += 20;
+    } else if (requirement.region.includes(jobseeker.region) || jobseeker.region.includes(requirement.region)) {
+      score += 10; // 부분 매칭
+    }
+  }
+  
+  // 3. 등급 매칭 (20점)
+  const gradeOrder = ['S', 'A', 'B', 'C', 'F'];
+  const requiredGradeIndex = gradeOrder.indexOf(requirement.min_grade);
+  const jobseekerGradeIndex = gradeOrder.indexOf(jobseeker.final_grade);
+  
+  if (jobseekerGradeIndex <= requiredGradeIndex) {
+    score += 20; // 요구 등급 이상
+    
+    // 보너스: 요구 등급보다 높으면 추가 점수
+    const gradeDiff = requiredGradeIndex - jobseekerGradeIndex;
+    score += gradeDiff * 5;
+  }
+  
+  // 4. 점수 매칭 (30점)
+  // reliability, job_fit, service_mind 각각 10점씩
+  if (jobseeker.reliability_score >= (requirement.min_reliability || 0)) {
+    score += 10;
+  }
+  if (jobseeker.job_fit_score >= (requirement.min_job_fit || 0)) {
+    score += 10;
+  }
+  if (jobseeker.service_mind_score >= (requirement.min_service_mind || 0)) {
+    score += 10;
+  }
+  
+  // 최대 100점
+  return Math.min(100, Math.round(score));
+}
+
+// ========================================
 // 미들웨어 설정
 // ========================================
 
@@ -66,7 +119,178 @@ app.post('/chat', async (c) => {
     const { message, userType = 'jobseeker', userId = 'anonymous', jobType = 'cafe', region = '서울', expectedWage = 10000 } = body;
 
     // ========================================
-    // 🐝 AlbiInterviewEngine 완전 통합 (스마트 버전)
+    // 🐝 구인자 면접 처리
+    // ========================================
+    if (userType === 'employer') {
+      // EmployerInterviewEngine 동적 import
+      const { EmployerInterviewEngine } = await import('../../src/employer-interview-engine');
+      
+      // 세션 키 생성
+      const sessionKey = `employer_${userId}`;
+      let aiMessage = '';
+      let sessionData: any = {};
+      let requirement: any = null;
+      
+      try {
+        // ========================================
+        // 새 세션 시작 (첫 번째 메시지)
+        // ========================================
+        if (!interviewSessionsV2.has(sessionKey)) {
+          const engine = new EmployerInterviewEngine(userId);
+          const startResponse = engine.startInterview();
+          
+          // 세션 저장
+          interviewSessionsV2.set(sessionKey, {
+            engine,
+            userId,
+            userType: 'employer',
+            startedAt: new Date(),
+            lastActivity: new Date()
+          });
+          
+          return c.json<ApiResponse>({
+            success: true,
+            data: {
+              role: 'assistant',
+              content: startResponse.message + '\n\n' + (startResponse.question || ''),
+              sessionData: {
+                status: startResponse.status,
+                progress: startResponse.progress || '시작',
+                questionCount: 1
+              }
+            }
+          });
+        }
+        
+        // ========================================
+        // 기존 세션 진행
+        // ========================================
+        const session = interviewSessionsV2.get(sessionKey);
+        if (!session || !session.engine) {
+          return c.json<ApiResponse>({ 
+            success: false, 
+            error: '세션을 찾을 수 없습니다. 새로 시작해주세요.' 
+          }, 400);
+        }
+        
+        session.lastActivity = new Date();
+        
+        // 답변 처리
+        const response = await session.engine.processAnswer(message);
+        
+        // 세션 업데이트
+        interviewSessionsV2.set(sessionKey, session);
+        
+        // 응답 생성
+        if (response.status === 'completed') {
+          aiMessage = response.message;
+          requirement = response.result?.requirement;
+          
+          // 🔥 구인자 요구사항을 D1 Database에 저장
+          try {
+            const requirementId = crypto.randomUUID();
+            await c.env.DB.prepare(`
+              INSERT INTO employer_requirements (
+                id, user_id, interview_id,
+                business_name, job_type, region, hourly_wage,
+                required_hours, required_days, is_urgent,
+                min_grade, min_reliability, min_job_fit, min_service_mind,
+                preferred_personality, preferred_experience,
+                workplace_culture, trial_period, notes,
+                is_active
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            `).bind(
+              requirementId,
+              userId,
+              response.result?.interview_id || crypto.randomUUID(),
+              requirement.business_name,
+              requirement.job_type,
+              requirement.region,
+              requirement.hourly_wage,
+              JSON.stringify(requirement.required_hours || []),
+              JSON.stringify(requirement.required_days || []),
+              requirement.is_urgent ? 1 : 0,
+              requirement.min_grade,
+              requirement.min_reliability || 0,
+              requirement.min_job_fit || 0,
+              requirement.min_service_mind || 0,
+              JSON.stringify(requirement.preferred_personality || []),
+              JSON.stringify(requirement.preferred_experience || []),
+              requirement.workplace_culture || '',
+              requirement.trial_period || 3,
+              requirement.notes || ''
+            ).run();
+            
+            console.log('✅ 구인자 요구사항 저장 성공:', requirementId);
+            
+            // 매칭 시작: 구직자 조회 (Top 5)
+            const { results } = await c.env.DB.prepare(`
+              SELECT * FROM jobseeker_profiles
+              WHERE job_type = ? 
+                AND is_active = 1
+                AND final_grade IN ('S', 'A', 'B', 'C')
+              ORDER BY total_score DESC
+              LIMIT 5
+            `).bind(requirement.job_type).all();
+            
+            // JSON 파싱
+            const matches = results.map((js: any) => ({
+              ...js,
+              strengths: JSON.parse(js.strengths || '[]'),
+              concerns: JSON.parse(js.concerns || '[]'),
+              match_score: calculateMatchScore(requirement, js)
+            }));
+            
+            sessionData = {
+              status: 'completed',
+              progress: '완료',
+              requirement,
+              matches
+            };
+            
+          } catch (dbError) {
+            console.error('❌ 요구사항 저장 실패:', dbError);
+            // 에러가 발생해도 면접 결과는 반환합니다
+            sessionData = {
+              status: 'completed',
+              progress: '완료',
+              requirement
+            };
+          }
+          
+          // 완료된 세션 정리
+          interviewSessionsV2.delete(sessionKey);
+        } else {
+          // ongoing
+          aiMessage = response.message + (response.question ? '\n\n' + response.question : '');
+          sessionData = {
+            status: 'ongoing',
+            progress: response.progress || '진행 중'
+          };
+        }
+        
+      } catch (engineError) {
+        console.error('Employer Interview Engine Error:', engineError);
+        aiMessage = '죄송해요, 일시적인 오류가 발생했어요. 😅\n잠시 후 다시 시도해주세요!';
+        sessionData = {
+          status: 'error',
+          progress: '오류'
+        };
+      }
+      
+      return c.json<ApiResponse>({
+        success: true,
+        data: {
+          role: 'assistant',
+          content: aiMessage.trim(),
+          requirement: requirement,
+          sessionData: sessionData
+        }
+      });
+    }
+    
+    // ========================================
+    // 🐝 AlbiInterviewEngine 완전 통합 (구직자 면접)
     // ========================================
     
     // 구직자 면접만 지원
