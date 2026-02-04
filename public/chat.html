@@ -255,12 +255,6 @@
     };
 
     function setUserType(type) {
-      // 구인자 기능은 Phase 2에서 구현 예정
-      if (type === 'employer') {
-        alert('🏪 구인자 면접 기능은 준비 중입니다!\n\nPhase 2에서 다음 기능이 제공될 예정입니다:\n• 구직자 프로필 조회\n• 맞춤형 구직자 추천\n• 면접 제안 기능\n\n현재는 구직자 면접만 이용 가능합니다. 😊');
-        return; // 타입 변경하지 않음
-      }
-      
       userType = type;
       const jobBtn = document.getElementById('jobseekerBtn');
       const empBtn = document.getElementById('employerBtn');
@@ -273,8 +267,7 @@
         empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
       }
       
-      // 타입 변경 시 페이지 새로고침 (아래의 resetInterview 함수 사용)
-      // 단순 변수 초기화가 아닌 완전 초기화 필요
+      // 타입 변경 시 세션 초기화
       if (confirm('면접을 다시 시작하시겠어요?')) {
         localStorage.removeItem('albi_session_user_id');
         window.location.reload();
@@ -495,14 +488,14 @@
         const selectedJobType = currentJobType || 'cafe';
         console.log('🎯 Using job type:', selectedJobType);
         
-        // API 호출: AlbiInterviewEngine 사용
+        // API 호출: AlbiInterviewEngine 또는 EmployerInterviewEngine 사용
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             message, 
             userId: sessionUserId, // 세션 유지
-            userType: 'jobseeker',
+            userType: userType, // 'jobseeker' 또는 'employer'
             jobType: selectedJobType // 선택된 업종 또는 기본값
           })
         });
@@ -542,14 +535,27 @@
             }
             
             // 완료 또는 탈락 처리
-            if (session.status === 'completed' && data.data.profile) {
+            if (session.status === 'completed') {
               updateProgressBar(4); // 마지막 단계로
-              console.log('✅ Interview Completed! Final Result:', data.data.profile);
               
-              // 결과 카드 표시
-              setTimeout(() => {
-                showResultCard(data.data.profile);
-              }, 500);
+              // 구직자 면접 완료
+              if (userType === 'jobseeker' && data.data.profile) {
+                console.log('✅ Jobseeker Interview Completed! Final Result:', data.data.profile);
+                
+                // 결과 카드 표시
+                setTimeout(() => {
+                  showResultCard(data.data.profile);
+                }, 500);
+              }
+              // 구인자 면접 완료
+              else if (userType === 'employer' && session.matches) {
+                console.log('✅ Employer Interview Completed! Matched Candidates:', session.matches);
+                
+                // 추천 구직자 카드 표시
+                setTimeout(() => {
+                  showMatchedCandidates(session.matches, session.requirement);
+                }, 500);
+              }
             } else if (session.status === 'rejected' && data.data.profile) {
               console.log('❌ Interview Rejected:', data.data.profile);
               
@@ -749,6 +755,149 @@
           <div class="mt-4 text-center">
             <button onclick="resetInterview()" class="bg-orange-500 text-white px-6 py-3 rounded-full font-bold hover:bg-orange-600 transition">
               다시 도전하기
+            </button>
+          </div>
+        </div>
+      `;
+      
+      chatArea.appendChild(resultCard);
+      chatArea.scrollTop = chatArea.scrollHeight;
+      
+      // 입력 필드 비활성화
+      document.getElementById('messageInput').disabled = true;
+      document.getElementById('sendBtn').disabled = true;
+    }
+
+    // ========================================
+    // 🤝 추천 구직자 카드 표시 (구인자용)
+    // ========================================
+    function showMatchedCandidates(matches, requirement) {
+      const chatArea = document.getElementById('chatArea');
+      const resultCard = document.createElement('div');
+      resultCard.className = 'chat-bubble-enter mt-4';
+      
+      // 업종 한글 변환
+      const jobTypeNames = {
+        'cafe': '카페',
+        'cvs': '편의점',
+        'restaurant': '음식점',
+        'retail': '매장/판매',
+        'fastfood': '패스트푸드'
+      };
+      const jobTypeName = jobTypeNames[requirement.job_type] || requirement.job_type;
+      
+      // 등급별 색상
+      const gradeColors = {
+        'S': 'bg-purple-500',
+        'A': 'bg-blue-500',
+        'B': 'bg-green-500',
+        'C': 'bg-yellow-500',
+        'F': 'bg-red-500'
+      };
+      
+      resultCard.innerHTML = `
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-2xl shadow-lg border-2 border-orange-300">
+          <div class="text-center mb-4">
+            <div class="text-4xl mb-2">🎉</div>
+            <div class="text-2xl font-bold text-orange-600 mb-2">매칭 완료!</div>
+            <div class="text-sm text-gray-600">최적의 구직자를 찾았습니다</div>
+          </div>
+          
+          <!-- 요구사항 요약 -->
+          <div class="bg-white p-4 rounded-xl mb-4">
+            <div class="font-bold text-gray-700 mb-2">📋 요구사항</div>
+            <div class="text-sm text-gray-600 space-y-1">
+              <div>🏢 <strong>${requirement.business_name}</strong></div>
+              <div>📍 ${jobTypeName} • ${requirement.region}</div>
+              <div>💰 시급 ${requirement.hourly_wage.toLocaleString()}원</div>
+              <div>⭐ 최소 ${requirement.min_grade}급 이상</div>
+            </div>
+          </div>
+          
+          <!-- 추천 구직자 목록 -->
+          <div class="space-y-3">
+            <div class="font-bold text-gray-700 mb-2">🤝 추천 구직자 Top ${matches.length}</div>
+            
+            ${matches.length === 0 ? `
+              <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                <div class="text-yellow-600 text-sm">
+                  😔 조건에 맞는 구직자를 찾지 못했습니다.<br>
+                  요구사항을 조정하거나 다시 시도해주세요.
+                </div>
+              </div>
+            ` : matches.map((candidate, index) => {
+              const gradeColor = gradeColors[candidate.final_grade] || 'bg-gray-500';
+              
+              return `
+                <div class="bg-white p-4 rounded-xl shadow-sm border hover:shadow-md transition">
+                  <div class="flex items-start justify-between mb-2">
+                    <div class="flex items-center space-x-3">
+                      <div class="${gradeColor} text-white text-lg font-bold w-10 h-10 rounded-full flex items-center justify-center">
+                        ${candidate.final_grade}
+                      </div>
+                      <div>
+                        <div class="font-bold text-gray-800">후보자 #${index + 1}</div>
+                        <div class="text-xs text-gray-500">총점 ${candidate.total_score}점</div>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm font-bold text-purple-600">매칭 ${candidate.match_score}점</div>
+                      <div class="text-xs text-gray-500">${candidate.recommendation}</div>
+                    </div>
+                  </div>
+                  
+                  <!-- 점수 상세 -->
+                  <div class="grid grid-cols-2 gap-2 mb-2 text-xs">
+                    <div class="bg-blue-50 p-2 rounded">
+                      <div class="text-gray-600">신뢰도</div>
+                      <div class="font-bold text-blue-600">${candidate.reliability_score}/35</div>
+                    </div>
+                    <div class="bg-green-50 p-2 rounded">
+                      <div class="text-gray-600">직무적합도</div>
+                      <div class="font-bold text-green-600">${candidate.job_fit_score}/30</div>
+                    </div>
+                    <div class="bg-purple-50 p-2 rounded">
+                      <div class="text-gray-600">서비스마인드</div>
+                      <div class="font-bold text-purple-600">${candidate.service_mind_score}/25</div>
+                    </div>
+                    <div class="bg-orange-50 p-2 rounded">
+                      <div class="text-gray-600">근무조건</div>
+                      <div class="font-bold text-orange-600">${candidate.logistics_score}/10</div>
+                    </div>
+                  </div>
+                  
+                  <!-- 강점 -->
+                  ${candidate.strengths && candidate.strengths.length > 0 ? `
+                    <div class="bg-green-50 p-2 rounded-lg mb-2">
+                      <div class="text-xs font-bold text-green-700 mb-1">✅ 강점</div>
+                      <div class="text-xs text-green-600">
+                        ${candidate.strengths.slice(0, 2).map(s => `• ${s}`).join('<br>')}
+                      </div>
+                    </div>
+                  ` : ''}
+                  
+                  <!-- 한 줄 평가 -->
+                  <div class="text-xs text-gray-600 italic mt-2">
+                    "${candidate.one_liner}"
+                  </div>
+                  
+                  <!-- 액션 버튼 -->
+                  <div class="mt-3 flex space-x-2">
+                    <button class="flex-1 bg-orange-500 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-orange-600 transition" onclick="alert('면접 제안 기능은 준비 중입니다!')">
+                      면접 제안하기
+                    </button>
+                    <button class="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-300 transition" onclick="alert('상세보기 기능은 준비 중입니다!')">
+                      상세보기
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          
+          <div class="mt-4 text-center">
+            <button onclick="resetInterview()" class="bg-orange-500 text-white px-6 py-3 rounded-full font-bold hover:bg-orange-600 transition">
+              새로운 구인 시작하기
             </button>
           </div>
         </div>
