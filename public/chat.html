@@ -198,7 +198,8 @@
   </main>
 
   <script>
-    let userType = 'jobseeker';
+    // userType을 localStorage에서 복원 (기본값: 'jobseeker')
+    let userType = localStorage.getItem('albi_user_type') || 'jobseeker';
     let currentJobType = null; // 선택된 업종 (cafe, cvs, restaurant, retail, fastfood)
     let isLoading = false;
     let currentStep = 0; // 0: 기본정보, 1: 성향분석, 2: 경험분석, 3: 매칭결과
@@ -209,6 +210,20 @@
       preferences: {}
     };
     let conversationHistory = [];
+    
+    // 페이지 로드 시 버튼 상태 초기화
+    window.addEventListener('DOMContentLoaded', function() {
+      const jobBtn = document.getElementById('jobseekerBtn');
+      const empBtn = document.getElementById('employerBtn');
+      
+      if (userType === 'employer') {
+        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
+        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
+      } else {
+        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600';
+        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
+      }
+    });
 
     // AI 질문 시나리오
     const interviewQuestions = {
@@ -256,6 +271,10 @@
 
     function setUserType(type) {
       userType = type;
+      
+      // localStorage에 저장
+      localStorage.setItem('albi_user_type', type);
+      
       const jobBtn = document.getElementById('jobseekerBtn');
       const empBtn = document.getElementById('employerBtn');
       
