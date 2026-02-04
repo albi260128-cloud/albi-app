@@ -1631,6 +1631,116 @@ app.post('/community/report', async (c) => {
 });
 
 // ========================================
+// 인증 API (Auth APIs)
+// ========================================
+
+// 회원가입 API
+app.post('/auth/signup', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    
+    const name = formData.get('name') as string;
+    const phone = formData.get('phone') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const userType = formData.get('user_type') as string || 'jobseeker';
+    const agreedTerms = formData.get('agreed_terms') === 'true';
+    const agreedPrivacy = formData.get('agreed_privacy') === 'true';
+    const agreedMarketing = formData.get('agreed_marketing') === 'true';
+    
+    // 필수 필드 검증
+    if (!name || !phone || !password) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '필수 정보가 누락되었습니다.' 
+      }, 400);
+    }
+    
+    if (!agreedTerms || !agreedPrivacy) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '필수 약관에 동의해주세요.' 
+      }, 400);
+    }
+    
+    // 구인자 추가 검증
+    let businessRegistrationNumber = null;
+    let businessName = null;
+    let businessRegistrationFileUrl = null;
+    
+    if (userType === 'employer') {
+      businessRegistrationNumber = formData.get('business_registration_number') as string;
+      businessName = formData.get('business_name') as string;
+      const businessRegistrationFile = formData.get('business_registration_file') as File;
+      
+      if (!businessRegistrationNumber || !businessName || !businessRegistrationFile) {
+        return c.json<ApiResponse>({ 
+          success: false, 
+          error: '구인자는 사업자등록증 인증이 필수입니다.' 
+        }, 400);
+      }
+      
+      // TODO: 파일을 R2 Storage에 업로드 (현재는 임시 처리)
+      businessRegistrationFileUrl = `temp/${Date.now()}_${businessRegistrationFile.name}`;
+      console.log('[구인자 회원가입] 사업자등록증 파일:', businessRegistrationFile.name);
+    }
+    
+    // 휴대폰 번호 중복 체크
+    const existingUser = await c.env.DB.prepare(`
+      SELECT id FROM users WHERE phone = ?
+    `).bind(phone).first();
+    
+    if (existingUser) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이미 가입된 휴대폰 번호입니다.' 
+      }, 409);
+    }
+    
+    // 비밀번호 해시 (실제로는 bcrypt 등을 사용해야 함)
+    // TODO: 실제 프로덕션에서는 bcrypt 사용
+    const passwordHash = password; // 임시 처리
+    
+    // 사용자 ID 생성
+    const userId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    
+    // DB에 사용자 저장
+    await c.env.DB.prepare(`
+      INSERT INTO users (
+        id, name, phone, email, password_hash, user_type,
+        business_registration_number, business_name, business_registration_file_url,
+        business_registration_verified, agreed_terms, agreed_privacy, agreed_marketing,
+        is_verified, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      userId, name, phone, email || null, passwordHash, userType,
+      businessRegistrationNumber, businessName, businessRegistrationFileUrl,
+      0, agreedTerms ? 1 : 0, agreedPrivacy ? 1 : 0, agreedMarketing ? 1 : 0,
+      0 // 휴대폰 인증 미완료 상태
+    ).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        userId,
+        userType,
+        name,
+        phone,
+        email,
+        needsVerification: userType === 'employer' // 구인자는 사업자등록증 검증 필요
+      },
+      message: '회원가입이 완료되었습니다!'
+    });
+  } catch (error) {
+    console.error('Signup error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '회원가입 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
 // 헬스체크 및 정보 API
 // ========================================
 

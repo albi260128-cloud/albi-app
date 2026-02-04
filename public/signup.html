@@ -278,6 +278,179 @@
       text-decoration: underline;
     }
     
+    /* 사용자 타입 선택 */
+    .user-type-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .type-btn {
+      padding: 20px 16px;
+      background: white;
+      border: 2px solid #e5e5e5;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .type-btn i {
+      font-size: 32px;
+      color: #999;
+    }
+    
+    .type-btn span {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .type-btn small {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .type-btn:hover {
+      border-color: #FF6B35;
+      background: #FFF5F2;
+    }
+    
+    .type-btn.active {
+      border-color: #FF6B35;
+      background: #FFF5F2;
+    }
+    
+    .type-btn.active i {
+      color: #FF6B35;
+    }
+    
+    /* 사업자등록증 인증 */
+    .business-registration {
+      margin-top: 20px;
+      padding: 20px;
+      background: #F8F9FA;
+      border-radius: 8px;
+      border: 1px dashed #ddd;
+    }
+    
+    .business-registration h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+    }
+    
+    .file-upload-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    .file-upload-input {
+      display: none;
+    }
+    
+    .file-upload-btn {
+      width: 100%;
+      padding: 16px;
+      background: white;
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .file-upload-btn:hover {
+      border-color: #FF6B35;
+      color: #FF6B35;
+    }
+    
+    .file-upload-btn i {
+      font-size: 24px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    
+    .file-preview {
+      margin-top: 12px;
+      padding: 12px;
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      display: none;
+    }
+    
+    .file-preview.active {
+      display: block;
+    }
+    
+    .file-preview-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .file-preview-name {
+      font-size: 14px;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+    
+    .file-preview-remove {
+      color: #FF6B35;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    
+    .business-info-input {
+      margin-top: 12px;
+    }
+    
+    .business-info-input input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .verification-status {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+    }
+    
+    .verification-status.success {
+      display: block;
+      background: #E8F5E9;
+      color: #2E7D32;
+      border: 1px solid #81C784;
+    }
+    
+    .verification-status.error {
+      display: block;
+      background: #FFEBEE;
+      color: #C62828;
+      border: 1px solid #EF9A9A;
+    }
+    
+    .verification-status i {
+      margin-right: 8px;
+    }
+
     @media (max-width: 480px) {
       .signup-container {
         padding: 32px 24px;
@@ -317,6 +490,51 @@
     <!-- 휴대폰 인증 회원가입 -->
     <form id="signupForm">
       <h3 class="phone-signup-title">휴대폰 인증 회원가입</h3>
+      
+      <!-- 사용자 타입 선택 -->
+      <div class="user-type-selector">
+        <button type="button" class="type-btn active" data-type="jobseeker" onclick="selectUserType('jobseeker')">
+          <i class="fas fa-user"></i>
+          <span>구직자</span>
+          <small>일반 회원</small>
+        </button>
+        <button type="button" class="type-btn" data-type="employer" onclick="selectUserType('employer')">
+          <i class="fas fa-building"></i>
+          <span>구인자</span>
+          <small>기업회원/개인사업자</small>
+        </button>
+      </div>
+      
+      <!-- 사업자등록증 인증 (구인자만 표시) -->
+      <div class="business-registration" id="businessRegistration" style="display: none;">
+        <h4><i class="fas fa-file-alt"></i> 사업자등록증 인증 (필수)</h4>
+        
+        <div class="file-upload-wrapper">
+          <input type="file" id="businessRegistrationFile" class="file-upload-input" accept="image/*,.pdf" onchange="handleFileUpload(event)">
+          <label for="businessRegistrationFile" class="file-upload-btn">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <div>사업자등록증 파일 업로드</div>
+            <small>이미지 또는 PDF 파일 (최대 5MB)</small>
+          </label>
+        </div>
+        
+        <div class="file-preview" id="filePreview">
+          <div class="file-preview-info">
+            <span class="file-preview-name" id="fileName"></span>
+            <i class="fas fa-times file-preview-remove" onclick="removeFile()"></i>
+          </div>
+        </div>
+        
+        <div class="business-info-input">
+          <input type="text" id="businessNumber" placeholder="사업자등록번호 (예: 123-45-67890)" maxlength="12">
+        </div>
+        
+        <div class="business-info-input">
+          <input type="text" id="businessName" placeholder="상호명">
+        </div>
+        
+        <div class="verification-status" id="verificationStatus"></div>
+      </div>
       
       <div class="form-group">
         <label class="form-label">
@@ -417,6 +635,68 @@
     let verificationSent = false;
     let verificationTimer = null;
     let timeLeft = 180; // 3분
+    let selectedUserType = 'jobseeker'; // 기본값: 구직자
+    let businessRegistrationFile = null;
+    
+    // 사용자 타입 선택
+    function selectUserType(type) {
+      selectedUserType = type;
+      
+      // 버튼 활성화 상태 변경
+      document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`.type-btn[data-type="${type}"]`).classList.add('active');
+      
+      // 구인자 선택 시 사업자등록증 인증 섹션 표시
+      const businessRegistration = document.getElementById('businessRegistration');
+      if (type === 'employer') {
+        businessRegistration.style.display = 'block';
+      } else {
+        businessRegistration.style.display = 'none';
+      }
+      
+      // 폼 유효성 검사 재실행
+      checkFormValidity();
+    }
+    
+    // 파일 업로드 처리
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // 파일 크기 체크 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기는 5MB 이하만 가능합니다.');
+        return;
+      }
+      
+      // 파일 타입 체크
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('이미지 또는 PDF 파일만 업로드 가능합니다.');
+        return;
+      }
+      
+      businessRegistrationFile = file;
+      
+      // 파일 미리보기 표시
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('filePreview').classList.add('active');
+      
+      // 폼 유효성 검사 재실행
+      checkFormValidity();
+    }
+    
+    // 파일 제거
+    function removeFile() {
+      businessRegistrationFile = null;
+      document.getElementById('businessRegistrationFile').value = '';
+      document.getElementById('filePreview').classList.remove('active');
+      
+      // 폼 유효성 검사 재실행
+      checkFormValidity();
+    }
     
     // 필수 약관 체크 감지
     document.querySelectorAll('.term-checkbox').forEach(checkbox => {
@@ -427,6 +707,8 @@
     document.getElementById('name').addEventListener('input', checkFormValidity);
     document.getElementById('password').addEventListener('input', checkFormValidity);
     document.getElementById('passwordConfirm').addEventListener('input', checkFormValidity);
+    document.getElementById('businessNumber').addEventListener('input', checkFormValidity);
+    document.getElementById('businessName').addEventListener('input', checkFormValidity);
     
     function checkFormValidity() {
       const name = document.getElementById('name').value;
@@ -436,9 +718,16 @@
       const agreeTerms = document.getElementById('agreeTerms').checked;
       const agreePrivacy = document.getElementById('agreePrivacy').checked;
       
-      const isValid = name && phone && password && passwordConfirm && 
+      let isValid = name && phone && password && passwordConfirm && 
                       password === passwordConfirm && 
                       agreeTerms && agreePrivacy;
+      
+      // 구인자인 경우 사업자등록증 필수
+      if (selectedUserType === 'employer') {
+        const businessNumber = document.getElementById('businessNumber').value;
+        const businessName = document.getElementById('businessName').value;
+        isValid = isValid && businessRegistrationFile && businessNumber && businessName;
+      }
       
       document.getElementById('submitBtn').disabled = !isValid;
     }
@@ -538,15 +827,53 @@
         return;
       }
       
+      // 구인자인 경우 사업자등록증 필수 체크
+      if (selectedUserType === 'employer' && !businessRegistrationFile) {
+        alert('사업자등록증을 업로드해주세요.');
+        return;
+      }
+      
       try {
-        // TODO: 실제 회원가입 API 연동
-        console.log('회원가입:', { name, phone, email });
-        alert('회원가입이 완료되었습니다!\n가입 축하 20P가 지급되었습니다! 🎉');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '가입 처리 중...';
+        
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('phone', phone);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('user_type', selectedUserType);
+        formData.append('agreed_terms', document.getElementById('agreeTerms').checked);
+        formData.append('agreed_privacy', document.getElementById('agreePrivacy').checked);
+        formData.append('agreed_marketing', document.getElementById('agreeMarketing').checked);
+        
+        // 구인자 추가 정보
+        if (selectedUserType === 'employer') {
+          formData.append('business_registration_number', document.getElementById('businessNumber').value);
+          formData.append('business_name', document.getElementById('businessName').value);
+          formData.append('business_registration_file', businessRegistrationFile);
+        }
+        
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || '회원가입 실패');
+        }
+        
+        alert(`회원가입이 완료되었습니다!\n가입 축하 20P가 지급되었습니다! 🎉\n\n${selectedUserType === 'employer' ? '사업자등록증 인증이 완료되면 알려드리겠습니다.' : ''}`);
         
         // 로그인 페이지로 이동
         window.location.href = '/login.html';
       } catch (error) {
-        alert('회원가입 중 오류가 발생했습니다.');
+        alert('회원가입 중 오류가 발생했습니다: ' + error.message);
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').textContent = '회원가입';
       }
     });
   </script>
