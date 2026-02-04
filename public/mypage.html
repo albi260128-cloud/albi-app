@@ -613,7 +613,8 @@
                   ${result.job_type === 'cafe' ? '카페' : 
                     result.job_type === 'cvs' ? '편의점' : 
                     result.job_type === 'restaurant' ? '음식점' : 
-                    result.job_type === 'retail' ? '매장/판매' : '패스트푸드'}
+                    result.job_type === 'retail' ? '매장/판매' : 
+                    result.job_type === 'fastfood' ? '패스트푸드' : '기타'}
                 </div>
               </div>
               <div class="result-date">${date}</div>
@@ -657,7 +658,8 @@
                   ${result.job_type === 'cafe' ? '카페' : 
                     result.job_type === 'cvs' ? '편의점' : 
                     result.job_type === 'restaurant' ? '음식점' : 
-                    result.job_type === 'retail' ? '매장/판매' : '패스트푸드'} · ${result.region}
+                    result.job_type === 'retail' ? '매장/판매' : 
+                    result.job_type === 'fastfood' ? '패스트푸드' : '기타'} · ${result.region}
                 </div>
               </div>
               <div class="result-date">${date}</div>
@@ -774,7 +776,8 @@
                   ${proposal.job_type === 'cafe' ? '카페' : 
                     proposal.job_type === 'cvs' ? '편의점' : 
                     proposal.job_type === 'restaurant' ? '음식점' : 
-                    proposal.job_type === 'retail' ? '매장/판매' : '패스트푸드'} • ${proposal.region || '지역 미상'}
+                    proposal.job_type === 'retail' ? '매장/판매' : 
+                    proposal.job_type === 'fastfood' ? '패스트푸드' : '기타'} • ${proposal.region || '지역 미상'}
                 </div>
               </div>
               <div>
