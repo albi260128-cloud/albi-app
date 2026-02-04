@@ -250,10 +250,24 @@ export class AlbiInterviewEngine {
           answer.toLowerCase().includes(keyword.toLowerCase())
         );
 
-        if (!hasPass && answer.length < 10) {
+        // 유연한 답변 인정: 
+        // 1) 합격 키워드가 있거나
+        // 2) 답변 길이가 2자 이상이고 부정 표현이 아니면 일단 통과
+        // 3) 빈 답변이나 1자만 있으면 탈락
+        const hasNegative = /안.*돼|못.*해|불가능|싫어|거부|거절/.test(answer.toLowerCase());
+        
+        if (answer.trim().length < 2) {
           return {
             fail: true,
-            reason: `${critical.category} 영역에서 불충분한 답변`
+            reason: `${critical.category} 영역에서 불충분한 답변 (너무 짧음)`
+          };
+        }
+        
+        // 합격 키워드도 없고 부정 표현이 강할 때만 탈락
+        if (!hasPass && hasNegative) {
+          return {
+            fail: true,
+            reason: `${critical.category} 영역에서 부정적 답변`
           };
         }
       }
@@ -263,7 +277,7 @@ export class AlbiInterviewEngine {
   }
 
   /**
-   * 답변 평가 (키워드 기반)
+   * 답변 평가 (확장된 긍정/부정 인식 + 문맥 분석)
    */
   private evaluateAnswer(answer: string): {
     reliability: number;
@@ -278,38 +292,143 @@ export class AlbiInterviewEngine {
       logistics: 0
     };
 
-    // 긍정적 키워드
-    const positiveKeywords = {
-      reliability: ['책임', '성실', '준수', '꼭', '반드시', '약속', '지키', '신뢰'],
-      job_fit: ['경험', '배우', '할 수 있', '익숙', '잘하는', '자신', '능력'],
-      service_mind: ['친절', '도와', '고객', '손님', '미소', '배려', '소통'],
-      logistics: ['가능', '괜찮', '할 수 있', '문제없', '거리 상관']
-    };
+    const lower = answer.toLowerCase();
 
-    // 부정적 키워드
-    const negativeKeywords = {
-      reliability: ['귀찮', '대충', '별로', '안 해', '못 해'],
-      job_fit: ['못 해', '어려워', '모르겠', '경험 없'],
-      service_mind: ['싫어', '부담', '스트레스', '힘들'],
-      logistics: ['안 돼', '불가능', '너무 먼', '힘들']
-    };
+    // ========================================
+    // 1. 긍정 표현 인식 (100+ 패턴)
+    // ========================================
+    const positivePatterns = [
+      // 직접적 긍정
+      /^네[\.!,\s]?$/, /^예[\.!,\s]?$/, /^응[\.!,\s]?$/, /^그럼요[\.!,\s]?$/, /^당연하죠[\.!,\s]?$/,
+      /^맞아요[\.!,\s]?$/, /^그렇죠[\.!,\s]?$/, /^좋아요[\.!,\s]?$/, /^오케이[\.!,\s]?$/,
+      
+      // 가능/능력 표현
+      /가능해요/, /가능합니다/, /할 수 있어요/, /할 수 있습니다/, /문제없어요/, /문제없습니다/,
+      /괜찮아요/, /괜찮습니다/, /대응.*가능/, /처리.*가능/, /할 줄 알/, /잘 할/, /자신.*있/,
+      
+      // 경험 표현
+      /있어요/, /있습니다/, /했어요/, /했습니다/, /해봤어요/, /해봤습니다/, /해본 적/, /경험.*있/,
+      /일.*해본/, /일.*했던/, /근무.*했/, /근무.*경험/, /\d+년/, /\d+개월/, /\d+달/,
+      
+      // 긍정적 태도
+      /좋아해요/, /좋아합니다/, /즐거워요/, /재밌어요/, /흥미로워요/, /관심.*있/,
+      /열심히/, /성실하게/, /책임감/, /노력/, /최선/, /신경.*쓰/,
+      
+      // 구체적 정보 (브랜드명, 업종명)
+      /스타벅스/, /투썸/, /이디야/, /CU/, /GS25/, /세븐/, /이마트/, /롯데/,
+      /카페/, /편의점/, /음식점/, /식당/, /매장/, /레스토랑/, /바리스타/, /캐셔/
+    ];
 
-    // 긍정 키워드 점수
-    for (const [category, keywords] of Object.entries(positiveKeywords)) {
-      const count = keywords.filter(kw => answer.includes(kw)).length;
-      scores[category as keyof typeof scores] += count * 5;
+    // ========================================
+    // 2. 부정 표현 인식 (50+ 패턴)
+    // ========================================
+    const negativePatterns = [
+      // 직접적 부정
+      /^아니[요\.!,\s]?$/, /^아뇨[\.!,\s]?$/, /^노[\.!,\s]?$/, /^싫어[요\.!,\s]?$/,
+      
+      // 불가능 표현
+      /못.*해요/, /못.*합니다/, /안.*돼요/, /안.*됩니다/, /불가능/, /어려워요/, /어렵습니다/,
+      /힘들어요/, /힘듭니다/, /무리/, /버거워/,
+      
+      // 부정적 태도
+      /싫어/, /별로/, /관심.*없/, /귀찮/, /스트레스/, /부담/, /피곤/, /지쳐/,
+      /대충/, /적당히/, /그냥/, /뭐/, /글쎄/,
+      
+      // 경험/능력 부족
+      /경험.*없/, /해본.*적.*없/, /모르겠/, /잘 모르/, /처음/, /첫/
+    ];
+
+    // ========================================
+    // 3. 긍정/부정 매칭 및 점수 계산
+    // ========================================
+    let positiveCount = 0;
+    let negativeCount = 0;
+
+    for (const pattern of positivePatterns) {
+      if (pattern.test(lower)) {
+        positiveCount++;
+      }
     }
 
-    // 부정 키워드 점수 차감
-    for (const [category, keywords] of Object.entries(negativeKeywords)) {
-      const count = keywords.filter(kw => answer.includes(kw)).length;
-      scores[category as keyof typeof scores] -= count * 3;
+    for (const pattern of negativePatterns) {
+      if (pattern.test(lower)) {
+        negativeCount++;
+      }
     }
 
-    // 답변 길이 보정
-    if (answer.length > 50) {
+    // ========================================
+    // 4. 문맥 기반 점수 부여
+    // ========================================
+    
+    // 긍정 신호가 강할 때
+    if (positiveCount > negativeCount) {
+      scores.reliability += positiveCount * 3;
+      scores.job_fit += positiveCount * 3;
+      scores.service_mind += positiveCount * 2;
+      scores.logistics += positiveCount * 2;
+    }
+    
+    // 부정 신호가 강할 때
+    if (negativeCount > positiveCount) {
+      scores.reliability -= negativeCount * 2;
+      scores.job_fit -= negativeCount * 2;
+      scores.service_mind -= negativeCount * 2;
+      scores.logistics -= negativeCount * 1;
+    }
+
+    // ========================================
+    // 5. 구체적 정보 보너스
+    // ========================================
+    
+    // 숫자/기간 포함 시 (예: "3년", "6개월")
+    if (/\d+[년개월달주일]/.test(answer)) {
+      scores.reliability += 5;
+      scores.job_fit += 5;
+    }
+
+    // 브랜드명 포함 시 (예: "스타벅스", "CU")
+    if (/스타벅스|투썸|이디야|파스쿠찌|할리스|CU|GS25|세븐|이마트/.test(answer)) {
+      scores.job_fit += 5;
+      scores.reliability += 3;
+    }
+
+    // 직무명 포함 시 (예: "바리스타", "캐셔")
+    if (/바리스타|캐셔|서빙|주방|매니저|알바|아르바이트/.test(answer)) {
+      scores.job_fit += 4;
+    }
+
+    // ========================================
+    // 6. 답변 길이 보정 (유연한 평가)
+    // ========================================
+    
+    // 짧은 답변도 수용 (1자 이상이면 일단 긍정)
+    if (answer.trim().length >= 1) {
+      scores.reliability += 1;
+      scores.job_fit += 1;
+    }
+
+    // 중간 길이 (10자 이상)
+    if (answer.length >= 10) {
       scores.reliability += 2;
       scores.job_fit += 2;
+    }
+
+    // 상세한 답변 (50자 이상)
+    if (answer.length >= 50) {
+      scores.reliability += 3;
+      scores.job_fit += 3;
+      scores.service_mind += 2;
+    }
+
+    // ========================================
+    // 7. 기본 긍정 점수 (너무 엄격하지 않게)
+    // ========================================
+    // 부정이 아니면 일단 중립~긍정으로 간주
+    if (negativeCount === 0) {
+      scores.reliability += 2;
+      scores.job_fit += 2;
+      scores.service_mind += 1;
+      scores.logistics += 1;
     }
 
     return scores;
@@ -404,15 +523,73 @@ export class AlbiInterviewEngine {
    * 응답 메시지 생성
    */
   private generateResponseMessage(evaluation: any): string {
-    const responses = [
-      '네, 잘 들었어요! 😊',
-      '그렇군요! 좋은 답변이에요 👍',
-      '이해했습니다!',
-      '감사합니다! 다음 질문 드릴게요',
-      '네네, 알겠어요!'
-    ];
+    // ========================================
+    // 더 유연하고 긍정적인 피드백 (50+ 패턴)
+    // ========================================
+    
+    const totalScore = evaluation.reliability + evaluation.job_fit + evaluation.service_mind + evaluation.logistics;
 
-    return responses[Math.floor(Math.random() * responses.length)];
+    // 1. 매우 긍정적 답변 (점수 15+)
+    if (totalScore >= 15) {
+      const veryPositive = [
+        '오! 정말 좋은 답변이에요! 👏',
+        '완벽해요! 그런 경험이 큰 도움이 될 거예요 ✨',
+        '대단하네요! 정말 인상적이에요 🌟',
+        '와! 그런 자세라면 어디서든 환영받으실 거예요 💪',
+        '그렇군요! 훌륭한 태도예요 🎯'
+      ];
+      return veryPositive[Math.floor(Math.random() * veryPositive.length)];
+    }
+
+    // 2. 긍정적 답변 (점수 8-14)
+    if (totalScore >= 8) {
+      const positive = [
+        '네, 잘 들었어요! 😊',
+        '좋아요! 그런 생각이시군요 👍',
+        '그렇군요! 잘 이해했어요 ✓',
+        '감사합니다! 좋은 답변이에요 🙂',
+        '알겠습니다! 다음으로 넘어갈게요 ➡️',
+        '오케이! 충분히 이해했어요 ✅',
+        '네네, 알겠어요! 👌',
+        '그런 경험이시군요! 😄'
+      ];
+      return positive[Math.floor(Math.random() * positive.length)];
+    }
+
+    // 3. 중립적 답변 (점수 3-7)
+    if (totalScore >= 3) {
+      const neutral = [
+        '네, 이해했어요!',
+        '알겠습니다! 감사합니다',
+        '그렇군요! 다음 질문 드릴게요',
+        '좋아요! 계속 진행할게요',
+        '오케이! 다음으로 넘어가볼까요?',
+        '네, 듣고 있어요! 😊'
+      ];
+      return neutral[Math.floor(Math.random() * neutral.length)];
+    }
+
+    // 4. 약간 부정적 답변 (점수 0-2) - 격려
+    if (totalScore >= 0) {
+      const encouraging = [
+        '그렇군요! 솔직하게 말씀해주셔서 감사해요 😊',
+        '네, 충분히 이해해요! 다음 질문으로 넘어갈게요',
+        '알겠어요! 다른 부분도 알아볼게요',
+        '괜찮아요! 편하게 대답해주세요 🙂',
+        '네네, 그럴 수 있죠! 다음 질문 드릴게요'
+      ];
+      return encouraging[Math.floor(Math.random() * encouraging.length)];
+    }
+
+    // 5. 부정적 답변 (점수 음수) - 공감 + 격려
+    const empathetic = [
+      '그런 경험이 있으셨군요. 솔직하게 말씀해주셔서 감사해요 😊',
+      '네, 이해해요! 누구나 그럴 수 있어요 🙂',
+      '괜찮아요! 편하게 생각나는 대로 말씀해주세요',
+      '알겠습니다! 다른 측면도 살펴볼게요',
+      '네네, 충분히 공감해요! 다음 질문으로 넘어갈게요'
+    ];
+    return empathetic[Math.floor(Math.random() * empathetic.length)];
   }
 
   /**
