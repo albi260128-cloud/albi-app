@@ -44,3 +44,7 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+
+# Core dumps
+core
+core.*
