@@ -8,7 +8,7 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "DB"
 database_name = "albi-production"
-database_id = "00000000-0000-0000-0000-000000000000"  # 임시 ID (로컬 개발용)
+database_id = "cd20f633-d756-4249-87b8-2577775afef5"
 
 # 환경 변수
 [vars]
