@@ -255,6 +255,12 @@
     };
 
     function setUserType(type) {
+      // 구인자 기능은 Phase 2에서 구현 예정
+      if (type === 'employer') {
+        alert('🏪 구인자 면접 기능은 준비 중입니다!\n\nPhase 2에서 다음 기능이 제공될 예정입니다:\n• 구직자 프로필 조회\n• 맞춤형 구직자 추천\n• 면접 제안 기능\n\n현재는 구직자 면접만 이용 가능합니다. 😊');
+        return; // 타입 변경하지 않음
+      }
+      
       userType = type;
       const jobBtn = document.getElementById('jobseekerBtn');
       const empBtn = document.getElementById('employerBtn');
@@ -267,20 +273,12 @@
         empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
       }
       
-      // 타입 변경 시 초기화
-      resetInterview();
-    }
-
-    function resetInterview() {
-      currentStep = 0;
-      userProfile = {
-        interests: [],
-        personality: {},
-        experience: {},
-        preferences: {}
-      };
-      conversationHistory = [];
-      updateProgressBar();
+      // 타입 변경 시 페이지 새로고침 (아래의 resetInterview 함수 사용)
+      // 단순 변수 초기화가 아닌 완전 초기화 필요
+      if (confirm('면접을 다시 시작하시겠어요?')) {
+        localStorage.removeItem('albi_session_user_id');
+        window.location.reload();
+      }
     }
 
     // ✨ 진행률 표시 함수 (매개변수 추가)
