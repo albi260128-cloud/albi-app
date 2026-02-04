@@ -270,6 +270,11 @@
     };
 
     function setUserType(type) {
+      // 현재와 같은 타입이면 아무 동작도 하지 않음
+      if (userType === type) {
+        return;
+      }
+      
       userType = type;
       
       // localStorage에 저장
@@ -290,6 +295,19 @@
       if (confirm('면접을 다시 시작하시겠어요?')) {
         localStorage.removeItem('albi_session_user_id');
         window.location.reload();
+      } else {
+        // 취소하면 원래 타입으로 복원
+        userType = type === 'jobseeker' ? 'employer' : 'jobseeker';
+        localStorage.setItem('albi_user_type', userType);
+        
+        // 버튼 상태도 원래대로
+        if (userType === 'jobseeker') {
+          jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600';
+          empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
+        } else {
+          jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
+          empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
+        }
       }
     }
 
