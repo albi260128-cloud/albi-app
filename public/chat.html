@@ -275,6 +275,13 @@
         return;
       }
       
+      // 먼저 확인 다이얼로그 표시
+      if (!confirm('면접을 다시 시작하시겠어요?')) {
+        // 취소하면 아무것도 하지 않음
+        return;
+      }
+      
+      // 확인을 누른 경우에만 타입 변경
       userType = type;
       
       // localStorage에 저장
@@ -291,24 +298,9 @@
         empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
       }
       
-      // 타입 변경 시 세션 초기화
-      if (confirm('면접을 다시 시작하시겠어요?')) {
-        localStorage.removeItem('albi_session_user_id');
-        window.location.reload();
-      } else {
-        // 취소하면 원래 타입으로 복원
-        userType = type === 'jobseeker' ? 'employer' : 'jobseeker';
-        localStorage.setItem('albi_user_type', userType);
-        
-        // 버튼 상태도 원래대로
-        if (userType === 'jobseeker') {
-          jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600';
-          empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
-        } else {
-          jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
-          empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
-        }
-      }
+      // 세션 초기화 후 새로고침
+      localStorage.removeItem('albi_session_user_id');
+      window.location.reload();
     }
 
     // ✨ 진행률 표시 함수 (매개변수 추가)
