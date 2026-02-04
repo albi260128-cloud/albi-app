@@ -53,6 +53,10 @@
         <span class="text-2xl font-bold text-orange-500">알비 AI 매칭</span>
       </a>
       <div class="flex items-center gap-3">
+        <button onclick="resetInterview()" class="text-sm text-gray-600 hover:text-orange-500 transition">
+          <i class="fas fa-redo mr-1"></i>
+          <span class="hidden sm:inline">다시 시작</span>
+        </button>
         <a href="/jobs" class="text-sm text-gray-600 hover:text-orange-500 transition">
           <i class="fas fa-briefcase mr-1"></i>
           <span class="hidden sm:inline">알바 둘러보기</span>
@@ -372,13 +376,25 @@
       showLoading();
       
       try {
+        // 세션 ID 생성 또는 가져오기 (localStorage 사용)
+        let sessionUserId = localStorage.getItem('albi_session_user_id');
+        if (!sessionUserId) {
+          sessionUserId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+          localStorage.setItem('albi_session_user_id', sessionUserId);
+          console.log('🆕 New session created:', sessionUserId);
+        } else {
+          console.log('♻️ Existing session:', sessionUserId);
+        }
+        
+        console.log('📤 Sending message:', message);
+        
         // API 호출: AlbiInterviewEngine 사용
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             message, 
-            userId: 'web-user-' + Date.now(), // 고유 사용자 ID
+            userId: sessionUserId, // 세션 유지
             userType: 'jobseeker',
             jobType: 'cafe' // 기본값 (나중에 선택 기능 추가)
           })
@@ -389,10 +405,12 @@
         }
         
         const data = await response.json();
+        console.log('📥 Received response:', data);
         hideLoading();
         
         if (data.success && data.data) {
           // AI 응답 표시 (백엔드에서 온 응답 그대로 사용)
+          console.log('✅ Adding AI message:', data.data.content.substring(0, 50) + '...');
           addMessage('assistant', data.data.content);
           conversationHistory.push({ role: 'assistant', content: data.data.content });
           
@@ -456,6 +474,17 @@
         return '알겠습니다. 처음이시라면 교육이 잘 되어 있는 곳이 좋겠네요!<br><br><strong>체력적으로 활동적인 일</strong>과 <strong>정적인 일</strong> 중 어떤 것이 더 맞으실 것 같나요?';
       } else {
         return '답변 감사합니다! 더 자세히 알려주시면 더 정확한 추천이 가능해요. 😊';
+      }
+    }
+
+    function resetInterview() {
+      if (confirm('면접을 다시 시작하시겠어요? 현재 진행 내용이 모두 초기화됩니다.')) {
+        // localStorage 세션 삭제
+        localStorage.removeItem('albi_session_user_id');
+        console.log('🔄 Session reset');
+        
+        // 페이지 새로고침
+        window.location.reload();
       }
     }
 
