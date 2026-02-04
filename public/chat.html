@@ -677,6 +677,64 @@
     }
 
     // ========================================
+    // 💼 면접 제안 기능
+    // ========================================
+    
+    // 면접 제안 보내기
+    async function sendProposal(jobseekerId, matchScore, grade, totalScore, requirementId) {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        
+        if (!sessionToken) {
+          alert('로그인이 필요합니다.');
+          window.location.href = '/login.html';
+          return;
+        }
+        
+        // 확인 다이얼로그
+        const confirmed = confirm(`이 구직자에게 면접 제안을 보내시겠어요?\n\n등급: ${grade}\n총점: ${totalScore}점\n매칭 점수: ${matchScore}점`);
+        
+        if (!confirmed) {
+          return;
+        }
+        
+        // API 호출
+        const response = await fetch('/api/proposals/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({
+            jobseekerId,
+            matchScore,
+            jobseekerGrade: grade,
+            jobseekerScore: totalScore,
+            employerRequirementId: requirementId,
+            message: `안녕하세요! 귀하의 프로필을 보고 저희 매장에 적합하다고 판단하여 면접 제안을 드립니다. 연락 기다리겠습니다!`
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('✅ ' + result.message + '\n\n구직자가 제안을 확인하면 연락처가 공유됩니다.');
+        } else {
+          alert('❌ ' + (result.error || '면접 제안 전송에 실패했습니다.'));
+        }
+      } catch (error) {
+        console.error('Send proposal error:', error);
+        alert('면접 제안 전송 중 오류가 발생했습니다.');
+      }
+    }
+    
+    // 구직자 상세 정보 보기
+    async function viewCandidateDetail(jobseekerId) {
+      alert('🚧 구직자 상세 정보 기능은 준비 중입니다.');
+      // TODO: 구직자 상세 프로필 모달 표시
+    }
+
+    // ========================================
     // 🎯 면접 완료 결과 카드 표시
     // ========================================
     function showResultCard(profile) {
@@ -941,10 +999,14 @@
                   
                   <!-- 액션 버튼 -->
                   <div class="mt-3 flex space-x-2">
-                    <button class="flex-1 bg-orange-500 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-orange-600 transition" onclick="alert('면접 제안 기능은 준비 중입니다!')">
+                    <button 
+                      class="flex-1 bg-orange-500 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-orange-600 transition" 
+                      onclick="sendProposal('${candidate.id}', ${candidate.match_score}, '${candidate.final_grade}', ${candidate.total_score}, '${requirement.id}')">
                       면접 제안하기
                     </button>
-                    <button class="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-300 transition" onclick="alert('상세보기 기능은 준비 중입니다!')">
+                    <button 
+                      class="flex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-300 transition" 
+                      onclick="viewCandidateDetail('${candidate.id}')">
                       상세보기
                     </button>
                   </div>

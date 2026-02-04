@@ -2162,6 +2162,335 @@ app.put('/mypage/password', async (c) => {
 });
 
 // ========================================
+// 면접 제안 API (Interview Proposals)
+// ========================================
+
+// 면접 제안 보내기 (구인자 → 구직자)
+app.post('/proposals/send', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const { 
+      jobseekerId, 
+      message, 
+      proposedWage, 
+      proposedHours,
+      matchScore,
+      jobseekerGrade,
+      jobseekerScore,
+      employerRequirementId 
+    } = await c.req.json();
+    
+    if (!jobseekerId) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '구직자 ID가 필요합니다.' 
+      }, 400);
+    }
+    
+    // 세션 확인 및 구인자 정보 조회
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, u.user_type, u.phone as employer_contact, u.name as employer_name
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ? AND u.user_type = 'employer'
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '구인자만 면접 제안을 보낼 수 있습니다.' 
+      }, 403);
+    }
+    
+    // 구직자 정보 조회
+    const jobseeker = await c.env.DB.prepare(`
+      SELECT user_id, job_type, region FROM jobseeker_profiles WHERE id = ?
+    `).bind(jobseekerId).first();
+    
+    if (!jobseeker) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '구직자를 찾을 수 없습니다.' 
+      }, 404);
+    }
+    
+    // 중복 제안 확인
+    const existingProposal = await c.env.DB.prepare(`
+      SELECT id FROM interview_proposals 
+      WHERE employer_id = ? AND jobseeker_id = ? AND status = 'pending'
+    `).bind(session.user_id, jobseekerId).first();
+    
+    if (existingProposal) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이미 제안을 보낸 구직자입니다.' 
+      }, 409);
+    }
+    
+    // 제안 ID 생성
+    const proposalId = 'proposal-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    
+    // 만료 시간 설정 (7일 후)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    
+    // 제안 저장
+    await c.env.DB.prepare(`
+      INSERT INTO interview_proposals (
+        id, employer_id, jobseeker_id, employer_requirement_id,
+        message, proposed_wage, proposed_hours,
+        match_score, jobseeker_grade, jobseeker_score,
+        status, employer_contact, expires_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'))
+    `).bind(
+      proposalId, session.user_id, jobseekerId, employerRequirementId || null,
+      message || null, proposedWage || null, proposedHours || null,
+      matchScore || null, jobseekerGrade || null, jobseekerScore || null,
+      session.employer_contact, expiresAt.toISOString()
+    ).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        proposalId,
+        expiresAt: expiresAt.toISOString()
+      },
+      message: '면접 제안이 전송되었습니다!'
+    });
+  } catch (error) {
+    console.error('Send proposal error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '면접 제안 전송 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 받은 제안 조회 (구직자)
+app.get('/proposals/received', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, u.user_type
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ? AND u.user_type = 'jobseeker'
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '구직자만 제안을 조회할 수 있습니다.' 
+      }, 403);
+    }
+    
+    // 받은 제안 조회
+    const proposals = await c.env.DB.prepare(`
+      SELECT 
+        p.*,
+        u.name as employer_name,
+        u.phone as employer_phone,
+        er.business_name,
+        er.job_type,
+        er.region,
+        er.hourly_wage,
+        jp.final_grade,
+        jp.total_score
+      FROM interview_proposals p
+      JOIN users u ON p.employer_id = u.id
+      LEFT JOIN employer_requirements er ON p.employer_requirement_id = er.id
+      JOIN jobseeker_profiles jp ON p.jobseeker_id = jp.id
+      WHERE jp.user_id = ?
+      ORDER BY p.created_at DESC
+      LIMIT 50
+    `).bind(session.user_id).all();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: proposals.results || []
+    });
+  } catch (error) {
+    console.error('Get received proposals error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '제안 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 보낸 제안 조회 (구인자)
+app.get('/proposals/sent', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, u.user_type
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ? AND u.user_type = 'employer'
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '구인자만 제안을 조회할 수 있습니다.' 
+      }, 403);
+    }
+    
+    // 보낸 제안 조회
+    const proposals = await c.env.DB.prepare(`
+      SELECT 
+        p.*,
+        jp.user_id as jobseeker_user_id,
+        jp.job_type,
+        jp.region,
+        jp.expected_wage,
+        jp.final_grade,
+        jp.total_score,
+        jp.one_liner
+      FROM interview_proposals p
+      JOIN jobseeker_profiles jp ON p.jobseeker_id = jp.id
+      WHERE p.employer_id = ?
+      ORDER BY p.created_at DESC
+      LIMIT 50
+    `).bind(session.user_id).all();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: proposals.results || []
+    });
+  } catch (error) {
+    console.error('Get sent proposals error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '제안 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 제안 상태 변경 (수락/거절)
+app.put('/proposals/:id/status', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const proposalId = c.req.param('id');
+    const { status, feedback } = await c.req.json();
+    
+    if (!['accepted', 'rejected'].includes(status)) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 상태입니다. (accepted 또는 rejected)' 
+      }, 400);
+    }
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, u.user_type, u.phone as contact
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 제안 조회 및 권한 확인
+    const proposal = await c.env.DB.prepare(`
+      SELECT p.*, jp.user_id as jobseeker_user_id
+      FROM interview_proposals p
+      JOIN jobseeker_profiles jp ON p.jobseeker_id = jp.id
+      WHERE p.id = ?
+    `).bind(proposalId).first();
+    
+    if (!proposal) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '제안을 찾을 수 없습니다.' 
+      }, 404);
+    }
+    
+    // 구직자만 수락/거절 가능
+    if (proposal.jobseeker_user_id !== session.user_id) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이 제안을 처리할 권한이 없습니다.' 
+      }, 403);
+    }
+    
+    if (proposal.status !== 'pending') {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이미 처리된 제안입니다.' 
+      }, 409);
+    }
+    
+    // 상태 업데이트
+    await c.env.DB.prepare(`
+      UPDATE interview_proposals 
+      SET status = ?, 
+          jobseeker_feedback = ?,
+          jobseeker_contact = ?,
+          responded_at = datetime('now'),
+          updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(status, feedback || null, status === 'accepted' ? session.contact : null, proposalId).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: status === 'accepted' ? '면접 제안을 수락했습니다!' : '면접 제안을 거절했습니다.'
+    });
+  } catch (error) {
+    console.error('Update proposal status error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '제안 상태 변경 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
 // 404 핸들러
 // ========================================
 
