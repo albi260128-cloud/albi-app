@@ -44,6 +44,7 @@ export class AlbiInterviewEngine {
   private maxQuestions = 15;
   private minQuestions = 8;
   private criticalQuestionsAsked = new Set<string>();
+  private askedQuestions = new Set<string>(); // 이미 물어본 질문 추적
 
   constructor(
     jobType: 'cafe' | 'cvs' | 'restaurant' | 'retail' | 'fastfood',
@@ -120,9 +121,13 @@ export class AlbiInterviewEngine {
     // 1. 예외 상황 체크
     const exceptionResult = this.checkException(userAnswer);
     if (exceptionResult) {
+      // ⚠️ Critical: followUp 질문도 askedQuestions에 추가하여 중복 방지
+      this.askedQuestions.add(exceptionResult.followUp);
+      this.context.question_count++;
+      
       this.context.conversation_log.push({
         role: 'assistant',
-        content: exceptionResult.response,
+        content: exceptionResult.response + '\n\n' + exceptionResult.followUp,
         timestamp: new Date().toISOString()
       });
 
@@ -192,32 +197,51 @@ export class AlbiInterviewEngine {
 
   /**
    * 예외 상황 체크 (애매한 답변, 거짓말 의심 등)
+   * ✨ 다양한 followUp 질문으로 같은 질문 반복 방지
    */
   private checkException(answer: string): { response: string; followUp: string } | null {
     // A. 애매/회피 답변
     const vaguePatterns = ['그냥요', '모르겠어요', '글쎄요', '별로', '잘 모르겠', '음...'];
     if (vaguePatterns.some(pattern => answer.includes(pattern))) {
+      const followUps = [
+        '예를 들어, 이전에 비슷한 경험이 있으셨나요?',
+        '구체적으로 어떤 상황이 떠오르시나요?',
+        '혹시 관련된 일을 해보신 적이 있으신가요?',
+        '어떤 점이 궁금하신가요?'
+      ];
       return {
         response: '긴장하셨나 봐요! 편하게 생각나는 대로 말씀해주세요 😊',
-        followUp: '예를 들어, 이전에 비슷한 경험이 있으셨나요?'
+        followUp: this.getUnaskedQuestion(followUps) || followUps[0]
       };
     }
 
     // B. 과장 의심
     const exaggerationPatterns = ['모든 것', '완벽하게', '전부 다', '100%', '항상'];
     if (exaggerationPatterns.some(pattern => answer.includes(pattern))) {
+      const followUps = [
+        '실제 경험을 예로 들어주시면 더 좋을 것 같아요!',
+        '그때 구체적으로 어떤 일이 있었나요?',
+        '인상 깊었던 순간을 하나만 말씀해주세요!',
+        '특히 기억에 남는 사례가 있나요?'
+      ];
       return {
         response: '오~ 대단하시네요! 그럼 구체적으로 어떻게 하셨어요?',
-        followUp: '실제 경험을 예로 들어주시면 더 좋을 것 같아요!'
+        followUp: this.getUnaskedQuestion(followUps) || followUps[0]
       };
     }
 
     // C. 부정적 태도
     const negativePatterns = ['별로', '싫어', '못 해', '귀찮아', '안 할래요'];
     if (negativePatterns.some(pattern => answer.includes(pattern))) {
+      const followUps = [
+        '그 부분을 개선할 수 있는 환경이라면 어떠세요?',
+        '어떤 조건이라면 가능하실까요?',
+        '더 나은 방법은 없을까요?',
+        '다른 관점에서 생각해보시면 어떠세요?'
+      ];
       return {
         response: '그런 경험이 있으셨나 봐요. 구체적으로 무엇이 힘들었나요?',
-        followUp: '그 부분을 개선할 수 있는 환경이라면 어떠세요?'
+        followUp: this.getUnaskedQuestion(followUps) || followUps[0]
       };
     }
 
@@ -482,7 +506,7 @@ export class AlbiInterviewEngine {
   }
 
   /**
-   * 다음 질문 생성
+   * 다음 질문 생성 (중복 방지 + 다양한 질문)
    */
   private generateNextQuestion(evaluation: any): string {
     // 1. Critical 질문 우선
@@ -490,33 +514,93 @@ export class AlbiInterviewEngine {
     for (const critical of criticalQuestions) {
       if (!this.criticalQuestionsAsked.has(critical.id)) {
         this.criticalQuestionsAsked.add(critical.id);
+        this.askedQuestions.add(critical.question);
         return critical.question;
       }
     }
 
-    // 2. 점수 부족 영역 질문
+    // 2. 점수 부족 영역 질문 (다양한 질문 풀)
     const scores = this.context.current_scores;
+    
+    // Reliability 영역 질문 풀
     if (scores.reliability < 20) {
-      return '무단 결근이나 지각을 하지 않으려면 어떻게 관리하시나요?';
+      const reliabilityQuestions = [
+        '무단 결근이나 지각을 하지 않으려면 어떻게 관리하시나요?',
+        '약속한 시간을 지키는 것이 어려울 때는 어떻게 하시나요?',
+        '업무 중 실수를 했을 때 어떻게 대처하시나요?',
+        '책임감 있게 일했던 경험을 말씀해주세요.'
+      ];
+      const question = this.getUnaskedQuestion(reliabilityQuestions);
+      if (question) return question;
     }
+    
+    // Job Fit 영역 질문 풀
     if (scores.job_fit < 15) {
-      return '이 일을 배우는 데 얼마나 시간이 걸릴 것 같나요?';
+      const jobFitQuestions = [
+        '이 일을 배우는 데 얼마나 시간이 걸릴 것 같나요?',
+        '비슷한 업무 경험이 있으신가요?',
+        '새로운 일을 배울 때 어떤 방식을 선호하시나요?',
+        '이 업종에서 일하고 싶은 특별한 이유가 있나요?'
+      ];
+      const question = this.getUnaskedQuestion(jobFitQuestions);
+      if (question) return question;
     }
+    
+    // Service Mind 영역 질문 풀
     if (scores.service_mind < 12) {
-      return '까다로운 손님을 만나면 어떻게 대처하시겠어요?';
+      const serviceMindQuestions = [
+        '까다로운 손님을 만나면 어떻게 대처하시겠어요?',
+        '손님이 불만을 제기하면 어떻게 하시겠어요?',
+        '친절하게 응대했던 경험을 말씀해주세요.',
+        '바쁜 시간에 여러 손님을 동시에 응대해야 한다면 어떻게 하시겠어요?'
+      ];
+      const question = this.getUnaskedQuestion(serviceMindQuestions);
+      if (question) return question;
     }
 
-    // 3. 일반 질문
+    // 3. 일반 질문 (다양한 질문 풀)
     const generalQuestions = [
+      // 팀워크
       '팀으로 일하는 것과 혼자 일하는 것 중 어느 게 더 편하신가요?',
+      '동료와 의견이 다를 때 어떻게 해결하시나요?',
+      
+      // 스트레스 관리
       '스트레스를 받았을 때 어떻게 해소하시나요?',
+      '힘든 일이 있을 때 어떻게 극복하시나요?',
+      
+      // 경험
+      '이전 알바에서 가장 좋았던 점은 무엇이었나요?',
       '이전 알바에서 가장 힘들었던 점은 무엇이었나요?',
+      '알바를 하면서 가장 뿌듯했던 순간은 언제였나요?',
+      
+      // 근무 조건
       '장기적으로 이 일을 하실 의향이 있으신가요?',
+      '주말이나 공휴일 근무도 가능하신가요?',
+      '선호하는 근무 시간대가 있으신가요?',
+      
+      // 기타
+      '이 업종에서 가장 중요하다고 생각하는 것은 무엇인가요?',
       '마지막으로 하고 싶은 말씀이나 궁금한 점 있으신가요?'
     ];
 
-    const randomIndex = Math.floor(Math.random() * generalQuestions.length);
-    return generalQuestions[randomIndex];
+    const question = this.getUnaskedQuestion(generalQuestions);
+    if (question) return question;
+
+    // 4. 모든 질문을 다 물어봤으면 마무리 질문
+    return '마지막으로 추가로 말씀하고 싶은 것이 있으신가요?';
+  }
+
+  /**
+   * 아직 물어보지 않은 질문 가져오기
+   */
+  private getUnaskedQuestion(questions: string[]): string | null {
+    const unasked = questions.filter(q => !this.askedQuestions.has(q));
+    if (unasked.length === 0) return null;
+    
+    const randomIndex = Math.floor(Math.random() * unasked.length);
+    const selectedQuestion = unasked[randomIndex];
+    this.askedQuestions.add(selectedQuestion);
+    return selectedQuestion;
   }
 
   /**

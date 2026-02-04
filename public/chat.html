@@ -264,15 +264,20 @@
       updateProgressBar();
     }
 
-    function updateProgressBar() {
+    // ✨ 진행률 표시 함수 (매개변수 추가)
+    function updateProgressBar(step = null) {
+      if (step !== null) {
+        currentStep = step - 1; // 0-indexed로 변환
+      }
+      
       const steps = document.querySelectorAll('.progress-step');
-      steps.forEach((step, index) => {
+      steps.forEach((stepEl, index) => {
         if (index < currentStep) {
-          step.className = 'progress-step completed flex-1 text-center py-2 rounded-lg text-xs font-bold transition';
+          stepEl.className = 'progress-step completed flex-1 text-center py-2 rounded-lg text-xs font-bold transition';
         } else if (index === currentStep) {
-          step.className = 'progress-step active flex-1 text-center py-2 rounded-lg text-xs font-bold transition';
+          stepEl.className = 'progress-step active flex-1 text-center py-2 rounded-lg text-xs font-bold transition';
         } else {
-          step.className = 'progress-step flex-1 text-center py-2 rounded-lg text-xs font-bold bg-gray-200 text-gray-600 transition';
+          stepEl.className = 'progress-step flex-1 text-center py-2 rounded-lg text-xs font-bold bg-gray-200 text-gray-600 transition';
         }
       });
     }
@@ -418,13 +423,25 @@
           if (data.data.sessionData) {
             const session = data.data.sessionData;
             
-            // 진행률 업데이트
+            // 진행률 업데이트: progress는 "3/15" 형태
             if (session.progress) {
-              console.log('Progress:', session.progress);
+              const [current, total] = session.progress.split('/').map(Number);
+              const percentage = Math.floor((current / total) * 100);
+              
+              // 단계 업데이트: 0-25% = 기본정보, 26-50% = 성향분석, 51-75% = 경험분석, 76-100% = 매칭결과
+              let step = 1;
+              if (percentage > 75) step = 4;
+              else if (percentage > 50) step = 3;
+              else if (percentage > 25) step = 2;
+              else step = 1;
+              
+              updateProgressBar(step);
+              console.log(`📊 Progress: ${session.progress} (${percentage}%) → Step ${step}`);
             }
             
             // 완료 또는 탈락 처리
             if (session.status === 'completed' && data.data.profile) {
+              updateProgressBar(4); // 마지막 단계로
               setTimeout(() => {
                 alert('면접이 완료되었습니다! 결과를 확인해주세요.');
                 console.log('Final Result:', data.data.profile);
