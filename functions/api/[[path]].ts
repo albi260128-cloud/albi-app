@@ -148,9 +148,6 @@ app.post('/chat', async (c) => {
       // 답변 처리
       const response = await session.engine.processAnswer(message);
       
-      // 디버깅: response 구조 확인
-      console.log('AlbiInterviewEngine Response:', JSON.stringify(response, null, 2));
-      
       // 세션 업데이트
       interviewSessionsV2.set(sessionKey, session);
       
