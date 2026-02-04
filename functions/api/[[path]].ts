@@ -2258,6 +2258,22 @@ app.post('/proposals/send', async (c) => {
       session.employer_contact, expiresAt.toISOString()
     ).run();
     
+    // 구직자에게 알림 생성
+    const notificationId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    await c.env.DB.prepare(`
+      INSERT INTO notifications (
+        id, user_id, type, title, message, link, related_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      notificationId,
+      jobseeker.user_id,
+      'proposal_received',
+      '📩 새로운 면접 제안이 도착했습니다!',
+      `${session.employer_name || '구인자'}님으로부터 면접 제안을 받았습니다.`,
+      '/mypage.html',
+      proposalId
+    ).run();
+    
     return c.json<ApiResponse>({
       success: true,
       data: {
@@ -2477,6 +2493,27 @@ app.put('/proposals/:id/status', async (c) => {
       WHERE id = ?
     `).bind(status, feedback || null, status === 'accepted' ? session.contact : null, proposalId).run();
     
+    // 구인자에게 알림 생성
+    const notificationId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    const notificationTitle = status === 'accepted' ? '✅ 면접 제안이 수락되었습니다!' : '❌ 면접 제안이 거절되었습니다.';
+    const notificationMessage = status === 'accepted' 
+      ? '구직자가 면접 제안을 수락했습니다. 연락처가 공유되었습니다.'
+      : '구직자가 면접 제안을 거절했습니다.';
+    
+    await c.env.DB.prepare(`
+      INSERT INTO notifications (
+        id, user_id, type, title, message, link, related_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      notificationId,
+      proposal.employer_id,
+      status === 'accepted' ? 'proposal_accepted' : 'proposal_rejected',
+      notificationTitle,
+      notificationMessage,
+      '/mypage.html',
+      proposalId
+    ).run();
+    
     return c.json<ApiResponse>({
       success: true,
       message: status === 'accepted' ? '면접 제안을 수락했습니다!' : '면접 제안을 거절했습니다.'
@@ -2486,6 +2523,215 @@ app.put('/proposals/:id/status', async (c) => {
     return c.json<ApiResponse>({ 
       success: false, 
       error: '제안 상태 변경 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
+// 알림 API (Notifications)
+// ========================================
+
+// 알림 목록 조회
+app.get('/notifications', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const limit = parseInt(c.req.query('limit') || '20');
+    const unreadOnly = c.req.query('unread_only') === 'true';
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 알림 조회
+    let query = `
+      SELECT * FROM notifications 
+      WHERE user_id = ?
+    `;
+    
+    if (unreadOnly) {
+      query += ` AND is_read = 0`;
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT ?`;
+    
+    const notifications = await c.env.DB.prepare(query)
+      .bind(session.user_id, limit)
+      .all();
+    
+    // 읽지 않은 알림 개수
+    const unreadCount = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM notifications 
+      WHERE user_id = ? AND is_read = 0
+    `).bind(session.user_id).first();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        notifications: notifications.results || [],
+        unreadCount: unreadCount?.count || 0
+      }
+    });
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '알림 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 알림 읽음 처리
+app.put('/notifications/:id/read', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const notificationId = c.req.param('id');
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 알림 읽음 처리
+    await c.env.DB.prepare(`
+      UPDATE notifications 
+      SET is_read = 1, read_at = datetime('now')
+      WHERE id = ? AND user_id = ?
+    `).bind(notificationId, session.user_id).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: '알림을 읽음 처리했습니다.'
+    });
+  } catch (error) {
+    console.error('Mark notification as read error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '알림 읽음 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 모든 알림 읽음 처리
+app.put('/notifications/read-all', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 모든 알림 읽음 처리
+    await c.env.DB.prepare(`
+      UPDATE notifications 
+      SET is_read = 1, read_at = datetime('now')
+      WHERE user_id = ? AND is_read = 0
+    `).bind(session.user_id).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: '모든 알림을 읽음 처리했습니다.'
+    });
+  } catch (error) {
+    console.error('Mark all notifications as read error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '알림 읽음 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 알림 삭제
+app.delete('/notifications/:id', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const notificationId = c.req.param('id');
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 알림 삭제
+    await c.env.DB.prepare(`
+      DELETE FROM notifications 
+      WHERE id = ? AND user_id = ?
+    `).bind(notificationId, session.user_id).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: '알림을 삭제했습니다.'
+    });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '알림 삭제 중 오류가 발생했습니다.' 
     }, 500);
   }
 });

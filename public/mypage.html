@@ -316,6 +316,25 @@
         <span id="userTypeBadge" class="user-type-badge jobseeker">구직자</span>
       </div>
       <div class="header-actions">
+        <!-- 알림 버튼 -->
+        <div style="position: relative; display: inline-block;">
+          <button onclick="toggleNotifications()" class="btn btn-secondary" title="알림" style="position: relative;">
+            <i class="fas fa-bell"></i>
+            <span id="notificationBadge" class="hidden" style="position: absolute; top: -8px; right: -8px; background: #EF4444; color: white; font-size: 10px; border-radius: 9999px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold;">0</span>
+          </button>
+          
+          <!-- 알림 드롭다운 -->
+          <div id="notificationDropdown" class="hidden" style="position: absolute; right: 0; margin-top: 8px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid #E5E7EB; z-index: 1000; max-height: 400px; overflow-y: auto;">
+            <div style="padding: 12px; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="font-weight: 700; color: #1F2937;">알림</h3>
+              <button onclick="markAllAsRead()" style="font-size: 12px; color: #FF6B35; cursor: pointer; background: none; border: none;">모두 읽음</button>
+            </div>
+            <div id="notificationList" style="divide-y divide-gray-100;">
+              <!-- 알림 목록이 여기에 표시됩니다 -->
+            </div>
+          </div>
+        </div>
+        
         <a href="/chat.html" class="btn btn-secondary">
           <i class="fas fa-comments"></i>
           면접하기
@@ -510,6 +529,9 @@
       
       // 면접 결과 로드
       await loadInterviewResults();
+      
+      // 알림 로드
+      loadNotifications();
     });
     
     // 프로필 정보 로드
@@ -888,6 +910,167 @@
         alert('처리 중 오류가 발생했습니다: ' + error.message);
       }
     }
+    
+    // ========================================
+    // 📢 알림 기능
+    // ========================================
+    
+    // 알림 로드
+    async function loadNotifications() {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        if (!sessionToken) return;
+        
+        const response = await fetch('/api/notifications?limit=10', {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          const { notifications, unreadCount } = data.data;
+          
+          // 배지 업데이트
+          const badge = document.getElementById('notificationBadge');
+          if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+            badge.classList.remove('hidden');
+            badge.style.display = 'flex';
+          } else {
+            badge.classList.add('hidden');
+            badge.style.display = 'none';
+          }
+          
+          // 알림 목록 렌더링
+          const listContainer = document.getElementById('notificationList');
+          if (notifications.length === 0) {
+            listContainer.innerHTML = `
+              <div style="padding: 16px; text-center; color: #6B7280; font-size: 14px;">
+                <i class="fas fa-bell-slash" style="font-size: 24px; margin-bottom: 8px;"></i>
+                <div>알림이 없습니다</div>
+              </div>
+            `;
+          } else {
+            listContainer.innerHTML = notifications.map(notif => renderNotification(notif)).join('');
+          }
+        }
+      } catch (error) {
+        console.error('Load notifications error:', error);
+      }
+    }
+    
+    // 알림 렌더링
+    function renderNotification(notif) {
+      const date = new Date(notif.created_at);
+      const timeAgo = getTimeAgo(date);
+      const bgColor = notif.is_read ? '#FFFFFF' : '#EFF6FF';
+      
+      const iconMap = {
+        'proposal_received': '📩',
+        'proposal_accepted': '✅',
+        'proposal_rejected': '❌'
+      };
+      
+      const icon = iconMap[notif.type] || '📢';
+      
+      return `
+        <div style="padding: 12px; background: ${bgColor}; cursor: pointer; border-bottom: 1px solid #F3F4F6;" 
+             onclick="handleNotificationClick('${notif.id}', '${notif.link}', ${notif.is_read})"
+             onmouseover="this.style.background='#F9FAFB'" 
+             onmouseout="this.style.background='${bgColor}'">
+          <div style="display: flex; align-items: start; gap: 8px;">
+            <div style="font-size: 24px;">${icon}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 14px; color: #1F2937;">${notif.title}</div>
+              <div style="font-size: 12px; color: #6B7280; margin-top: 4px;">${notif.message}</div>
+              <div style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">${timeAgo}</div>
+            </div>
+            ${!notif.is_read ? '<div style="width: 8px; height: 8px; background: #FF6B35; border-radius: 50%;"></div>' : ''}
+          </div>
+        </div>
+      `;
+    }
+    
+    // 시간 경과 표시
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000);
+      
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+      if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
+      return date.toLocaleDateString('ko-KR');
+    }
+    
+    // 알림 드롭다운 토글
+    function toggleNotifications() {
+      const dropdown = document.getElementById('notificationDropdown');
+      const isHidden = dropdown.classList.contains('hidden');
+      
+      if (isHidden) {
+        dropdown.classList.remove('hidden');
+        loadNotifications();
+      } else {
+        dropdown.classList.add('hidden');
+      }
+    }
+    
+    // 알림 클릭 처리
+    async function handleNotificationClick(notifId, link, isRead) {
+      try {
+        if (!isRead) {
+          const sessionToken = localStorage.getItem('albi_session_token');
+          await fetch(`/api/notifications/${notifId}/read`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`
+            }
+          });
+        }
+        
+        if (link) {
+          window.location.href = link;
+        }
+      } catch (error) {
+        console.error('Handle notification click error:', error);
+      }
+    }
+    
+    // 모두 읽음 처리
+    async function markAllAsRead() {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/notifications/read-all', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          loadNotifications();
+        }
+      } catch (error) {
+        console.error('Mark all as read error:', error);
+      }
+    }
+    
+    // 페이지 클릭 시 드롭다운 닫기
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('notificationDropdown');
+      if (!dropdown) return;
+      
+      const notifButton = e.target.closest('[onclick="toggleNotifications()"]');
+      
+      if (!dropdown.classList.contains('hidden') && !notifButton && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
     
     // 탭 전환
     function showTab(tabName) {
