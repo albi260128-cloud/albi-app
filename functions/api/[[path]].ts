@@ -62,7 +62,15 @@ const PROFESSIONAL_SCENARIOS = {
 app.post('/chat', async (c) => {
   try {
     const body = await c.req.json();
-    const { message, userType = 'jobseeker', userId = 'anonymous', jobType = 'cafe' } = body;
+    const { message, userType = 'jobseeker', userId = 'anonymous', jobType = 'cafe', region = '서울', expectedWage = 10000 } = body;
+
+    // 구직자 면접만 처리 (구인자는 기존 로직 유지)
+    if (userType !== 'jobseeker') {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '현재는 구직자 면접만 지원합니다.' 
+      }, 400);
+    }
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return c.json<ApiResponse>({ 
@@ -71,16 +79,13 @@ app.post('/chat', async (c) => {
       }, 400);
     }
 
-    // 고급 AI 면접 시스템 사용
-    // 실전급 질문 DB와 시나리오 기반 대화 트리 적용
-    const sessionKey = `${userId}_${userType}`;
-    
-    let aiMessage = '';
-    let profile = null;
-    let sessionData = null;
+    // ========================================
+    // AlbiInterviewEngine 통합 (Phase 1)
+    // ========================================
+    const sessionKey = `${userId}_${jobType}`;
     
     try {
-      // 세션이 있으면 가져오고, 없으면 새로 생성
+      // 새 세션 시작 (첫 메시지)
       if (!interviewSessions.has(sessionKey)) {
         // 새 세션 초기화
         const welcome = userType === 'jobseeker' 
