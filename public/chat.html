@@ -181,6 +181,7 @@
 
   <script>
     let userType = 'jobseeker';
+    let currentJobType = null; // 선택된 업종 (cafe, cvs, restaurant, retail, fastfood)
     let isLoading = false;
     let currentStep = 0; // 0: 기본정보, 1: 성향분석, 2: 경험분석, 3: 매칭결과
     let userProfile = {
@@ -354,7 +355,31 @@
       if (loading) loading.remove();
     }
 
+    // ========================================
+    // 🎯 빠른 답변 버튼 클릭 (업종 자동 감지)
+    // ========================================
     function quickAnswer(answer) {
+      // 업종 매핑
+      const jobTypeMapping = {
+        '카페': 'cafe',
+        '편의점': 'cvs',
+        '음식점': 'restaurant',
+        '매장/판매': 'retail',
+        '배달': 'fastfood'
+      };
+      
+      // 업종 감지 및 설정
+      if (jobTypeMapping[answer]) {
+        currentJobType = jobTypeMapping[answer];
+        console.log('🎯 Selected job type:', currentJobType, '(' + answer + ')');
+        
+        // 빠른 답변 버튼 숨기기
+        const quickAnswers = document.getElementById('quickAnswers');
+        if (quickAnswers) {
+          quickAnswers.style.display = 'none';
+        }
+      }
+      
       const input = document.getElementById('messageInput');
       input.value = answer;
       sendMessage();
@@ -393,6 +418,10 @@
         
         console.log('📤 Sending message:', message);
         
+        // jobType 결정: currentJobType이 있으면 사용, 없으면 기본값 'cafe'
+        const selectedJobType = currentJobType || 'cafe';
+        console.log('🎯 Using job type:', selectedJobType);
+        
         // API 호출: AlbiInterviewEngine 사용
         const response = await fetch('/api/chat', {
           method: 'POST',
@@ -401,7 +430,7 @@
             message, 
             userId: sessionUserId, // 세션 유지
             userType: 'jobseeker',
-            jobType: 'cafe' // 기본값 (나중에 선택 기능 추가)
+            jobType: selectedJobType // 선택된 업종 또는 기본값
           })
         });
         
