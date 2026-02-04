@@ -23,7 +23,50 @@
   <main class="py-12">
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
-        <div class="text-6xl mb-4">🐜</div>
+        <svg width="96" height="96" viewBox="0 0 64 64" style="margin: 0 auto 1rem;" xmlns="http://www.w3.org/2000/svg">
+          <!-- 날개 왼쪽 -->
+          <ellipse cx="18" cy="28" rx="8" ry="12" fill="#FFB627" opacity="0.8"/>
+          <ellipse cx="18" cy="28" rx="6" ry="10" fill="#FFC947" opacity="0.6"/>
+          
+          <!-- 날개 오른쪽 -->
+          <ellipse cx="46" cy="28" rx="8" ry="12" fill="#FFB627" opacity="0.8"/>
+          <ellipse cx="46" cy="28" rx="6" ry="10" fill="#FFC947" opacity="0.6"/>
+          
+          <!-- 머리 -->
+          <circle cx="32" cy="20" r="10" fill="#FF6B35"/>
+          <circle cx="32" cy="20" r="8" fill="#FF8B5F"/>
+          
+          <!-- 눈 -->
+          <circle cx="28" cy="19" r="2" fill="#1F2937"/>
+          <circle cx="36" cy="19" r="2" fill="#1F2937"/>
+          <circle cx="28.5" cy="18.5" r="0.8" fill="white"/>
+          <circle cx="36.5" cy="18.5" r="0.8" fill="white"/>
+          
+          <!-- 미소 -->
+          <path d="M 28 23 Q 32 25 36 23" stroke="#1F2937" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          
+          <!-- 더듬이 -->
+          <path d="M 27 12 Q 24 8 22 6" stroke="#FF6B35" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="22" cy="6" r="2" fill="#FF8B5F"/>
+          <path d="M 37 12 Q 40 8 42 6" stroke="#FF6B35" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="42" cy="6" r="2" fill="#FF8B5F"/>
+          
+          <!-- 가슴 -->
+          <ellipse cx="32" cy="35" rx="9" ry="11" fill="#FF6B35"/>
+          <ellipse cx="32" cy="35" rx="7" ry="9" fill="#FF8B5F"/>
+          
+          <!-- 배 -->
+          <ellipse cx="32" cy="50" rx="10" ry="12" fill="#FF6B35"/>
+          <ellipse cx="32" cy="50" rx="8" ry="10" fill="#FF8B5F"/>
+          
+          <!-- 다리 -->
+          <path d="M 26 32 L 18 38" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 25 38 L 16 44" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 26 46 L 20 52" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 38 32 L 46 38" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 39 38 L 48 44" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M 38 46 L 44 52" stroke="#FF6B35" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
         <h1 class="text-4xl font-bold mb-4">알비 급여계산기</h1>
         <p class="text-gray-600 text-lg">시급과 근무시간을 입력하면 주휴수당까지 자동 계산해드립니다</p>
       </div>
