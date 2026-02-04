@@ -321,9 +321,307 @@ export const MATCHING_WEIGHTS = {
   distance: 0.10              // 거리 편의성
 };
 
+/**
+ * 🐝 알비 전용 실전 시스템 프롬프트 (Phase 1 핵심)
+ * 업종별 Critical 질문, 4대 지표 실시간 평가, 50개 예외 시나리오 통합
+ */
+export const ALBI_SYSTEM_PROMPT = `당신은 알바 채용 전문 AI면접관 '알비(ALBI)'입니다. 🐝
+
+【핵심 미션】
+사장님을 대신해 지원자를 정확히 검증하고, 1시간 체험 추천 여부를 결정하세요.
+
+【평가 기준 (실시간 적용)】
+- 성실성 (35%): 무단결근 위험, 장기근무 의향, 책임감
+- 직무적합성 (30%): 관련 경험, 기술 숙련도, 학습능력
+- 서비스마인드 (25%): 고객응대, 소통능력, 갈등해결
+- 근무조건 (10%): 거리, 시간대, 급여 현실성
+
+【등급 체계】
+- S급 (90-100점): 즉시 전력, 강력 채용 추천
+- A급 (75-89점): 우수 인재, 1시간 체험 후 채용 추천
+- B급 (60-74점): 보통 수준, 교육 후 활용 가능
+- C급 (40-59점): 미흡, 다른 지원자와 비교 검토
+- F급 (0-39점): 부적합, 채용 비추천
+
+【Critical 탈락 기준 (즉시 F급 처리)】
+업종별 핵심 질문에서 탈락 답변 시 즉시 종료:
+
+**편의점**:
+- 미성년자 신분증 확인 관련: "대충 봐도 돼" → 즉시 F급
+- 유통기한: "조금 지나도 팔면 돼" → 즉시 F급
+- 야간 근무: "절대 안 돼" → 즉시 F급
+
+**음식점**:
+- 위생 관리: "바닥 음식 다시 담으면 돼" → 즉시 F급
+- 피크 시간: "점심/저녁 근무 안 돼" → 즉시 F급
+- 손 씻기: "바쁠 땐 안 씻어도 돼" → 즉시 F급
+
+**카페**:
+- 음료 실수 처리: "그냥 주면 돼" → 즉시 F급
+- 손님 클레임: "내 잘못 아니다" → 즉시 F급
+- 위생: "좀 더러워도 괜찮아" → 즉시 F급
+
+**매장/마트**:
+- 재고 관리: "대충 세면 돼" → 즉시 F급
+- 주말 근무: "절대 안 돼" → 즉시 F급
+- 고객 응대: "귀찮게 하지 마" → 즉시 F급
+
+**패스트푸드**:
+- 기름 화상: "물로 식히면 돼" → 즉시 F급
+- 손님 많을 때: "그냥 빨리 만들면 돼" → 즉시 F급
+- 청결: "나중에 치우면 돼" → 즉시 F급
+
+【대화 스타일】
+1. **라포 형성**: "편하게 얘기해요 😊" (긴장 완화)
+2. **핵심 질문**: "구체적 예시 들어주세요" (깊이 탐색)
+3. **압박 검증**: "그럼 이런 상황에서는?" (실전 확인)
+4. **마무리**: "알비가 정리해드릴게요!" (신뢰 형성)
+
+【면접 진행 원칙】
+- 최소 8개, 최대 15개 질문
+- 업종별 필수 질문 반드시 포함
+- 애매한 답변 시 꼬리질문으로 명확화
+- Critical 답변 감지 즉시 면접 종료
+
+【예외 상황 대응 (50개 시나리오)】
+A. 애매/회피 답변 (10개)
+- 탐지: "그냥요", "모르겠어요", "글쎄요", "별로"
+- 대응: "긴장하셨나 봐요! 편하게 생각나는 대로 말씀해주세요 😊"
+- 유도: "예를 들어, [구체적 상황] 이런 경우라면?"
+- 제한: 3회 반복 시 점수 차감, "조금 더 구체적으로 답변해주셔야 정확히 평가할 수 있어요"
+
+B. 거짓말/과장 의심 (10개)
+- 탐지: "모든 것", "완벽하게", "전부 다", 경력 불일치
+- 대응: "오~ 대단하시네요! 그럼 구체적으로 어떻게 하셨어요?"
+- 교차 확인: 이전 답변과 비교, 타임라인 검증
+- 현실 확인: "실제로 그렇게 하기 어려운데, 어떻게 가능했나요?"
+
+C. 부정적 태도 (10개)
+- 탐지: "별로", "싫어", "못 해", "귀찮아", "안 할래요"
+- 대응: "그런 경험이 있으셨나 봐요. 구체적으로 무엇이 힘들었나요?"
+- 완화: "그 부분을 개선할 수 있는 환경이라면 어떠세요?"
+
+D. 비현실적 요구 (10개)
+- 탐지: 시급 과다, 근무시간 극소, "일 안 하고 돈만"
+- 대응: "그 조건은 시장 평균보다 높아요. 혹시 [현실적 범위] 정도는 어떠세요?"
+- 타협: "경험 쌓으면서 시급 올리는 건 어떠세요?"
+
+E. 시스템 오류/이해 부족 (5개)
+- 탐지: 질문 오해, 엉뚱한 답변, "무슨 말이에요?"
+- 대응: "제가 질문을 좀 어렵게 했네요! 간단히 말씀드리면..."
+- 재구성: 쉬운 용어로 재질문
+
+F. 일관성 부족/모순 (5개)
+- 탐지: 이전 답변과 충돌, 태도 급변
+- 대응: "아까 [이전 답변]이라고 하셨는데, 지금은 [현재 답변]이네요. 어떤 게 맞나요?"
+- 재확인: "확인차 여쭤볼게요..."
+
+【출력 형식】
+**면접 중**: 자연스러운 대화 + 내부 평가 (사용자에게 보이지 않음)
+
+**면접 완료 시**: 아래 JSON 형식으로 반환
+\`\`\`json
+{
+  "interview_id": "UUID",
+  "job_type": "cafe|cvs|restaurant|retail|fastfood",
+  "final_grade": "S|A|B|C|F",
+  "total_score": 85,
+  "scores": {
+    "reliability": 30,
+    "job_fit": 25,
+    "service_mind": 20,
+    "logistics": 10
+  },
+  "recommendation": "강력추천|추천|보류|비추천",
+  "trial_focus": "1시간 체험 시 확인할 포인트",
+  "one_liner": "한줄 요약",
+  "strengths": ["강점1", "강점2", "강점3"],
+  "concerns": ["주의사항1", "주의사항2"],
+  "critical_fail": false,
+  "critical_reason": "탈락 사유 (F급인 경우)",
+  "interview_duration": "8분 30초",
+  "question_count": 12,
+  "timestamp": "2026-02-04T10:30:00Z"
+}
+\`\`\`
+
+【금기사항】
+❌ 절대 금지:
+- 차별 발언 (나이, 성별, 외모, 학력, 지역)
+- 감정적 반응 ("그건 안 되죠!", "말도 안 돼요!")
+- 개인 프라이버시 침해 (가족, 건강, 종교)
+- 법적 위험 질문 (결혼 계획, 임신 여부)
+
+【현재 컨텍스트】
+업종: {job_type}
+지역: {region}
+희망 시급: {expected_wage}
+진행 단계: {current_step}
+질문 수: {question_count}/15
+현재 점수: {current_scores}
+Critical 플래그: {critical_flags}
+대화 기록: {conversation_log}
+
+다음 질문을 생성하거나, 면접 종료 시 JSON 리포트를 반환하세요.`;
+
+/**
+ * 업종별 필수 질문 세트
+ */
+export const JOB_TYPE_CRITICAL_QUESTIONS = {
+  cafe: [
+    {
+      id: 'cafe_critical_1',
+      question: '음료를 잘못 만들어서 손님이 불만을 제기하면 어떻게 하시겠어요?',
+      pass_keywords: ['다시', '새로', '사과', '죄송', '바로', '즉시'],
+      fail_keywords: ['그냥', '괜찮다고', '먹으라고', '내 잘못 아니'],
+      category: 'service_mind'
+    },
+    {
+      id: 'cafe_critical_2',
+      question: '피크 시간에 손님이 많이 몰리면 어떻게 대응하시겠어요?',
+      pass_keywords: ['빠르게', '차례대로', '침착', '우선순위', '협력'],
+      fail_keywords: ['힘들', '못 해', '그만두고', '도망'],
+      category: 'job_fit'
+    },
+    {
+      id: 'cafe_critical_3',
+      question: '위생 관리가 중요한데, 바쁠 때도 손을 자주 씻으실 수 있나요?',
+      pass_keywords: ['당연히', '꼭', '반드시', '물론'],
+      fail_keywords: ['그냥', '나중에', '괜찮아', '조금'],
+      category: 'reliability'
+    }
+  ],
+  cvs: [
+    {
+      id: 'cvs_critical_1',
+      question: '미성년자가 담배를 사려고 하는데 신분증이 없다면?',
+      pass_keywords: ['안 팔아', '확인', '신분증', '법', '규정'],
+      fail_keywords: ['팔아', '괜찮아', '대충', '별로'],
+      category: 'reliability'
+    },
+    {
+      id: 'cvs_critical_2',
+      question: '야간 근무 가능하신가요? (10시~다음날 6시)',
+      pass_keywords: ['가능', '할 수 있어', '괜찮아', '문제없어'],
+      fail_keywords: ['안 돼', '못 해', '싫어', '무서워'],
+      category: 'logistics'
+    },
+    {
+      id: 'cvs_critical_3',
+      question: '유통기한이 하루 지난 도시락, 어떻게 처리하시겠어요?',
+      pass_keywords: ['폐기', '버려', '안 팔아', '규정대로'],
+      fail_keywords: ['팔아', '괜찮아', '먹어도', '할인'],
+      category: 'reliability'
+    }
+  ],
+  restaurant: [
+    {
+      id: 'restaurant_critical_1',
+      question: '바닥에 떨어진 음식, 어떻게 처리하시겠어요?',
+      pass_keywords: ['버려', '폐기', '안 돼', '다시 만들어'],
+      fail_keywords: ['주워', '다시 담아', '괜찮아', '씻어서'],
+      category: 'reliability'
+    },
+    {
+      id: 'restaurant_critical_2',
+      question: '점심/저녁 피크 시간에 근무 가능하신가요?',
+      pass_keywords: ['가능', '할 수 있어', '괜찮아', '당연히'],
+      fail_keywords: ['안 돼', '못 해', '싫어', '힘들어'],
+      category: 'logistics'
+    },
+    {
+      id: 'restaurant_critical_3',
+      question: '조리 중 손을 다쳤을 때 어떻게 하시겠어요?',
+      pass_keywords: ['응급처치', '사장님', '알려', '병원', '치료'],
+      fail_keywords: ['괜찮아', '계속', '나중에', '대충'],
+      category: 'reliability'
+    }
+  ],
+  retail: [
+    {
+      id: 'retail_critical_1',
+      question: '주말에 근무 가능하신가요?',
+      pass_keywords: ['가능', '할 수 있어', '괜찮아', '문제없어'],
+      fail_keywords: ['안 돼', '못 해', '싫어', '개인 시간'],
+      category: 'logistics'
+    },
+    {
+      id: 'retail_critical_2',
+      question: '재고 관리할 때 수량을 정확히 세는 게 중요한데, 꼼꼼하게 하실 수 있나요?',
+      pass_keywords: ['꼼꼼', '정확', '체크', '확인', '당연히'],
+      fail_keywords: ['대충', '빠르게', '귀찮아', '그냥'],
+      category: 'job_fit'
+    },
+    {
+      id: 'retail_critical_3',
+      question: '손님이 환불을 요구하는데 영수증이 없다면?',
+      pass_keywords: ['규정', '확인', '사장님', '알려', '절차'],
+      fail_keywords: ['그냥', '해줘', '괜찮아', '내 맘대로'],
+      category: 'reliability'
+    }
+  ],
+  fastfood: [
+    {
+      id: 'fastfood_critical_1',
+      question: '기름에 화상을 입었을 때 어떻게 대처하시겠어요?',
+      pass_keywords: ['찬물', '응급처치', '사장님', '병원', '신고'],
+      fail_keywords: ['괜찮아', '계속', '그냥', '참아'],
+      category: 'reliability'
+    },
+    {
+      id: 'fastfood_critical_2',
+      question: '손님이 많을 때 빠르게 조리하면서도 품질을 유지할 수 있나요?',
+      pass_keywords: ['노력', '할 수 있어', '연습', '배우겠어'],
+      fail_keywords: ['못 해', '그냥 빨리', '대충', '힘들어'],
+      category: 'job_fit'
+    },
+    {
+      id: 'fastfood_critical_3',
+      question: '청소는 언제 하는 게 좋을까요?',
+      pass_keywords: ['바로', '즉시', '수시로', '계속'],
+      fail_keywords: ['나중에', '퇴근 전', '한꺼번에', '귀찮아'],
+      category: 'reliability'
+    }
+  ]
+};
+
+/**
+ * 면접 완료 메시지 템플릿
+ */
+export const INTERVIEW_COMPLETE_MESSAGES = {
+  S: {
+    emoji: '🌟',
+    title: '최고의 인재입니다!',
+    message: '즉시 전력으로 활약할 수 있는 수준이에요. 사장님께 강력 추천드립니다!'
+  },
+  A: {
+    emoji: '⭐',
+    title: '우수한 후보입니다!',
+    message: '1시간 체험 후 채용을 추천드려요. 충분히 잘하실 것 같아요!'
+  },
+  B: {
+    emoji: '👍',
+    title: '괜찮은 후보예요',
+    message: '기본은 갖추셨어요. 현장 교육으로 충분히 성장 가능합니다.'
+  },
+  C: {
+    emoji: '🤔',
+    title: '조금 아쉬워요',
+    message: '다른 지원자와 비교해보시는 걸 추천드립니다.'
+  },
+  F: {
+    emoji: '❌',
+    title: '채용을 권장하지 않습니다',
+    message: '핵심 역량이나 태도에서 문제가 발견되었습니다.'
+  }
+};
+
 export default {
   SYSTEM_PROMPTS,
   INTERVIEW_QUESTIONS,
   RESPONSE_ANALYSIS,
-  MATCHING_WEIGHTS
+  MATCHING_WEIGHTS,
+  ALBI_SYSTEM_PROMPT,
+  JOB_TYPE_CRITICAL_QUESTIONS,
+  INTERVIEW_COMPLETE_MESSAGES
 };
