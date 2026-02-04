@@ -101,14 +101,15 @@
               <p class="text-sm text-gray-600">당신에게 딱 맞는 일자리를 찾아드립니다</p>
             </div>
           </div>
-          <div class="flex space-x-2">
-            <button onclick="setUserType('jobseeker')" id="jobseekerBtn" 
-                    class="px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600">
-              구직자 👤
-            </button>
-            <button onclick="setUserType('employer')" id="employerBtn" 
-                    class="px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition">
-              구인자 🏪
+          <div class="flex items-center space-x-3">
+            <!-- 사용자 정보 표시 -->
+            <div id="userInfo" class="flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-full">
+              <i id="userIcon" class="fas fa-user text-blue-500"></i>
+              <span id="userName" class="text-sm font-bold text-gray-700">로딩 중...</span>
+            </div>
+            <!-- 로그아웃 버튼 -->
+            <button onclick="logout()" class="px-3 py-2 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition">
+              <i class="fas fa-sign-out-alt"></i>
             </button>
           </div>
         </div>
@@ -211,17 +212,40 @@
     };
     let conversationHistory = [];
     
-    // 페이지 로드 시 버튼 상태 초기화
-    window.addEventListener('DOMContentLoaded', function() {
-      const jobBtn = document.getElementById('jobseekerBtn');
-      const empBtn = document.getElementById('employerBtn');
+    // 페이지 로드 시 로그인 체크 및 사용자 정보 표시
+    window.addEventListener('DOMContentLoaded', async function() {
+      // 로그인 정보 확인
+      const userId = localStorage.getItem('albi_user_id');
+      const userName = localStorage.getItem('albi_user_name');
+      const savedUserType = localStorage.getItem('albi_user_type');
+      const sessionToken = localStorage.getItem('albi_session_token');
+      
+      // 로그인하지 않은 경우
+      if (!userId || !sessionToken) {
+        if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠어요?')) {
+          window.location.href = '/login.html';
+        } else {
+          window.location.href = '/';
+        }
+        return;
+      }
+      
+      // userType 자동 설정
+      if (savedUserType) {
+        userType = savedUserType;
+        console.log('[면접 시작] 사용자 타입:', userType);
+      }
+      
+      // 사용자 정보 표시
+      const userIcon = document.getElementById('userIcon');
+      const userNameEl = document.getElementById('userName');
       
       if (userType === 'employer') {
-        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
-        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
+        userIcon.className = 'fas fa-building text-orange-500';
+        userNameEl.textContent = `${userName || '사용자'} (구인자)`;
       } else {
-        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600';
-        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
+        userIcon.className = 'fas fa-user text-blue-500';
+        userNameEl.textContent = `${userName || '사용자'} (구직자)`;
       }
     });
 
@@ -269,38 +293,39 @@
       }
     };
 
-    function setUserType(type) {
-      // 현재와 같은 타입이면 아무 동작도 하지 않음
-      if (userType === type) {
+    // 로그아웃 함수
+    async function logout() {
+      if (!confirm('로그아웃하시겠습니까?')) {
         return;
       }
       
-      // 먼저 확인 다이얼로그 표시
-      if (!confirm('면접을 다시 시작하시겠어요?')) {
-        // 취소하면 아무것도 하지 않음
-        return;
+      const sessionToken = localStorage.getItem('albi_session_token');
+      
+      try {
+        // 서버에 로그아웃 요청
+        if (sessionToken) {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sessionToken })
+          });
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      } finally {
+        // localStorage 초기화
+        localStorage.removeItem('albi_user_id');
+        localStorage.removeItem('albi_user_name');
+        localStorage.removeItem('albi_user_type');
+        localStorage.removeItem('albi_session_token');
+        localStorage.removeItem('albi_session_user_id');
+        localStorage.removeItem('albi_remember');
+        
+        // 로그인 페이지로 이동
+        window.location.href = '/login.html';
       }
-      
-      // 확인을 누른 경우에만 타입 변경
-      userType = type;
-      
-      // localStorage에 저장
-      localStorage.setItem('albi_user_type', type);
-      
-      const jobBtn = document.getElementById('jobseekerBtn');
-      const empBtn = document.getElementById('employerBtn');
-      
-      if (type === 'jobseeker') {
-        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white transition hover:bg-blue-600';
-        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
-      } else {
-        jobBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
-        empBtn.className = 'px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white transition hover:bg-orange-600';
-      }
-      
-      // 세션 초기화 후 새로고침
-      localStorage.removeItem('albi_session_user_id');
-      window.location.reload();
     }
 
     // ✨ 진행률 표시 함수 (매개변수 추가)

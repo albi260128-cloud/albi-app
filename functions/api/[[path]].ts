@@ -1740,6 +1740,186 @@ app.post('/auth/signup', async (c) => {
   }
 });
 
+// 로그인 API
+app.post('/auth/login', async (c) => {
+  try {
+    const { username, password, remember } = await c.req.json();
+    
+    // 필수 필드 검증
+    if (!username || !password) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이메일/휴대폰번호와 비밀번호를 입력해주세요.' 
+      }, 400);
+    }
+    
+    // 사용자 조회 (휴대폰 또는 이메일로)
+    const user = await c.env.DB.prepare(`
+      SELECT id, name, phone, email, password_hash, user_type, 
+             business_registration_verified, is_verified
+      FROM users 
+      WHERE (phone = ? OR email = ?) AND is_active = 1
+    `).bind(username, username).first();
+    
+    if (!user) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '등록되지 않은 사용자입니다.' 
+      }, 401);
+    }
+    
+    // 비밀번호 검증 (실제로는 bcrypt.compare 사용)
+    // TODO: bcrypt 사용
+    if (user.password_hash !== password) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '비밀번호가 일치하지 않습니다.' 
+      }, 401);
+    }
+    
+    // 휴대폰 인증 여부 체크
+    if (!user.is_verified) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '휴대폰 인증이 필요합니다. 회원가입 시 전송된 인증번호를 확인해주세요.' 
+      }, 403);
+    }
+    
+    // 구인자인 경우 사업자등록증 인증 체크
+    if (user.user_type === 'employer' && !user.business_registration_verified) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '사업자등록증 인증이 진행 중입니다. 인증 완료 후 이용 가능합니다.' 
+      }, 403);
+    }
+    
+    // 세션 토큰 생성 (간단한 UUID)
+    const sessionToken = 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 15);
+    const sessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    
+    // 세션 만료 시간 설정 (remember: 30일, 아니면 1일)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + (remember ? 30 : 1));
+    
+    // 세션 저장
+    await c.env.DB.prepare(`
+      INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `).bind(sessionId, user.id, sessionToken, expiresAt.toISOString()).run();
+    
+    // 마지막 로그인 시간 업데이트
+    await c.env.DB.prepare(`
+      UPDATE users SET last_login_at = datetime('now') WHERE id = ?
+    `).bind(user.id).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        userId: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        userType: user.user_type,
+        sessionToken,
+        expiresAt: expiresAt.toISOString()
+      },
+      message: '로그인 성공'
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '로그인 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 로그아웃 API
+app.post('/auth/logout', async (c) => {
+  try {
+    const { sessionToken } = await c.req.json();
+    
+    if (!sessionToken) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '세션 토큰이 없습니다.' 
+      }, 400);
+    }
+    
+    // 세션 삭제
+    await c.env.DB.prepare(`
+      DELETE FROM sessions WHERE token = ?
+    `).bind(sessionToken).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: '로그아웃되었습니다.'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '로그아웃 처리 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 사용자 정보 조회 API
+app.get('/auth/me', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, s.expires_at, u.name, u.phone, u.email, u.user_type
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ? AND u.is_active = 1
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 세션 만료 확인
+    if (new Date(session.expires_at) < new Date()) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '세션이 만료되었습니다. 다시 로그인해주세요.' 
+      }, 401);
+    }
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: {
+        userId: session.user_id,
+        name: session.name,
+        phone: session.phone,
+        email: session.email,
+        userType: session.user_type
+      }
+    });
+  } catch (error) {
+    console.error('Get user info error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '사용자 정보 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
 // ========================================
 // 헬스체크 및 정보 API
 // ========================================

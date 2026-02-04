@@ -304,15 +304,59 @@
       const password = document.getElementById('password').value;
       const remember = document.getElementById('remember').checked;
       
+      if (!username || !password) {
+        alert('이메일/휴대폰번호와 비밀번호를 입력해주세요.');
+        return;
+      }
+      
+      const loginBtn = document.querySelector('.btn-login');
+      loginBtn.disabled = true;
+      loginBtn.textContent = '로그인 중...';
+      
       try {
-        // TODO: 실제 API 연동
-        console.log('로그인 시도:', { username, remember });
-        alert('로그인 기능은 곧 추가됩니다!');
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username,
+            password,
+            remember
+          })
+        });
         
-        // 임시: 메인으로 이동
-        // window.location.href = '/';
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || '로그인 실패');
+        }
+        
+        // 로그인 성공: 사용자 정보를 localStorage에 저장
+        localStorage.setItem('albi_user_id', data.data.userId);
+        localStorage.setItem('albi_user_type', data.data.userType);
+        localStorage.setItem('albi_user_name', data.data.name);
+        localStorage.setItem('albi_session_token', data.data.sessionToken);
+        
+        // remember가 true면 장기 보관
+        if (remember) {
+          localStorage.setItem('albi_remember', 'true');
+        }
+        
+        alert(`${data.data.name}님, 환영합니다! 🎉`);
+        
+        // 사용자 타입에 따라 페이지 이동
+        if (data.data.userType === 'employer') {
+          // 구인자: 면접 페이지로 이동
+          window.location.href = '/chat.html';
+        } else {
+          // 구직자: 면접 페이지로 이동
+          window.location.href = '/chat.html';
+        }
       } catch (error) {
-        alert('로그인 중 오류가 발생했습니다.');
+        alert('로그인 실패: ' + error.message);
+        loginBtn.disabled = false;
+        loginBtn.textContent = '로그인';
       }
     });
     
@@ -321,6 +365,19 @@
       console.log(`${provider} 로그인 시도`);
       alert(`${provider} 로그인 기능은 곧 추가됩니다!`);
     }
+    
+    // 이미 로그인된 사용자 체크
+    window.addEventListener('DOMContentLoaded', () => {
+      const userId = localStorage.getItem('albi_user_id');
+      const sessionToken = localStorage.getItem('albi_session_token');
+      
+      if (userId && sessionToken) {
+        const userName = localStorage.getItem('albi_user_name') || '사용자';
+        if (confirm(`${userName}님, 이미 로그인되어 있습니다. 메인 페이지로 이동하시겠어요?`)) {
+          window.location.href = '/';
+        }
+      }
+    });
   </script>
 </body>
 </html>
