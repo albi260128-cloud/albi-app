@@ -956,7 +956,7 @@ app.post('/jobs', async (c) => {
       }, 400);
     }
 
-    const jobId = 'job-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const jobId = 'job-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
     const timestamp = Math.floor(Date.now() / 1000);
 
     // 트랜잭션: 공고 등록 + 포인트 차감
@@ -1123,7 +1123,7 @@ app.post('/community/posts', async (c) => {
       }, 400);
     }
 
-    const postId = 'post-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const postId = 'post-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
     const displayName = isAnonymous ? '익명' : (authorName || '알비사용자');
     const timestamp = Math.floor(Date.now() / 1000);
 
@@ -1205,7 +1205,7 @@ app.post('/community/posts/:postId/comments', async (c) => {
       }, 400);
     }
 
-    const commentId = 'comment-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const commentId = 'comment-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
     const displayName = isAnonymous ? '익명' : (authorName || '알비사용자');
     const timestamp = Math.floor(Date.now() / 1000);
 
@@ -1262,7 +1262,7 @@ app.post('/community/posts/:postId/like', async (c) => {
       });
     } else {
       // 좋아요 추가
-      const likeId = 'like-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      const likeId = 'like-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
       const timestamp = Math.floor(Date.now() / 1000);
       
       await c.env.DB.batch([
@@ -1299,7 +1299,7 @@ app.post('/community/report', async (c) => {
       }, 400);
     }
 
-    const reportId = 'report-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const reportId = 'report-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
     const timestamp = Math.floor(Date.now() / 1000);
 
     await c.env.DB.prepare(`

@@ -19,8 +19,8 @@ interface Env {
   KV?: KVNamespace;
 }
 
-// Hono 앱 생성
-const app = new Hono<{ Bindings: Env }>().basePath('/api/interview');
+// Hono 앱 생성 (basePath 제거 - Cloudflare Pages Functions가 자동으로 /api/interview에 매핑함)
+const app = new Hono<{ Bindings: Env }>();
 
 // CORS 설정
 app.use('*', cors({
