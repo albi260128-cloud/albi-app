@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이페이지 - 알비</title>
+  <link href="/styles.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    
+    .header {
+      background: white;
+      padding: 20px 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+    }
+    
+    .user-type-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .user-type-badge.jobseeker {
+      background: #E3F2FD;
+      color: #1976D2;
+    }
+    
+    .user-type-badge.employer {
+      background: #FFF3E0;
+      color: #F57C00;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: #FF6B35;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #E55A2B;
+    }
+    
+    .btn-secondary {
+      background: #e5e5e5;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background: #d0d0d0;
+    }
+    
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+    }
+    
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .profile-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .profile-item:last-child {
+      border-bottom: none;
+    }
+    
+    .profile-label {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .profile-value {
+      font-size: 14px;
+      color: #222;
+      font-weight: 600;
+    }
+    
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .nav-item {
+      padding: 14px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: #333;
+      background: #f8f9fa;
+    }
+    
+    .nav-item:hover {
+      background: #FF6B35;
+      color: white;
+    }
+    
+    .nav-item.active {
+      background: #FF6B35;
+      color: white;
+    }
+    
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+    
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .result-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .result-date {
+      font-size: 13px;
+      color: #999;
+    }
+    
+    .grade-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 18px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    
+    .grade-S { background: #E1BEE7; color: #7B1FA2; }
+    .grade-A { background: #BBDEFB; color: #1976D2; }
+    .grade-B { background: #C8E6C9; color: #388E3C; }
+    .grade-C { background: #FFF9C4; color: #F57F17; }
+    .grade-F { background: #FFCDD2; color: #C62828; }
+    
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin: 20px 0;
+    }
+    
+    .score-item {
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    .score-label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .score-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #FF6B35;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+    }
+    
+    .form-input:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+    
+    @media (max-width: 768px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .score-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1 class="header-title">마이페이지</h1>
+        <span id="userTypeBadge" class="user-type-badge jobseeker">구직자</span>
+      </div>
+      <div class="header-actions">
+        <a href="/chat.html" class="btn btn-secondary">
+          <i class="fas fa-comments"></i>
+          면접하기
+        </a>
+        <a href="/" class="btn btn-secondary">
+          <i class="fas fa-home"></i>
+          홈으로
+        </a>
+      </div>
+    </div>
+    
+    <!-- Content Grid -->
+    <div class="content-grid">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <!-- Profile Card -->
+        <div class="card">
+          <div class="card-title">
+            <i class="fas fa-user-circle"></i>
+            내 정보
+          </div>
+          <div class="profile-info" id="profileInfo">
+            <div class="profile-item">
+              <span class="profile-label">이름</span>
+              <span class="profile-value" id="userName">로딩 중...</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">휴대폰</span>
+              <span class="profile-value" id="userPhone">-</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">이메일</span>
+              <span class="profile-value" id="userEmail">-</span>
+            </div>
+            <div class="profile-item">
+              <span class="profile-label">가입일</span>
+              <span class="profile-value" id="joinDate">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <div class="card">
+          <div class="nav-menu">
+            <div class="nav-item active" onclick="showTab('results')">
+              <i class="fas fa-clipboard-list"></i>
+              <span>면접 결과</span>
+            </div>
+            <div class="nav-item" onclick="showTab('profile')">
+              <i class="fas fa-user-edit"></i>
+              <span>프로필 수정</span>
+            </div>
+            <div class="nav-item" onclick="showTab('password')">
+              <i class="fas fa-key"></i>
+              <span>비밀번호 변경</span>
+            </div>
+            <div class="nav-item" onclick="logout()">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>로그아웃</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- 면접 결과 탭 -->
+        <div id="tabResults" class="tab-content">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-chart-line"></i>
+              최근 면접 결과
+            </div>
+            <div id="interviewResults">
+              <!-- 면접 결과가 여기에 표시됩니다 -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- 프로필 수정 탭 -->
+        <div id="tabProfile" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-user-edit"></i>
+              프로필 수정
+            </div>
+            <form id="profileForm">
+              <div class="form-group">
+                <label class="form-label">이름</label>
+                <input type="text" class="form-input" id="editName" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">휴대폰 번호</label>
+                <input type="tel" class="form-input" id="editPhone" disabled>
+              </div>
+              <div class="form-group">
+                <label class="form-label">이메일</label>
+                <input type="email" class="form-input" id="editEmail">
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-save"></i>
+                저장하기
+              </button>
+            </form>
+          </div>
+        </div>
+        
+        <!-- 비밀번호 변경 탭 -->
+        <div id="tabPassword" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-key"></i>
+              비밀번호 변경
+            </div>
+            <form id="passwordForm">
+              <div class="form-group">
+                <label class="form-label">현재 비밀번호</label>
+                <input type="password" class="form-input" id="currentPassword" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">새 비밀번호</label>
+                <input type="password" class="form-input" id="newPassword" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">새 비밀번호 확인</label>
+                <input type="password" class="form-input" id="confirmPassword" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-check"></i>
+                비밀번호 변경
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let currentUser = null;
+    let userType = null;
+    
+    // 페이지 로드 시 로그인 체크 및 데이터 로드
+    window.addEventListener('DOMContentLoaded', async function() {
+      // 로그인 정보 확인
+      const userId = localStorage.getItem('albi_user_id');
+      const userName = localStorage.getItem('albi_user_name');
+      const savedUserType = localStorage.getItem('albi_user_type');
+      const sessionToken = localStorage.getItem('albi_session_token');
+      
+      if (!userId || !sessionToken) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      userType = savedUserType;
+      
+      // 사용자 타입 배지 업데이트
+      const badge = document.getElementById('userTypeBadge');
+      if (userType === 'employer') {
+        badge.textContent = '구인자';
+        badge.className = 'user-type-badge employer';
+      } else {
+        badge.textContent = '구직자';
+        badge.className = 'user-type-badge jobseeker';
+      }
+      
+      // 프로필 정보 로드
+      await loadProfile();
+      
+      // 면접 결과 로드
+      await loadInterviewResults();
+    });
+    
+    // 프로필 정보 로드
+    async function loadProfile() {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          currentUser = data.data;
+          
+          // 프로필 정보 표시
+          document.getElementById('userName').textContent = currentUser.name;
+          document.getElementById('userPhone').textContent = currentUser.phone;
+          document.getElementById('userEmail').textContent = currentUser.email || '-';
+          
+          // 프로필 수정 폼에 데이터 채우기
+          document.getElementById('editName').value = currentUser.name;
+          document.getElementById('editPhone').value = currentUser.phone;
+          document.getElementById('editEmail').value = currentUser.email || '';
+        }
+      } catch (error) {
+        console.error('프로필 로드 실패:', error);
+      }
+    }
+    
+    // 면접 결과 로드
+    async function loadInterviewResults() {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/mypage/interview-results', {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        const data = await response.json();
+        
+        const resultsContainer = document.getElementById('interviewResults');
+        
+        if (data.success && data.data && data.data.length > 0) {
+          resultsContainer.innerHTML = data.data.map(result => renderResultCard(result)).join('');
+        } else {
+          resultsContainer.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-clipboard"></i>
+              <div style="font-size: 16px; margin-top: 8px;">아직 면접 결과가 없습니다</div>
+              <div style="font-size: 14px; margin-top: 8px;">AI 면접을 시작해보세요!</div>
+              <a href="/chat.html" class="btn btn-primary" style="margin-top: 20px;">
+                <i class="fas fa-comments"></i>
+                면접 시작하기
+              </a>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('면접 결과 로드 실패:', error);
+      }
+    }
+    
+    // 결과 카드 렌더링
+    function renderResultCard(result) {
+      const gradeClass = `grade-${result.final_grade}`;
+      const date = new Date(result.created_at).toLocaleDateString('ko-KR');
+      
+      if (userType === 'jobseeker') {
+        return `
+          <div class="result-card">
+            <div class="result-header">
+              <div>
+                <span class="grade-badge ${gradeClass}">${result.final_grade}급</span>
+                <div style="margin-top: 8px; font-size: 14px; color: #666;">
+                  ${result.job_type === 'cafe' ? '카페' : 
+                    result.job_type === 'cvs' ? '편의점' : 
+                    result.job_type === 'restaurant' ? '음식점' : 
+                    result.job_type === 'retail' ? '매장/판매' : '패스트푸드'}
+                </div>
+              </div>
+              <div class="result-date">${date}</div>
+            </div>
+            
+            <div class="score-grid">
+              <div class="score-item">
+                <div class="score-label">총점</div>
+                <div class="score-value">${result.total_score}점</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">신뢰도</div>
+                <div class="score-value">${result.reliability_score}점</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">직무 적합도</div>
+                <div class="score-value">${result.job_fit_score}점</div>
+              </div>
+              <div class="score-item">
+                <div class="score-label">서비스 마인드</div>
+                <div class="score-value">${result.service_mind_score}점</div>
+              </div>
+            </div>
+            
+            ${result.one_liner ? `
+              <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; margin-top: 16px;">
+                <div style="font-size: 13px; color: #666; margin-bottom: 4px;">한 줄 평가</div>
+                <div style="font-size: 15px; color: #333;">${result.one_liner}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        // 구인자용 결과 카드
+        return `
+          <div class="result-card">
+            <div class="result-header">
+              <div>
+                <div style="font-size: 18px; font-weight: 700; color: #222;">${result.business_name}</div>
+                <div style="margin-top: 8px; font-size: 14px; color: #666;">
+                  ${result.job_type === 'cafe' ? '카페' : 
+                    result.job_type === 'cvs' ? '편의점' : 
+                    result.job_type === 'restaurant' ? '음식점' : 
+                    result.job_type === 'retail' ? '매장/판매' : '패스트푸드'} · ${result.region}
+                </div>
+              </div>
+              <div class="result-date">${date}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px;">
+              <div style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-size: 13px; color: #666;">시급</div>
+                <div style="font-size: 18px; font-weight: 700; color: #FF6B35; margin-top: 4px;">
+                  ${result.hourly_wage.toLocaleString()}원
+                </div>
+              </div>
+              <div style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-size: 13px; color: #666;">최소 등급</div>
+                <div style="font-size: 18px; font-weight: 700; color: #FF6B35; margin-top: 4px;">
+                  ${result.min_grade}급 이상
+                </div>
+              </div>
+              <div style="text-align: center; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-size: 13px; color: #666;">매칭</div>
+                <div style="font-size: 18px; font-weight: 700; color: #FF6B35; margin-top: 4px;">
+                  진행 중
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    // 탭 전환
+    function showTab(tabName) {
+      // 모든 탭 숨기기
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+      });
+      
+      // 모든 네비게이션 비활성화
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // 선택된 탭 표시
+      document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).style.display = 'block';
+      
+      // 선택된 네비게이션 활성화
+      event.target.closest('.nav-item').classList.add('active');
+    }
+    
+    // 프로필 수정 폼 제출
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('editName').value;
+      const email = document.getElementById('editEmail').value;
+      
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/mypage/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({ name, email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('프로필이 수정되었습니다!');
+          localStorage.setItem('albi_user_name', name);
+          await loadProfile();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        alert('프로필 수정 실패: ' + error.message);
+      }
+    });
+    
+    // 비밀번호 변경 폼 제출
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (newPassword !== confirmPassword) {
+        alert('새 비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      
+      if (newPassword.length < 8) {
+        alert('새 비밀번호는 8자 이상이어야 합니다.');
+        return;
+      }
+      
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/mypage/password', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('비밀번호가 변경되었습니다!');
+          document.getElementById('passwordForm').reset();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        alert('비밀번호 변경 실패: ' + error.message);
+      }
+    });
+    
+    // 로그아웃
+    async function logout() {
+      if (!confirm('로그아웃하시겠습니까?')) {
+        return;
+      }
+      
+      const sessionToken = localStorage.getItem('albi_session_token');
+      
+      try {
+        if (sessionToken) {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sessionToken })
+          });
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      } finally {
+        localStorage.removeItem('albi_user_id');
+        localStorage.removeItem('albi_user_name');
+        localStorage.removeItem('albi_user_type');
+        localStorage.removeItem('albi_session_token');
+        localStorage.removeItem('albi_session_user_id');
+        localStorage.removeItem('albi_remember');
+        
+        window.location.href = '/login.html';
+      }
+    }
+  </script>
+</body>
+</html>

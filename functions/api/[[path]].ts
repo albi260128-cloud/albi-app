@@ -1970,6 +1970,198 @@ app.get('/info', (c) => {
 });
 
 // ========================================
+// 마이페이지 API (MyPage APIs)
+// ========================================
+
+// 면접 결과 조회 API
+app.get('/mypage/interview-results', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, u.user_type
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ? AND u.is_active = 1
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    let results;
+    
+    if (session.user_type === 'jobseeker') {
+      // 구직자: jobseeker_profiles 조회
+      results = await c.env.DB.prepare(`
+        SELECT * FROM jobseeker_profiles 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 10
+      `).bind(session.user_id).all();
+    } else {
+      // 구인자: employer_requirements 조회
+      results = await c.env.DB.prepare(`
+        SELECT * FROM employer_requirements 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 10
+      `).bind(session.user_id).all();
+    }
+    
+    return c.json<ApiResponse>({
+      success: true,
+      data: results.results || []
+    });
+  } catch (error) {
+    console.error('Get interview results error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '면접 결과 조회 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 프로필 수정 API
+app.put('/mypage/profile', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const { name, email } = await c.req.json();
+    
+    if (!name) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '이름은 필수 항목입니다.' 
+      }, 400);
+    }
+    
+    // 세션 확인
+    const session = await c.env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 프로필 업데이트
+    await c.env.DB.prepare(`
+      UPDATE users 
+      SET name = ?, email = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(name, email || null, session.user_id).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: '프로필이 수정되었습니다.'
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '프로필 수정 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// 비밀번호 변경 API
+app.put('/mypage/password', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '인증 토큰이 없습니다.' 
+      }, 401);
+    }
+    
+    const sessionToken = authHeader.substring(7);
+    const { currentPassword, newPassword } = await c.req.json();
+    
+    if (!currentPassword || !newPassword) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '현재 비밀번호와 새 비밀번호를 입력해주세요.' 
+      }, 400);
+    }
+    
+    if (newPassword.length < 8) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '새 비밀번호는 8자 이상이어야 합니다.' 
+      }, 400);
+    }
+    
+    // 세션 확인 및 사용자 조회
+    const session = await c.env.DB.prepare(`
+      SELECT s.user_id, u.password_hash
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ?
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '유효하지 않은 세션입니다.' 
+      }, 401);
+    }
+    
+    // 현재 비밀번호 확인 (TODO: bcrypt 사용)
+    if (session.password_hash !== currentPassword) {
+      return c.json<ApiResponse>({ 
+        success: false, 
+        error: '현재 비밀번호가 일치하지 않습니다.' 
+      }, 401);
+    }
+    
+    // 비밀번호 업데이트 (TODO: bcrypt 해싱)
+    await c.env.DB.prepare(`
+      UPDATE users 
+      SET password_hash = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(newPassword, session.user_id).run();
+    
+    return c.json<ApiResponse>({
+      success: true,
+      message: '비밀번호가 변경되었습니다.'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return c.json<ApiResponse>({ 
+      success: false, 
+      error: '비밀번호 변경 중 오류가 발생했습니다.' 
+    }, 500);
+  }
+});
+
+// ========================================
 // 404 핸들러
 // ========================================
 
