@@ -368,15 +368,15 @@
       showLoading();
       
       try {
-        // API 호출
-        const response = await fetch('/api/ai-matching/chat', {
+        // API 호출: AlbiInterviewEngine 사용
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             message, 
-            userType,
-            currentStep,
-            conversationHistory
+            userId: 'web-user-' + Date.now(), // 고유 사용자 ID
+            userType: 'jobseeker',
+            jobType: 'cafe' // 기본값 (나중에 선택 기능 추가)
           })
         });
         
@@ -388,21 +388,30 @@
         hideLoading();
         
         if (data.success && data.data) {
-          // AI 응답 표시
-          addMessage('assistant', data.data.content, data.data.card);
+          // AI 응답 표시 (백엔드에서 온 응답 그대로 사용)
+          addMessage('assistant', data.data.content);
           conversationHistory.push({ role: 'assistant', content: data.data.content });
           
-          // 단계 업데이트
-          if (data.data.nextStep !== undefined) {
-            currentStep = data.data.nextStep;
-            updateProgressBar();
-          }
-          
-          // 매칭 완료 시 결과 페이지로 이동
-          if (data.data.matchingComplete) {
-            setTimeout(() => {
-              window.location.href = `/matching-results?profileId=${data.data.profileId}`;
-            }, 2000);
+          // 진행 상태 업데이트
+          if (data.data.sessionData) {
+            const session = data.data.sessionData;
+            
+            // 진행률 업데이트
+            if (session.progress) {
+              console.log('Progress:', session.progress);
+            }
+            
+            // 완료 또는 탈락 처리
+            if (session.status === 'completed' && data.data.profile) {
+              setTimeout(() => {
+                alert('면접이 완료되었습니다! 결과를 확인해주세요.');
+                console.log('Final Result:', data.data.profile);
+              }, 1000);
+            } else if (session.status === 'rejected') {
+              setTimeout(() => {
+                alert('면접이 종료되었습니다.');
+              }, 1000);
+            }
           }
         } else {
           throw new Error(data.error || '응답 처리 실패');
@@ -412,10 +421,8 @@
         console.error('Error:', error);
         hideLoading();
         
-        // 폴백: 간단한 규칙 기반 응답
-        const fallbackResponse = generateFallbackResponse(message);
-        addMessage('assistant', fallbackResponse);
-        conversationHistory.push({ role: 'assistant', content: fallbackResponse });
+        // 폴백: 오류 메시지만 표시 (generateFallbackResponse 제거)
+        addMessage('assistant', '죄송해요, 일시적인 오류가 발생했어요. 😅<br>잠시 후 다시 시도해주세요!');
       } finally {
         isLoading = false;
         document.getElementById('sendBtn').disabled = false;
