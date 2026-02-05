@@ -3004,18 +3004,6 @@ app.post('/auth/phone/verify-code', async (c) => {
     }, 500);
   }
 });
-      message: '휴대폰 인증이 완료되었습니다.',
-      phoneNumber
-    });
-
-  } catch (error) {
-    console.error('Error verifying code:', error);
-    return c.json({
-      success: false,
-      error: '인증번호 확인에 실패했습니다.'
-    }, 500);
-  }
-});
 
 // GET /api/auth/phone/check-verified/:phoneNumber - Check if phone is verified
 app.get('/auth/phone/check-verified/:phoneNumber', async (c) => {
