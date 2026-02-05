@@ -2740,9 +2740,6 @@ app.delete('/notifications/:id', async (c) => {
 // 휴대폰 인증 API
 // ========================================
 
-// Temporary storage for verification codes (in production, use D1 or KV)
-const verificationCodes = new Map<string, { code: string; expiresAt: number; attempts: number }>();
-
 /**
  * Send SMS using CoolSMS API
  */
@@ -2820,6 +2817,7 @@ async function sendSMS(to: string, text: string, env: any): Promise<{ success: b
 app.post('/auth/phone/send-code', async (c) => {
   try {
     const { phoneNumber } = await c.req.json();
+    const { env } = c;
 
     // Validate phone number format (Korean format)
     const phoneRegex = /^01[0-9]{8,9}$/;
@@ -2830,31 +2828,40 @@ app.post('/auth/phone/send-code', async (c) => {
       }, 400);
     }
 
-    // Check if code was sent recently (rate limiting - 1 minute cooldown)
-    const existing = verificationCodes.get(phoneNumber);
-    if (existing && existing.expiresAt > Date.now()) {
-      const remainingSeconds = Math.ceil((existing.expiresAt - Date.now()) / 1000);
-      if (remainingSeconds > 240) { // If more than 4 minutes left, it's a recent request
+    // Clean up expired codes first
+    await env.DB.prepare(`
+      DELETE FROM phone_verification_codes 
+      WHERE expires_at < ?
+    `).bind(Date.now()).run();
+
+    // Check if code was sent recently (rate limiting)
+    const existing = await env.DB.prepare(`
+      SELECT code, expires_at, attempts 
+      FROM phone_verification_codes 
+      WHERE phone_number = ? AND expires_at > ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).bind(phoneNumber, Date.now()).first();
+
+    if (existing) {
+      const remainingSeconds = Math.ceil((existing.expires_at - Date.now()) / 1000);
+      if (remainingSeconds > 240) { // If more than 4 minutes left
         return c.json({
           success: false,
           error: `인증번호가 이미 발송되었습니다. ${Math.floor(remainingSeconds / 60)}분 후에 다시 시도해주세요.`
         }, 429);
       }
+      // Delete old code if less than 4 minutes remain
+      await env.DB.prepare(`
+        DELETE FROM phone_verification_codes WHERE phone_number = ?
+      `).bind(phoneNumber).run();
     }
 
     // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Store verification code with 5-minute expiration
-    const expiresAt = Date.now() + 5 * 60 * 1000;
-    verificationCodes.set(phoneNumber, {
-      code: verificationCode,
-      expiresAt,
-      attempts: 0
-    });
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
 
     // Check environment - use Mock in development
-    const { env } = c;
     const isProduction = env.ENVIRONMENT === 'production' && env.COOLSMS_API_KEY;
     
     if (isProduction) {
@@ -2863,8 +2870,6 @@ app.post('/auth/phone/send-code', async (c) => {
       const smsResult = await sendSMS(phoneNumber, smsMessage, env);
 
       if (!smsResult.success) {
-        // If SMS sending failed, remove the code and return error
-        verificationCodes.delete(phoneNumber);
         return c.json({
           success: false,
           error: smsResult.error || '인증번호 발송에 실패했습니다.'
@@ -2876,6 +2881,12 @@ app.post('/auth/phone/send-code', async (c) => {
       // Mock mode for development
       console.log(`[MOCK SMS] 휴대폰: ${phoneNumber}, 인증번호: ${verificationCode}`);
     }
+
+    // Store verification code in D1
+    await env.DB.prepare(`
+      INSERT INTO phone_verification_codes (phone_number, code, expires_at, attempts)
+      VALUES (?, ?, ?, 0)
+    `).bind(phoneNumber, verificationCode, expiresAt).run();
 
     return c.json({
       success: true,
@@ -2898,6 +2909,7 @@ app.post('/auth/phone/send-code', async (c) => {
 app.post('/auth/phone/verify-code', async (c) => {
   try {
     const { phoneNumber, code } = await c.req.json();
+    const { env } = c;
 
     if (!phoneNumber || !code) {
       return c.json({
@@ -2906,8 +2918,15 @@ app.post('/auth/phone/verify-code', async (c) => {
       }, 400);
     }
 
-    // Check if verification code exists
-    const stored = verificationCodes.get(phoneNumber);
+    // Check if verification code exists in D1
+    const stored = await env.DB.prepare(`
+      SELECT id, code, expires_at, attempts 
+      FROM phone_verification_codes 
+      WHERE phone_number = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).bind(phoneNumber).first();
+
     if (!stored) {
       return c.json({
         success: false,
@@ -2916,8 +2935,11 @@ app.post('/auth/phone/verify-code', async (c) => {
     }
 
     // Check if code expired
-    if (stored.expiresAt < Date.now()) {
-      verificationCodes.delete(phoneNumber);
+    if (stored.expires_at < Date.now()) {
+      await env.DB.prepare(`
+        DELETE FROM phone_verification_codes WHERE id = ?
+      `).bind(stored.id).run();
+      
       return c.json({
         success: false,
         error: '인증번호가 만료되었습니다. 다시 발송해주세요.'
@@ -2926,7 +2948,10 @@ app.post('/auth/phone/verify-code', async (c) => {
 
     // Check attempts limit
     if (stored.attempts >= 5) {
-      verificationCodes.delete(phoneNumber);
+      await env.DB.prepare(`
+        DELETE FROM phone_verification_codes WHERE id = ?
+      `).bind(stored.id).run();
+      
       return c.json({
         success: false,
         error: '인증 시도 횟수를 초과했습니다. 다시 발송해주세요.'
@@ -2935,19 +2960,26 @@ app.post('/auth/phone/verify-code', async (c) => {
 
     // Verify code
     if (stored.code !== code) {
-      stored.attempts++;
+      // Increment attempts
+      await env.DB.prepare(`
+        UPDATE phone_verification_codes 
+        SET attempts = attempts + 1 
+        WHERE id = ?
+      `).bind(stored.id).run();
+      
       return c.json({
         success: false,
-        error: `인증번호가 일치하지 않습니다. (${stored.attempts}/5)`,
-        remainingAttempts: 5 - stored.attempts
+        error: `인증번호가 일치하지 않습니다. (${stored.attempts + 1}/5)`,
+        remainingAttempts: 4 - stored.attempts
       }, 400);
     }
 
-    // Success - remove code from storage
-    verificationCodes.delete(phoneNumber);
+    // Success - remove code from database
+    await env.DB.prepare(`
+      DELETE FROM phone_verification_codes WHERE id = ?
+    `).bind(stored.id).run();
 
-    // Update user's phone_verified status in database
-    const { env } = c;
+    // Update user's phone_verified status in database (if user exists)
     try {
       await env.DB.prepare(`
         UPDATE users 
@@ -2960,6 +2992,18 @@ app.post('/auth/phone/verify-code', async (c) => {
 
     return c.json({
       success: true,
+      message: '휴대폰 인증이 완료되었습니다.',
+      phoneNumber
+    });
+
+  } catch (error) {
+    console.error('Error verifying code:', error);
+    return c.json({
+      success: false,
+      error: '인증번호 확인에 실패했습니다.'
+    }, 500);
+  }
+});
       message: '휴대폰 인증이 완료되었습니다.',
       phoneNumber
     });
