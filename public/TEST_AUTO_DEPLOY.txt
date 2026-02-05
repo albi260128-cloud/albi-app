@@ -1,0 +1,15 @@
+GitHub 자동 배포 테스트
+======================
+
+테스트 시간: Thu Feb  5 02:25:42 UTC 2026
+
+이 파일은 GitHub → Cloudflare Pages 자동 배포가
+정상적으로 작동하는지 확인하기 위한 테스트 파일입니다.
+
+워크플로우:
+1. GenSpark에서 파일 생성
+2. GitHub에 푸시
+3. Cloudflare Pages 자동 배포
+4. https://albi-app.pages.dev/TEST_AUTO_DEPLOY.txt 에서 확인
+
+상태: ✅ 자동 배포 테스트 중...
