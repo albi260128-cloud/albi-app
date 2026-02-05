@@ -1,11 +1,20 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { handle } from 'hono/cloudflare-pages'
 
 type Bindings = {
   DB: D1Database
+  KAKAO_CLIENT_ID: string
+  KAKAO_REDIRECT_URI: string
+  NAVER_CLIENT_ID: string
+  NAVER_CLIENT_SECRET: string
+  NAVER_REDIRECT_URI: string
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
+  GOOGLE_REDIRECT_URI: string
 }
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Bindings }>().basePath('/api/auth')
 
 app.use('/*', cors())
 
@@ -14,7 +23,7 @@ app.use('/*', cors())
 // ========================================
 
 // Step 1: 카카오 로그인 페이지로 리다이렉트
-app.get('/auth/kakao', (c) => {
+app.get('/kakao', (c) => {
   const clientId = c.env.KAKAO_CLIENT_ID
   const redirectUri = c.env.KAKAO_REDIRECT_URI || `${new URL(c.req.url).origin}/api/auth/kakao/callback`
   
@@ -24,7 +33,7 @@ app.get('/auth/kakao', (c) => {
 })
 
 // Step 2: 카카오 콜백 처리
-app.get('/auth/kakao/callback', async (c) => {
+app.get('/kakao/callback', async (c) => {
   const code = c.req.query('code')
   
   if (!code) {
@@ -118,7 +127,7 @@ app.get('/auth/kakao/callback', async (c) => {
 // ========================================
 
 // Step 1: 네이버 로그인 페이지로 리다이렉트
-app.get('/auth/naver', (c) => {
+app.get('/naver', (c) => {
   const clientId = c.env.NAVER_CLIENT_ID
   const redirectUri = c.env.NAVER_REDIRECT_URI || `${new URL(c.req.url).origin}/api/auth/naver/callback`
   const state = Math.random().toString(36).substring(7)
@@ -129,7 +138,7 @@ app.get('/auth/naver', (c) => {
 })
 
 // Step 2: 네이버 콜백 처리
-app.get('/auth/naver/callback', async (c) => {
+app.get('/naver/callback', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
   
@@ -215,7 +224,7 @@ app.get('/auth/naver/callback', async (c) => {
 // ========================================
 
 // Step 1: 구글 로그인 페이지로 리다이렉트
-app.get('/auth/google', (c) => {
+app.get('/google', (c) => {
   const clientId = c.env.GOOGLE_CLIENT_ID
   const redirectUri = c.env.GOOGLE_REDIRECT_URI || `${new URL(c.req.url).origin}/api/auth/google/callback`
   
@@ -225,7 +234,7 @@ app.get('/auth/google', (c) => {
 })
 
 // Step 2: 구글 콜백 처리
-app.get('/auth/google/callback', async (c) => {
+app.get('/google/callback', async (c) => {
   const code = c.req.query('code')
   
   if (!code) {
@@ -313,4 +322,4 @@ app.get('/auth/google/callback', async (c) => {
   }
 })
 
-export const onRequest = app.fetch.bind(app)
+export const onRequest = handle(app)
