@@ -2737,6 +2737,177 @@ app.delete('/notifications/:id', async (c) => {
 });
 
 // ========================================
+// 휴대폰 인증 API
+// ========================================
+
+// Temporary storage for verification codes (in production, use D1 or KV)
+const verificationCodes = new Map<string, { code: string; expiresAt: number; attempts: number }>();
+
+// POST /api/auth/phone/send-code - Send verification code
+app.post('/auth/phone/send-code', async (c) => {
+  try {
+    const { phoneNumber } = await c.req.json();
+
+    // Validate phone number format (Korean format)
+    const phoneRegex = /^01[0-9]{8,9}$/;
+    if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
+      return c.json({
+        success: false,
+        error: '올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)'
+      }, 400);
+    }
+
+    // Check if code was sent recently (rate limiting - 1 minute cooldown)
+    const existing = verificationCodes.get(phoneNumber);
+    if (existing && existing.expiresAt > Date.now()) {
+      const remainingSeconds = Math.ceil((existing.expiresAt - Date.now()) / 1000);
+      if (remainingSeconds > 240) { // If more than 4 minutes left, it's a recent request
+        return c.json({
+          success: false,
+          error: `인증번호가 이미 발송되었습니다. ${Math.floor(remainingSeconds / 60)}분 후에 다시 시도해주세요.`
+        }, 429);
+      }
+    }
+
+    // Generate 6-digit verification code
+    // In MOCK mode, use fixed code for testing: 123456
+    const verificationCode = '123456'; // Mock code for development
+
+    // Store verification code with 5-minute expiration
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+    verificationCodes.set(phoneNumber, {
+      code: verificationCode,
+      expiresAt,
+      attempts: 0
+    });
+
+    // TODO: Replace with actual SMS API call
+    // Example services: NHN Cloud, Naver Cloud, CoolSMS
+    // await sendSMS(phoneNumber, `[알비] 인증번호는 ${verificationCode} 입니다. (5분간 유효)`)
+
+    console.log(`[MOCK SMS] 휴대폰: ${phoneNumber}, 인증번호: ${verificationCode}`);
+
+    return c.json({
+      success: true,
+      message: '인증번호가 발송되었습니다.',
+      expiresIn: 300, // 5 minutes in seconds
+      // In development, return the code for easy testing
+      mockCode: verificationCode
+    });
+
+  } catch (error) {
+    console.error('Error sending verification code:', error);
+    return c.json({
+      success: false,
+      error: '인증번호 발송에 실패했습니다.'
+    }, 500);
+  }
+});
+
+// POST /api/auth/phone/verify-code - Verify code
+app.post('/auth/phone/verify-code', async (c) => {
+  try {
+    const { phoneNumber, code } = await c.req.json();
+
+    if (!phoneNumber || !code) {
+      return c.json({
+        success: false,
+        error: '휴대폰 번호와 인증번호를 입력해주세요.'
+      }, 400);
+    }
+
+    // Check if verification code exists
+    const stored = verificationCodes.get(phoneNumber);
+    if (!stored) {
+      return c.json({
+        success: false,
+        error: '인증번호가 발송되지 않았습니다.'
+      }, 404);
+    }
+
+    // Check if code expired
+    if (stored.expiresAt < Date.now()) {
+      verificationCodes.delete(phoneNumber);
+      return c.json({
+        success: false,
+        error: '인증번호가 만료되었습니다. 다시 발송해주세요.'
+      }, 410);
+    }
+
+    // Check attempts limit
+    if (stored.attempts >= 5) {
+      verificationCodes.delete(phoneNumber);
+      return c.json({
+        success: false,
+        error: '인증 시도 횟수를 초과했습니다. 다시 발송해주세요.'
+      }, 429);
+    }
+
+    // Verify code
+    if (stored.code !== code) {
+      stored.attempts++;
+      return c.json({
+        success: false,
+        error: `인증번호가 일치하지 않습니다. (${stored.attempts}/5)`,
+        remainingAttempts: 5 - stored.attempts
+      }, 400);
+    }
+
+    // Success - remove code from storage
+    verificationCodes.delete(phoneNumber);
+
+    // Update user's phone_verified status in database
+    const { env } = c;
+    try {
+      await env.DB.prepare(`
+        UPDATE users 
+        SET phone_verified = 1, updated_at = CURRENT_TIMESTAMP
+        WHERE phone = ?
+      `).bind(phoneNumber).run();
+    } catch (error) {
+      console.log('User not yet created, verification will be stored on signup');
+    }
+
+    return c.json({
+      success: true,
+      message: '휴대폰 인증이 완료되었습니다.',
+      phoneNumber
+    });
+
+  } catch (error) {
+    console.error('Error verifying code:', error);
+    return c.json({
+      success: false,
+      error: '인증번호 확인에 실패했습니다.'
+    }, 500);
+  }
+});
+
+// GET /api/auth/phone/check-verified/:phoneNumber - Check if phone is verified
+app.get('/auth/phone/check-verified/:phoneNumber', async (c) => {
+  try {
+    const phoneNumber = c.req.param('phoneNumber');
+    const { env } = c;
+
+    const result = await env.DB.prepare(`
+      SELECT phone_verified FROM users WHERE phone = ?
+    `).bind(phoneNumber).first();
+
+    return c.json({
+      success: true,
+      verified: result?.phone_verified === 1
+    });
+
+  } catch (error) {
+    console.error('Error checking verification status:', error);
+    return c.json({
+      success: false,
+      error: '인증 상태 확인에 실패했습니다.'
+    }, 500);
+  }
+});
+
+// ========================================
 // 404 핸들러
 // ========================================
 

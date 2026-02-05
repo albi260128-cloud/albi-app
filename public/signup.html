@@ -638,6 +638,7 @@
   
   <script>
     let verificationSent = false;
+    let phoneVerified = false; // Track phone verification status
     let verificationTimer = null;
     let timeLeft = 180; // 3분
     let selectedUserType = 'jobseeker'; // 기본값: 구직자
@@ -723,7 +724,8 @@
       const agreeTerms = document.getElementById('agreeTerms').checked;
       const agreePrivacy = document.getElementById('agreePrivacy').checked;
       
-      let isValid = name && phone && password && passwordConfirm && 
+      // Check if phone is verified (required for signup)
+      let isValid = name && phone && phoneVerified && password && passwordConfirm && 
                       password === passwordConfirm && 
                       agreeTerms && agreePrivacy;
       
@@ -746,23 +748,59 @@
     }
     
     // 인증번호 발송
-    function sendVerification() {
+    async function sendVerification() {
       const phone = document.getElementById('phone').value;
-      if (!phone) {
+      
+      // Remove hyphens and validate format
+      const cleanPhone = phone.replace(/-/g, '');
+      if (!cleanPhone) {
         alert('휴대폰번호를 입력해주세요.');
         return;
       }
       
-      // TODO: 실제 SMS API 연동
-      console.log('인증번호 발송:', phone);
-      alert('인증번호가 발송되었습니다. (개발 중: 123456)');
+      // Validate Korean phone format (010xxxxxxxx)
+      if (!/^01[0-9]{8,9}$/.test(cleanPhone)) {
+        alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
+        return;
+      }
       
-      verificationSent = true;
-      document.getElementById('verifyCodeGroup').style.display = 'block';
-      document.getElementById('sendVerifyBtn').textContent = '재전송';
+      // Disable button to prevent double-click
+      const sendBtn = document.getElementById('sendVerifyBtn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = '발송 중...';
       
-      // 타이머 시작
-      startTimer();
+      try {
+        const response = await fetch('/api/auth/phone/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: cleanPhone })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert(data.message + (data.mockCode ? `\n\n[개발 모드] 인증번호: ${data.mockCode}` : ''));
+          verificationSent = true;
+          document.getElementById('verifyCodeGroup').style.display = 'block';
+          sendBtn.textContent = '재전송';
+          sendBtn.disabled = false;
+          
+          // Store clean phone for verification
+          document.getElementById('phone').dataset.cleanPhone = cleanPhone;
+          
+          // Start timer
+          startTimer();
+        } else {
+          alert(data.error || '인증번호 발송에 실패했습니다.');
+          sendBtn.textContent = '인증요청';
+          sendBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error sending verification:', error);
+        alert('인증번호 발송에 실패했습니다. 다시 시도해주세요.');
+        sendBtn.textContent = '인증요청';
+        sendBtn.disabled = false;
+      }
     }
     
     function startTimer() {
@@ -786,23 +824,67 @@
     }
     
     // 인증번호 확인
-    function verifyCode() {
+    async function verifyCode() {
       const code = document.getElementById('verifyCode').value;
+      const phoneInput = document.getElementById('phone');
+      const cleanPhone = phoneInput.dataset.cleanPhone;
       
       if (!code) {
         alert('인증번호를 입력해주세요.');
         return;
       }
       
-      // TODO: 실제 인증 확인 API
-      if (code === '123456') {
-        alert('인증되었습니다!');
-        clearInterval(verificationTimer);
-        document.getElementById('verifyCodeGroup').style.display = 'none';
-        document.getElementById('phone').disabled = true;
-        document.getElementById('sendVerifyBtn').disabled = true;
-      } else {
-        alert('인증번호가 일치하지 않습니다.');
+      if (!cleanPhone) {
+        alert('먼저 인증번호를 발송해주세요.');
+        return;
+      }
+      
+      // Disable inputs during verification
+      const verifyBtn = document.querySelector('#verifyCodeGroup button');
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = '확인 중...';
+      
+      try {
+        const response = await fetch('/api/auth/phone/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            phoneNumber: cleanPhone,
+            code: code 
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('✅ ' + data.message);
+          phoneVerified = true;
+          
+          // Clear timer and hide verification input
+          clearInterval(verificationTimer);
+          document.getElementById('verifyCodeGroup').style.display = 'none';
+          
+          // Disable phone input and send button
+          phoneInput.disabled = true;
+          phoneInput.style.backgroundColor = '#f0f0f0';
+          document.getElementById('sendVerifyBtn').disabled = true;
+          document.getElementById('sendVerifyBtn').textContent = '✓ 인증완료';
+          
+          // Enable signup button
+          checkFormValidity();
+        } else {
+          alert('❌ ' + (data.error || '인증번호가 일치하지 않습니다.'));
+          if (data.remainingAttempts !== undefined) {
+            alert(`남은 시도 횟수: ${data.remainingAttempts}회`);
+          }
+          verifyBtn.textContent = '확인';
+          verifyBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error verifying code:', error);
+        alert('인증 확인에 실패했습니다. 다시 시도해주세요.');
+        verifyBtn.textContent = '확인';
+        verifyBtn.disabled = false;
       }
     }
     
