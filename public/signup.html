@@ -808,8 +808,16 @@
     
     // 소셜 회원가입
     function socialSignup(provider) {
-      console.log(`${provider} 회원가입 시도`);
-      alert(`${provider} 간편 회원가입 기능은 곧 추가됩니다!`);
+      console.log(`${provider} 회원가입/로그인 시도`);
+      
+      // 소셜 로그인 페이지로 리다이렉트
+      if (provider === 'kakao') {
+        window.location.href = '/api/auth/kakao';
+      } else if (provider === 'naver') {
+        window.location.href = '/api/auth/naver';
+      } else if (provider === 'google') {
+        window.location.href = '/api/auth/google';
+      }
     }
     
     // 회원가입 폼 제출

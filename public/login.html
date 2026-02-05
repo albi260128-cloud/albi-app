@@ -363,7 +363,15 @@
     // 소셜 로그인
     function socialLogin(provider) {
       console.log(`${provider} 로그인 시도`);
-      alert(`${provider} 로그인 기능은 곧 추가됩니다!`);
+      
+      // 소셜 로그인 페이지로 리다이렉트
+      if (provider === 'kakao') {
+        window.location.href = '/api/auth/kakao';
+      } else if (provider === 'naver') {
+        window.location.href = '/api/auth/naver';
+      } else if (provider === 'google') {
+        window.location.href = '/api/auth/google';
+      }
     }
     
     // 이미 로그인된 사용자 체크
