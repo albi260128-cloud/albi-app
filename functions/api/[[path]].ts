@@ -2743,6 +2743,79 @@ app.delete('/notifications/:id', async (c) => {
 // Temporary storage for verification codes (in production, use D1 or KV)
 const verificationCodes = new Map<string, { code: string; expiresAt: number; attempts: number }>();
 
+/**
+ * Send SMS using CoolSMS API
+ */
+async function sendSMS(to: string, text: string, env: any): Promise<{ success: boolean; error?: string }> {
+  const apiKey = env.COOLSMS_API_KEY;
+  const apiSecret = env.COOLSMS_API_SECRET;
+  const sender = env.COOLSMS_SENDER;
+
+  if (!apiKey || !apiSecret || !sender) {
+    console.error('CoolSMS credentials not configured');
+    return { success: false, error: 'SMS 설정이 완료되지 않았습니다.' };
+  }
+
+  try {
+    // CoolSMS API v4 endpoint
+    const url = 'https://api.coolsms.co.kr/messages/v4/send';
+    
+    const body = {
+      message: {
+        to: to,
+        from: sender,
+        text: text,
+        type: 'SMS' // SMS (90자 이하), LMS (2000자 이하)
+      }
+    };
+
+    // Generate HMAC-SHA256 signature for authentication
+    const date = new Date().toISOString();
+    const salt = Math.random().toString(36).substring(2, 15);
+    
+    // Create signature: HMAC-SHA256(API_SECRET, date + salt)
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(apiSecret);
+    const messageData = encoder.encode(date + salt);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const signatureHex = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `HMAC-SHA256 apiKey=${apiKey}, date=${date}, salt=${salt}, signature=${signatureHex}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log('[CoolSMS] SMS sent successfully:', result);
+      return { success: true };
+    } else {
+      console.error('[CoolSMS] SMS send failed:', result);
+      return { success: false, error: result.errorMessage || 'SMS 발송 실패' };
+    }
+
+  } catch (error) {
+    console.error('[CoolSMS] Error:', error);
+    return { success: false, error: 'SMS 발송 중 오류가 발생했습니다.' };
+  }
+}
+
 // POST /api/auth/phone/send-code - Send verification code
 app.post('/auth/phone/send-code', async (c) => {
   try {
@@ -2770,8 +2843,7 @@ app.post('/auth/phone/send-code', async (c) => {
     }
 
     // Generate 6-digit verification code
-    // In MOCK mode, use fixed code for testing: 123456
-    const verificationCode = '123456'; // Mock code for development
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store verification code with 5-minute expiration
     const expiresAt = Date.now() + 5 * 60 * 1000;
@@ -2781,18 +2853,36 @@ app.post('/auth/phone/send-code', async (c) => {
       attempts: 0
     });
 
-    // TODO: Replace with actual SMS API call
-    // Example services: NHN Cloud, Naver Cloud, CoolSMS
-    // await sendSMS(phoneNumber, `[알비] 인증번호는 ${verificationCode} 입니다. (5분간 유효)`)
+    // Check environment - use Mock in development
+    const { env } = c;
+    const isProduction = env.ENVIRONMENT === 'production' && env.COOLSMS_API_KEY;
+    
+    if (isProduction) {
+      // Send SMS using CoolSMS API in production
+      const smsMessage = `[알비] 인증번호는 ${verificationCode} 입니다. (5분간 유효)`;
+      const smsResult = await sendSMS(phoneNumber, smsMessage, env);
 
-    console.log(`[MOCK SMS] 휴대폰: ${phoneNumber}, 인증번호: ${verificationCode}`);
+      if (!smsResult.success) {
+        // If SMS sending failed, remove the code and return error
+        verificationCodes.delete(phoneNumber);
+        return c.json({
+          success: false,
+          error: smsResult.error || '인증번호 발송에 실패했습니다.'
+        }, 500);
+      }
+
+      console.log(`[SMS Sent] 휴대폰: ${phoneNumber}, 인증번호: ${verificationCode}`);
+    } else {
+      // Mock mode for development
+      console.log(`[MOCK SMS] 휴대폰: ${phoneNumber}, 인증번호: ${verificationCode}`);
+    }
 
     return c.json({
       success: true,
       message: '인증번호가 발송되었습니다.',
       expiresIn: 300, // 5 minutes in seconds
-      // In development, return the code for easy testing
-      mockCode: verificationCode
+      // In development mode, return the mock code
+      ...(!isProduction && { mockCode: verificationCode })
     });
 
   } catch (error) {
