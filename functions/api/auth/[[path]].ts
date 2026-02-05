@@ -60,8 +60,16 @@ app.get('/kakao/callback', async (c) => {
     
     const tokenData = await tokenResponse.json() as any
     
+    console.log('[Kakao OAuth] Token response:', tokenData)
+    
     if (!tokenData.access_token) {
-      return c.json({ success: false, error: '액세스 토큰 발급 실패' }, 400)
+      console.error('[Kakao OAuth] Token error:', tokenData)
+      return c.json({ 
+        success: false, 
+        error: '액세스 토큰 발급 실패',
+        details: tokenData.error_description || tokenData.error || 'Unknown error',
+        kakao_error: tokenData
+      }, 400)
     }
     
     // 2. 사용자 정보 요청
