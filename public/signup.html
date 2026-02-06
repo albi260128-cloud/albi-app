@@ -550,42 +550,27 @@
       
       <div class="form-group">
         <label class="form-label">
-          통신사 <span class="required">*</span>
+          휴대폰 본인인증 <span class="required">*</span>
         </label>
-        <select class="form-input" id="carrier" required>
-          <option value="">통신사 선택</option>
-          <option value="SKT">SKT</option>
-          <option value="KT">KT</option>
-          <option value="LG U+">LG U+</option>
-          <option value="SKT 알뜰폰">SKT 알뜰폰</option>
-          <option value="KT 알뜰폰">KT 알뜰폰</option>
-          <option value="LG U+ 알뜰폰">LG U+ 알뜰폰</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">
-          휴대폰번호 <span class="required">*</span>
-        </label>
-        <div class="input-group">
-          <input type="tel" class="form-input" id="phone" placeholder="010-1234-5678" required>
-          <button type="button" class="btn-verify" id="sendVerifyBtn" onclick="sendVerification()">
-            인증요청
-          </button>
+        <div class="verification-box" style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 2px dashed #ddd;">
+          <div id="verificationStatus" style="text-align: center;">
+            <i class="fas fa-shield-alt" style="font-size: 48px; color: #999; margin-bottom: 16px;"></i>
+            <p style="color: #666; margin-bottom: 16px;">본인인증이 필요합니다</p>
+            <button type="button" class="btn-verify" id="startVerificationBtn" onclick="startPhoneVerification()" style="width: 100%; max-width: 300px; margin: 0 auto; display: block;">
+              <i class="fas fa-mobile-alt"></i> 휴대폰 본인인증 시작
+            </button>
+            <p style="color: #999; font-size: 12px; margin-top: 12px;">PASS 인증 또는 문자 인증을 선택할 수 있습니다</p>
+          </div>
+          
+          <div id="verificationComplete" style="display: none; text-align: center;">
+            <i class="fas fa-check-circle" style="font-size: 48px; color: #10B981; margin-bottom: 16px;"></i>
+            <p style="color: #10B981; font-weight: 600; margin-bottom: 8px;">본인인증 완료</p>
+            <p style="color: #666; font-size: 14px;" id="verifiedInfo"></p>
+          </div>
         </div>
-      </div>
-      
-      <div class="form-group" id="verifyCodeGroup" style="display: none;">
-        <label class="form-label">
-          인증번호 <span class="required">*</span>
-        </label>
-        <div class="input-group">
-          <input type="text" class="form-input" id="verifyCode" placeholder="6자리 인증번호" maxlength="6">
-          <button type="button" class="btn-verify" onclick="verifyCode()">
-            확인
-          </button>
-        </div>
-        <div class="verification-timer" id="timer"></div>
+        <input type="hidden" id="verificationToken" name="verificationToken">
+        <input type="hidden" id="phone" name="phone">
+        <input type="hidden" id="carrier" name="carrier">
       </div>
       
       <div class="form-group">
@@ -763,97 +748,72 @@
     }
     
     // 인증번호 발송
-    async function sendVerification() {
-      const phone = document.getElementById('phone').value;
-      const carrier = document.getElementById('carrier').value;
+    // ========================================
+    // 📱 휴대폰 본인인증 (팝업 방식)
+    // ========================================
+    
+    let verificationData = null;
+    
+    function startPhoneVerification() {
+      const name = document.getElementById('name').value.trim();
       
-      // Validate carrier
-      if (!carrier) {
-        alert('통신사를 선택해주세요.');
+      if (!name) {
+        alert('이름을 먼저 입력해주세요.');
+        document.getElementById('name').focus();
         return;
       }
       
-      // Remove hyphens and validate format
-      const cleanPhone = phone.replace(/-/g, '');
-      if (!cleanPhone) {
-        alert('휴대폰번호를 입력해주세요.');
+      // 본인인증 팝업 열기
+      const width = 450;
+      const height = 600;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
+      
+      const popup = window.open(
+        '/phone-verification.html?name=' + encodeURIComponent(name),
+        'phoneVerification',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+      );
+      
+      if (!popup) {
+        alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
         return;
       }
       
-      // Validate Korean phone format (010xxxxxxxx)
-      if (!/^01[0-9]{8,9}$/.test(cleanPhone)) {
-        alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
-        return;
-      }
-      
-      // Disable button to prevent double-click
-      const sendBtn = document.getElementById('sendVerifyBtn');
-      sendBtn.disabled = true;
-      sendBtn.textContent = '발송 중...';
-      
-      try {
-        const response = await fetch('/api/auth/phone/send-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            phoneNumber: cleanPhone,
-            carrier: carrier
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          alert(data.message + (data.mockCode ? `\n\n[개발 모드] 인증번호: ${data.mockCode}` : ''));
-          verificationSent = true;
-          document.getElementById('verifyCodeGroup').style.display = 'block';
-          sendBtn.textContent = '재전송';
-          sendBtn.disabled = false;
-          
-          // Store clean phone and carrier for verification
-          document.getElementById('phone').dataset.cleanPhone = cleanPhone;
-          document.getElementById('phone').dataset.carrier = carrier;
-          
-          // Start timer
-          startTimer();
-        } else {
-          alert(data.error || '인증번호 발송에 실패했습니다.');
-          sendBtn.textContent = '인증요청';
-          sendBtn.disabled = false;
-        }
-      } catch (error) {
-        console.error('Error sending verification:', error);
-        alert('인증번호 발송에 실패했습니다. 다시 시도해주세요.');
-        sendBtn.textContent = '인증요청';
-        sendBtn.disabled = false;
-      }
+      // 팝업에서 인증 완료 메시지 수신
+      window.addEventListener('message', handleVerificationResult);
     }
     
-    function startTimer() {
-      if (verificationTimer) clearInterval(verificationTimer);
+    function handleVerificationResult(event) {
+      // 보안을 위해 origin 체크 (프로덕션에서는 실제 도메인으로 변경)
+      // if (event.origin !== window.location.origin) return;
       
-      timeLeft = 180;
-      const timerEl = document.getElementById('timer');
-      
-      verificationTimer = setInterval(() => {
-        timeLeft--;
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        timerEl.textContent = `남은 시간: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+      if (event.data.type === 'PHONE_VERIFICATION_SUCCESS') {
+        const { name, phone, carrier, birthDate, gender, verificationToken } = event.data;
         
-        if (timeLeft <= 0) {
-          clearInterval(verificationTimer);
-          timerEl.textContent = '인증시간이 만료되었습니다.';
-          timerEl.style.color = '#999';
-        }
-      }, 1000);
+        verificationData = event.data;
+        
+        // UI 업데이트
+        document.getElementById('verificationStatus').style.display = 'none';
+        document.getElementById('verificationComplete').style.display = 'block';
+        document.getElementById('verifiedInfo').textContent = `${name} / ${phone}`;
+        
+        // 숨겨진 필드에 데이터 저장
+        document.getElementById('verificationToken').value = verificationToken;
+        document.getElementById('phone').value = phone;
+        document.getElementById('carrier').value = carrier;
+        
+        // 이름 필드 자동 채우기 (비활성화)
+        const nameInput = document.getElementById('name');
+        nameInput.value = name;
+        nameInput.disabled = true;
+        
+        console.log('✅ 본인인증 완료:', verificationData);
+        
+        // 이벤트 리스너 제거
+        window.removeEventListener('message', handleVerificationResult);
+      }
     }
-    
-    // 인증번호 확인
-    async function verifyCode() {
-      const code = document.getElementById('verifyCode').value;
-      const phoneInput = document.getElementById('phone');
-      const cleanPhone = phoneInput.dataset.cleanPhone;
       
       if (!code) {
         alert('인증번호를 입력해주세요.');
@@ -932,8 +892,15 @@
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const name = document.getElementById('name').value;
-      const phone = document.getElementById('phone').value;
+      // 본인인증 확인
+      if (!verificationData) {
+        alert('휴대폰 본인인증을 먼저 완료해주세요.');
+        document.getElementById('startVerificationBtn').focus();
+        return;
+      }
+      
+      const name = verificationData.name; // 본인인증에서 가져온 이름
+      const phone = verificationData.phone; // 본인인증에서 가져온 휴대폰번호
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const passwordConfirm = document.getElementById('passwordConfirm').value;
@@ -968,6 +935,10 @@
         formData.append('agreed_terms', document.getElementById('agreeTerms').checked);
         formData.append('agreed_privacy', document.getElementById('agreePrivacy').checked);
         formData.append('agreed_marketing', document.getElementById('agreeMarketing').checked);
+        formData.append('verification_token', verificationData.verificationToken);
+        formData.append('carrier', verificationData.carrier);
+        formData.append('birth_date', verificationData.birthDate);
+        formData.append('gender', verificationData.gender);
         
         // 구인자 추가 정보
         if (selectedUserType === 'employer') {
