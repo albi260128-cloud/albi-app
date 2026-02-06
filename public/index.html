@@ -11,6 +11,9 @@
   <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   
+  <!-- 네이버 지도 API -->
+  <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=h46g2mh4yh"></script>
+  
   <style>
     /* 실용적인 레이아웃 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -473,6 +476,142 @@
       color: #FF6B35;
     }
     
+    /* 지도 섹션 스타일 */
+    .map-section {
+      padding: 60px 20px;
+      background: white;
+    }
+    
+    .map-container {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    #map {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .map-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    
+    .map-control-btn {
+      background: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .map-control-btn:hover {
+      background: #f8f9fa;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .map-control-btn i {
+      color: #FF6B35;
+    }
+    
+    .map-job-list {
+      background: white;
+      border-radius: 12px;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .map-job-list-header {
+      padding: 20px;
+      border-bottom: 1px solid #e5e5e5;
+      background: #f8f9fa;
+    }
+    
+    .map-job-list-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .map-job-list-header span {
+      color: #FF6B35;
+      font-weight: 700;
+    }
+    
+    .map-job-list-content {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .map-job-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .map-job-item:hover {
+      background: #f8f9fa;
+    }
+    
+    .map-job-item:last-child {
+      border-bottom: none;
+    }
+    
+    .map-job-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    
+    .map-job-company {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .map-job-info {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      color: #999;
+    }
+    
+    .map-job-distance {
+      color: #FF6B35;
+      font-weight: 600;
+    }
+    
+    .loading-placeholder {
+      padding: 60px 20px;
+      text-align: center;
+      color: #999;
+    }
+    
+    .loading-placeholder i {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: #FF6B35;
+    }
+    
+    .loading-placeholder p {
+      font-size: 14px;
+    }
+    
     /* 반응형 */
     @media (max-width: 768px) {
       .nav-menu, .nav-actions .btn-outline {
@@ -498,7 +637,23 @@
       body {
         padding-bottom: 60px;
       }
+      
+      #map {
+        height: 350px !important;
+      }
+      
+      .map-controls {
+        top: 10px;
+        right: 10px;
+        flex-direction: column;
+      }
+      
+      .map-control-btn {
+        font-size: 12px;
+        padding: 8px 12px;
+      }
     }
+    
   </style>
 </head>
 <body>
@@ -549,6 +704,47 @@
         <span class="tag">#단기</span>
         <span class="tag">#주말</span>
         <span class="tag">#급구</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 내 주변 알바 지도 섹션 -->
+  <section class="map-section">
+    <div class="container">
+      <h2 class="section-title">
+        <i class="fas fa-map-marker-alt" style="color: #FF6B35;"></i> 내 주변 알바
+      </h2>
+      <p style="color: #666; margin-bottom: 20px; text-align: center;">
+        지도에서 가까운 알바를 찾아보세요
+      </p>
+      
+      <div class="map-container">
+        <!-- 지도 표시 영역 -->
+        <div id="map" style="width: 100%; height: 500px; border-radius: 12px; overflow: hidden;"></div>
+        
+        <!-- 지도 컨트롤 -->
+        <div class="map-controls">
+          <button id="myLocationBtn" class="map-control-btn">
+            <i class="fas fa-crosshairs"></i> 내 위치로
+          </button>
+          <button id="refreshJobsBtn" class="map-control-btn">
+            <i class="fas fa-sync-alt"></i> 알바 새로고침
+          </button>
+        </div>
+        
+        <!-- 알바 리스트 (지도 옆에 표시) -->
+        <div id="jobList" class="map-job-list">
+          <div class="map-job-list-header">
+            <h3>주변 알바 <span id="jobCount">0</span>건</h3>
+          </div>
+          <div id="jobListContent" class="map-job-list-content">
+            <!-- 알바 리스트가 여기에 표시됩니다 -->
+            <div class="loading-placeholder">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>주변 알바를 찾고 있습니다...</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -839,6 +1035,224 @@
         const tagText = tag.textContent.replace('#', '');
         window.location.href = `/jobs?keyword=${encodeURIComponent(tagText)}`;
       });
+    });
+    
+    // ========================================
+    // 🗺️ 네이버 지도 초기화 및 주변 알바 표시
+    // ========================================
+    let map = null;
+    let userMarker = null;
+    let jobMarkers = [];
+    let userLocation = { lat: 37.5665, lng: 126.9780 }; // 기본: 서울시청
+    
+    // 지도 초기화
+    function initMap() {
+      console.log('🗺️ 지도 초기화 시작');
+      
+      const mapOptions = {
+        center: new naver.maps.LatLng(userLocation.lat, userLocation.lng),
+        zoom: 15,
+        mapTypeControl: false,
+        scaleControl: true,
+        logoControl: false,
+        mapDataControl: false,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: naver.maps.Position.TOP_LEFT
+        }
+      };
+      
+      map = new naver.maps.Map('map', mapOptions);
+      console.log('✅ 지도 생성 완료');
+      
+      // 사용자 위치 마커 추가
+      userMarker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(userLocation.lat, userLocation.lng),
+        map: map,
+        icon: {
+          content: '<div style="background: #FF6B35; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+          anchor: new naver.maps.Point(10, 10)
+        },
+        title: '내 위치'
+      });
+      
+      // 현재 위치 가져오기
+      getUserLocation();
+      
+      // Mock 알바 데이터 표시
+      loadNearbyJobs();
+    }
+    
+    // 사용자 위치 가져오기
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        console.log('📍 위치 정보 요청 중...');
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            
+            console.log('✅ 위치 정보 획득:', userLocation);
+            
+            // 지도 중심 이동
+            const newCenter = new naver.maps.LatLng(userLocation.lat, userLocation.lng);
+            map.setCenter(newCenter);
+            userMarker.setPosition(newCenter);
+            
+            // 주변 알바 다시 로드
+            loadNearbyJobs();
+          },
+          (error) => {
+            console.warn('⚠️ 위치 정보 획득 실패:', error.message);
+            // 기본 위치(서울시청)로 진행
+            loadNearbyJobs();
+          }
+        );
+      } else {
+        console.warn('⚠️ 위치 정보 미지원 브라우저');
+        loadNearbyJobs();
+      }
+    }
+    
+    // 주변 알바 로드 (Mock 데이터)
+    function loadNearbyJobs() {
+      console.log('🔍 주변 알바 검색 중...');
+      
+      // 기존 마커 제거
+      jobMarkers.forEach(marker => marker.setMap(null));
+      jobMarkers = [];
+      
+      // Mock 알바 데이터 (실제로는 API에서 가져옴)
+      const mockJobs = [
+        {
+          id: 1,
+          title: '편의점 야간 알바',
+          company: 'CU 강남점',
+          hourlyPay: 12000,
+          lat: userLocation.lat + 0.003,
+          lng: userLocation.lng + 0.002,
+          address: '서울 강남구 테헤란로',
+          distance: 0.3
+        },
+        {
+          id: 2,
+          title: '카페 주말 알바',
+          company: '스타벅스 역삼점',
+          hourlyPay: 11000,
+          lat: userLocation.lat - 0.002,
+          lng: userLocation.lng + 0.003,
+          address: '서울 강남구 역삼동',
+          distance: 0.5
+        },
+        {
+          id: 3,
+          title: '음식점 홀 서빙',
+          company: '맘스터치 선릉점',
+          hourlyPay: 10500,
+          lat: userLocation.lat + 0.001,
+          lng: userLocation.lng - 0.003,
+          address: '서울 강남구 선릉로',
+          distance: 0.4
+        },
+        {
+          id: 4,
+          title: '배달 라이더 모집',
+          company: '배민라이더스',
+          hourlyPay: 13000,
+          lat: userLocation.lat - 0.003,
+          lng: userLocation.lng - 0.001,
+          address: '서울 강남구 논현동',
+          distance: 0.6
+        },
+        {
+          id: 5,
+          title: '편의점 단기 알바',
+          company: 'GS25 삼성점',
+          hourlyPay: 11500,
+          lat: userLocation.lat + 0.004,
+          lng: userLocation.lng + 0.001,
+          address: '서울 강남구 삼성동',
+          distance: 0.7
+        }
+      ];
+      
+      // 지도에 마커 추가
+      mockJobs.forEach(job => {
+        const marker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(job.lat, job.lng),
+          map: map,
+          title: job.company,
+          icon: {
+            content: `<div style="background: white; padding: 8px 12px; border-radius: 20px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap;">${job.hourlyPay.toLocaleString()}원</div>`,
+            anchor: new naver.maps.Point(30, 40)
+          }
+        });
+        
+        // 마커 클릭 이벤트
+        naver.maps.Event.addListener(marker, 'click', () => {
+          showJobDetail(job);
+        });
+        
+        jobMarkers.push(marker);
+      });
+      
+      // 알바 리스트 표시
+      displayJobList(mockJobs);
+      
+      console.log('✅ 주변 알바', mockJobs.length, '건 표시 완료');
+    }
+    
+    // 알바 리스트 표시
+    function displayJobList(jobs) {
+      const jobCount = document.getElementById('jobCount');
+      const jobListContent = document.getElementById('jobListContent');
+      
+      jobCount.textContent = jobs.length;
+      
+      jobListContent.innerHTML = jobs.map(job => `
+        <div class="map-job-item" onclick="focusJobOnMap(${job.id}, ${job.lat}, ${job.lng})">
+          <div class="map-job-title">${job.title}</div>
+          <div class="map-job-company">${job.company}</div>
+          <div class="map-job-info">
+            <span class="map-job-distance"><i class="fas fa-map-marker-alt"></i> ${job.distance}km</span>
+            <span><i class="fas fa-won-sign"></i> 시급 ${job.hourlyPay.toLocaleString()}원</span>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // 지도에서 알바 포커스
+    function focusJobOnMap(jobId, lat, lng) {
+      const position = new naver.maps.LatLng(lat, lng);
+      map.setCenter(position);
+      map.setZoom(17);
+    }
+    
+    // 알바 상세 정보 표시
+    function showJobDetail(job) {
+      alert(`${job.title}\n\n회사: ${job.company}\n시급: ${job.hourlyPay.toLocaleString()}원\n거리: ${job.distance}km\n주소: ${job.address}`);
+    }
+    
+    // 내 위치로 버튼
+    document.getElementById('myLocationBtn').addEventListener('click', () => {
+      getUserLocation();
+    });
+    
+    // 알바 새로고침 버튼
+    document.getElementById('refreshJobsBtn').addEventListener('click', () => {
+      loadNearbyJobs();
+    });
+    
+    // 페이지 로드 시 지도 초기화
+    window.addEventListener('load', () => {
+      if (typeof naver !== 'undefined' && naver.maps) {
+        initMap();
+      } else {
+        console.error('❌ 네이버 지도 API 로드 실패');
+      }
     });
   </script>
 </body>
