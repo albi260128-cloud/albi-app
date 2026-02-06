@@ -5,6 +5,7 @@ import { handle } from 'hono/cloudflare-pages'
 type Bindings = {
   DB: D1Database
   KAKAO_CLIENT_ID: string
+  KAKAO_CLIENT_SECRET: string
   KAKAO_REDIRECT_URI: string
   NAVER_CLIENT_ID: string
   NAVER_CLIENT_SECRET: string
@@ -42,6 +43,7 @@ app.get('/kakao/callback', async (c) => {
   
   try {
     const clientId = c.env.KAKAO_CLIENT_ID
+    const clientSecret = c.env.KAKAO_CLIENT_SECRET
     const redirectUri = c.env.KAKAO_REDIRECT_URI || `${new URL(c.req.url).origin}/api/auth/kakao/callback`
     
     // 1. 액세스 토큰 요청
@@ -53,6 +55,7 @@ app.get('/kakao/callback', async (c) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: redirectUri,
         code: code
       })
