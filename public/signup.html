@@ -550,6 +550,21 @@
       
       <div class="form-group">
         <label class="form-label">
+          통신사 <span class="required">*</span>
+        </label>
+        <select class="form-input" id="carrier" required>
+          <option value="">통신사 선택</option>
+          <option value="SKT">SKT</option>
+          <option value="KT">KT</option>
+          <option value="LG U+">LG U+</option>
+          <option value="SKT 알뜰폰">SKT 알뜰폰</option>
+          <option value="KT 알뜰폰">KT 알뜰폰</option>
+          <option value="LG U+ 알뜰폰">LG U+ 알뜰폰</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">
           휴대폰번호 <span class="required">*</span>
         </label>
         <div class="input-group">
@@ -750,6 +765,13 @@
     // 인증번호 발송
     async function sendVerification() {
       const phone = document.getElementById('phone').value;
+      const carrier = document.getElementById('carrier').value;
+      
+      // Validate carrier
+      if (!carrier) {
+        alert('통신사를 선택해주세요.');
+        return;
+      }
       
       // Remove hyphens and validate format
       const cleanPhone = phone.replace(/-/g, '');
@@ -773,7 +795,10 @@
         const response = await fetch('/api/auth/phone/send-code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumber: cleanPhone })
+          body: JSON.stringify({ 
+            phoneNumber: cleanPhone,
+            carrier: carrier
+          })
         });
         
         const data = await response.json();
@@ -785,8 +810,9 @@
           sendBtn.textContent = '재전송';
           sendBtn.disabled = false;
           
-          // Store clean phone for verification
+          // Store clean phone and carrier for verification
           document.getElementById('phone').dataset.cleanPhone = cleanPhone;
+          document.getElementById('phone').dataset.carrier = carrier;
           
           // Start timer
           startTimer();
