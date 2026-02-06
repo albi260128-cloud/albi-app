@@ -556,7 +556,7 @@
           <div id="verificationStatus" style="text-align: center;">
             <i class="fas fa-shield-alt" style="font-size: 48px; color: #999; margin-bottom: 16px;"></i>
             <p style="color: #666; margin-bottom: 16px;">본인인증이 필요합니다</p>
-            <button type="button" class="btn-verify" id="startVerificationBtn" onclick="startPhoneVerification()" style="width: 100%; max-width: 300px; margin: 0 auto; display: block;">
+            <button type="button" class="btn-verify" id="startVerificationBtn" style="width: 100%; max-width: 300px; margin: 0 auto; display: block;">
               <i class="fas fa-mobile-alt"></i> 휴대폰 본인인증 시작
             </button>
             <p style="color: #999; font-size: 12px; margin-top: 12px;">PASS 인증 또는 문자 인증을 선택할 수 있습니다</p>
@@ -642,8 +642,8 @@
     // ========================================
     let verificationData = null;
     
-    // 전역 함수로 등록
-    window.startPhoneVerification = function() {
+    // 전역 함수로 등록 (즉시 실행)
+    function startPhoneVerification() {
       console.log('🚀 startPhoneVerification 함수 호출됨');
       
       const nameInput = document.getElementById('name');
@@ -685,7 +685,7 @@
       
       // 팝업에서 인증 완료 메시지 수신
       window.addEventListener('message', handleVerificationResult);
-    };
+    }
     
     function handleVerificationResult(event) {
       // 보안을 위해 origin 체크 (프로덕션에서는 실제 도메인으로 변경)
