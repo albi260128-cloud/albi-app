@@ -769,6 +769,52 @@
   </nav>
 
   <script>
+    // 로그인 상태 확인 및 네비게이션 업데이트
+    function updateNavigation() {
+      const userId = localStorage.getItem('albi_user_id');
+      const sessionToken = localStorage.getItem('albi_session_token');
+      const userName = localStorage.getItem('albi_user_name');
+      
+      const navActions = document.querySelector('.nav-actions');
+      
+      if (userId && sessionToken) {
+        // 로그인 상태 - 버튼 교체
+        navActions.innerHTML = `
+          <a href="/referral" class="btn btn-outline" style="display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-gift"></i>
+            <span>친구초대</span>
+            <span style="background: #FF6B35; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: 600;">+20P</span>
+          </a>
+          <a href="/mypage.html" class="btn btn-outline" style="display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-user"></i>
+            <span>${userName || '내 정보'}</span>
+          </a>
+          <button onclick="logout()" class="btn btn-primary">로그아웃</button>
+        `;
+        
+        console.log('✅ 로그인 상태:', { userId, userName });
+      } else {
+        // 로그아웃 상태 - 기본 버튼 유지
+        console.log('❌ 로그아웃 상태');
+      }
+    }
+    
+    // 로그아웃 함수
+    function logout() {
+      if (confirm('로그아웃 하시겠습니까?')) {
+        localStorage.removeItem('albi_user_id');
+        localStorage.removeItem('albi_session_token');
+        localStorage.removeItem('albi_user_name');
+        localStorage.removeItem('albi_user_type');
+        
+        alert('로그아웃 되었습니다.');
+        window.location.reload();
+      }
+    }
+    
+    // 페이지 로드 시 네비게이션 업데이트
+    document.addEventListener('DOMContentLoaded', updateNavigation);
+    
     // 검색 기능
     const searchInput = document.querySelector('.search-input');
     const searchBtn = document.querySelector('.search-btn');
