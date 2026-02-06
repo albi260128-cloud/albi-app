@@ -25,6 +25,83 @@
       color: white;
       border-color: #FF6B35;
     }
+    
+    /* 모바일 최적화 */
+    @media (max-width: 768px) {
+      #map {
+        height: calc(100vh - 140px);
+      }
+      
+      .container.mx-auto {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      
+      /* 네비게이션 */
+      nav .text-xl {
+        font-size: 1.125rem;
+      }
+      
+      nav .text-xs {
+        font-size: 0.7rem;
+      }
+      
+      /* 공고올리기 버튼 */
+      nav a span.hidden.sm\\:inline {
+        display: none !important;
+      }
+      
+      /* 탭 버튼 */
+      button.flex-1 {
+        font-size: 0.875rem;
+        padding: 0.75rem;
+      }
+      
+      /* 필터 섹션 */
+      .flex.gap-2.mb-4 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      
+      /* 필터 칩 */
+      .filter-chip {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+      }
+      
+      /* 리스트 뷰 */
+      .grid.grid-cols-1.gap-4 {
+        gap: 0.75rem;
+      }
+      
+      /* 알바 카드 */
+      .job-card {
+        padding: 1rem;
+      }
+      
+      .job-card .text-lg {
+        font-size: 0.9375rem;
+      }
+      
+      .job-card .text-sm {
+        font-size: 0.75rem;
+      }
+      
+      .job-card .text-xs {
+        font-size: 0.6875rem;
+      }
+      
+      /* 시급 표시 */
+      .job-card .text-orange-500.text-2xl {
+        font-size: 1.25rem;
+      }
+      
+      /* 태그 */
+      .job-card .bg-gray-100 {
+        font-size: 0.6875rem;
+        padding: 0.25rem 0.5rem;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50">
