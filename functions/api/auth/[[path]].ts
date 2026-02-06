@@ -84,16 +84,25 @@ app.get('/kakao/callback', async (c) => {
     
     const userData = await userResponse.json() as any
     
-    // 3. 사용자 정보 추출
+    // 3. 사용자 정보 추출 (undefined를 null로 변환)
     const kakaoId = userData.id
-    const email = userData.kakao_account?.email
-    const name = userData.kakao_account?.profile?.nickname
-    const phone = userData.kakao_account?.phone_number
+    const email = userData.kakao_account?.email || null
+    const name = userData.kakao_account?.profile?.nickname || null
+    const phone = userData.kakao_account?.phone_number || null
     
-    // 4. DB에서 사용자 확인
-    const existingUser = await c.env.DB.prepare(`
-      SELECT * FROM users WHERE email = ? OR kakao_id = ?
-    `).bind(email, kakaoId.toString()).first()
+    console.log('[Kakao OAuth] User data:', { kakaoId, email, name, phone })
+    
+    // 4. DB에서 사용자 확인 (카카오 ID로만 검색)
+    let existingUser = await c.env.DB.prepare(`
+      SELECT * FROM users WHERE kakao_id = ?
+    `).bind(kakaoId.toString()).first()
+    
+    // 이메일로도 확인 (카카오 ID가 없는 기존 사용자)
+    if (!existingUser && email) {
+      existingUser = await c.env.DB.prepare(`
+        SELECT * FROM users WHERE email = ?
+      `).bind(email).first()
+    }
     
     let userId
     
@@ -183,16 +192,25 @@ app.get('/naver/callback', async (c) => {
       return c.json({ success: false, error: '사용자 정보 조회 실패' }, 400)
     }
     
-    // 3. 사용자 정보 추출
+    // 3. 사용자 정보 추출 (undefined를 null로 변환)
     const naverId = userData.response.id
-    const email = userData.response.email
-    const name = userData.response.name
-    const phone = userData.response.mobile
+    const email = userData.response.email || null
+    const name = userData.response.name || null
+    const phone = userData.response.mobile || null
     
-    // 4. DB에서 사용자 확인
-    const existingUser = await c.env.DB.prepare(`
-      SELECT * FROM users WHERE email = ? OR naver_id = ?
-    `).bind(email, naverId).first()
+    console.log('[Naver OAuth] User data:', { naverId, email, name, phone })
+    
+    // 4. DB에서 사용자 확인 (네이버 ID로만 검색)
+    let existingUser = await c.env.DB.prepare(`
+      SELECT * FROM users WHERE naver_id = ?
+    `).bind(naverId).first()
+    
+    // 이메일로도 확인 (네이버 ID가 없는 기존 사용자)
+    if (!existingUser && email) {
+      existingUser = await c.env.DB.prepare(`
+        SELECT * FROM users WHERE email = ?
+      `).bind(email).first()
+    }
     
     let userId
     
@@ -287,15 +305,24 @@ app.get('/google/callback', async (c) => {
     
     const userData = await userResponse.json() as any
     
-    // 3. 사용자 정보 추출
+    // 3. 사용자 정보 추출 (undefined를 null로 변환)
     const googleId = userData.id
-    const email = userData.email
-    const name = userData.name
+    const email = userData.email || null
+    const name = userData.name || null
     
-    // 4. DB에서 사용자 확인
-    const existingUser = await c.env.DB.prepare(`
-      SELECT * FROM users WHERE email = ? OR google_id = ?
-    `).bind(email, googleId).first()
+    console.log('[Google OAuth] User data:', { googleId, email, name })
+    
+    // 4. DB에서 사용자 확인 (구글 ID로만 검색)
+    let existingUser = await c.env.DB.prepare(`
+      SELECT * FROM users WHERE google_id = ?
+    `).bind(googleId).first()
+    
+    // 이메일로도 확인 (구글 ID가 없는 기존 사용자)
+    if (!existingUser && email) {
+      existingUser = await c.env.DB.prepare(`
+        SELECT * FROM users WHERE email = ?
+      `).bind(email).first()
+    }
     
     let userId
     
