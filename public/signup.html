@@ -637,6 +637,90 @@
   </div>
   
   <script>
+    // ========================================
+    // 📱 휴대폰 본인인증 전역 변수 및 함수
+    // ========================================
+    let verificationData = null;
+    
+    // 전역 함수로 등록
+    window.startPhoneVerification = function() {
+      console.log('🚀 startPhoneVerification 함수 호출됨');
+      
+      const nameInput = document.getElementById('name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      
+      console.log('👤 입력된 이름:', name);
+      
+      if (!name) {
+        alert('이름을 먼저 입력해주세요.');
+        if (nameInput) nameInput.focus();
+        return;
+      }
+      
+      // 본인인증 팝업 열기
+      const width = 450;
+      const height = 600;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
+      
+      console.log('🪟 팝업 열기 시도:', {
+        url: '/phone-verification.html?name=' + encodeURIComponent(name),
+        width, height, left, top
+      });
+      
+      const popup = window.open(
+        '/phone-verification.html?name=' + encodeURIComponent(name),
+        'phoneVerification',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+      );
+      
+      console.log('🪟 팝업 객체:', popup);
+      
+      if (!popup) {
+        alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+        return;
+      }
+      
+      console.log('✅ 팝업 열기 성공');
+      
+      // 팝업에서 인증 완료 메시지 수신
+      window.addEventListener('message', handleVerificationResult);
+    };
+    
+    function handleVerificationResult(event) {
+      // 보안을 위해 origin 체크 (프로덕션에서는 실제 도메인으로 변경)
+      // if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'PHONE_VERIFICATION_SUCCESS') {
+        const { name, phone, carrier, birthDate, gender, verificationToken } = event.data;
+        
+        verificationData = event.data;
+        
+        // UI 업데이트
+        document.getElementById('verificationStatus').style.display = 'none';
+        document.getElementById('verificationComplete').style.display = 'block';
+        document.getElementById('verifiedInfo').textContent = `${name} / ${phone}`;
+        
+        // 숨겨진 필드에 데이터 저장
+        document.getElementById('verificationToken').value = verificationToken;
+        document.getElementById('phone').value = phone;
+        document.getElementById('carrier').value = carrier;
+        
+        // 이름 필드 자동 채우기 (비활성화)
+        const nameInput = document.getElementById('name');
+        nameInput.value = name;
+        nameInput.disabled = true;
+        
+        console.log('✅ 본인인증 완료:', verificationData);
+        
+        // 이벤트 리스너 제거
+        window.removeEventListener('message', handleVerificationResult);
+      }
+    }
+    
+    // ========================================
+    // 기존 변수들
+    // ========================================
     let verificationSent = false;
     let phoneVerified = false; // Track phone verification status
     let verificationTimer = null;
@@ -747,87 +831,9 @@
       checkFormValidity();
     }
     
-    // 인증번호 발송
     // ========================================
-    // 📱 휴대폰 본인인증 (팝업 방식)
+    // 인증번호 발송 (제거됨 - 팝업 방식으로 대체)
     // ========================================
-    
-    let verificationData = null;
-    
-    function startPhoneVerification() {
-      console.log('🚀 startPhoneVerification 함수 호출됨');
-      
-      const nameInput = document.getElementById('name');
-      const name = nameInput ? nameInput.value.trim() : '';
-      
-      console.log('👤 입력된 이름:', name);
-      
-      if (!name) {
-        alert('이름을 먼저 입력해주세요.');
-        if (nameInput) nameInput.focus();
-        return;
-      }
-      
-      // 본인인증 팝업 열기
-      const width = 450;
-      const height = 600;
-      const left = (screen.width - width) / 2;
-      const top = (screen.height - height) / 2;
-      
-      console.log('🪟 팝업 열기 시도:', {
-        url: '/phone-verification.html?name=' + encodeURIComponent(name),
-        width, height, left, top
-      });
-      
-      const popup = window.open(
-        '/phone-verification.html?name=' + encodeURIComponent(name),
-        'phoneVerification',
-        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-      );
-      
-      console.log('🪟 팝업 객체:', popup);
-      
-      if (!popup) {
-        alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
-        return;
-      }
-      
-      console.log('✅ 팝업 열기 성공');
-      
-      // 팝업에서 인증 완료 메시지 수신
-      window.addEventListener('message', handleVerificationResult);
-    }
-    
-    function handleVerificationResult(event) {
-      // 보안을 위해 origin 체크 (프로덕션에서는 실제 도메인으로 변경)
-      // if (event.origin !== window.location.origin) return;
-      
-      if (event.data.type === 'PHONE_VERIFICATION_SUCCESS') {
-        const { name, phone, carrier, birthDate, gender, verificationToken } = event.data;
-        
-        verificationData = event.data;
-        
-        // UI 업데이트
-        document.getElementById('verificationStatus').style.display = 'none';
-        document.getElementById('verificationComplete').style.display = 'block';
-        document.getElementById('verifiedInfo').textContent = `${name} / ${phone}`;
-        
-        // 숨겨진 필드에 데이터 저장
-        document.getElementById('verificationToken').value = verificationToken;
-        document.getElementById('phone').value = phone;
-        document.getElementById('carrier').value = carrier;
-        
-        // 이름 필드 자동 채우기 (비활성화)
-        const nameInput = document.getElementById('name');
-        nameInput.value = name;
-        nameInput.disabled = true;
-        
-        console.log('✅ 본인인증 완료:', verificationData);
-        
-        // 이벤트 리스너 제거
-        window.removeEventListener('message', handleVerificationResult);
-      }
-    }
       
       if (!code) {
         alert('인증번호를 입력해주세요.');
