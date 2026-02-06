@@ -755,11 +755,16 @@
     let verificationData = null;
     
     function startPhoneVerification() {
-      const name = document.getElementById('name').value.trim();
+      console.log('🚀 startPhoneVerification 함수 호출됨');
+      
+      const nameInput = document.getElementById('name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      
+      console.log('👤 입력된 이름:', name);
       
       if (!name) {
         alert('이름을 먼저 입력해주세요.');
-        document.getElementById('name').focus();
+        if (nameInput) nameInput.focus();
         return;
       }
       
@@ -769,16 +774,25 @@
       const left = (screen.width - width) / 2;
       const top = (screen.height - height) / 2;
       
+      console.log('🪟 팝업 열기 시도:', {
+        url: '/phone-verification.html?name=' + encodeURIComponent(name),
+        width, height, left, top
+      });
+      
       const popup = window.open(
         '/phone-verification.html?name=' + encodeURIComponent(name),
         'phoneVerification',
         `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
       );
       
+      console.log('🪟 팝업 객체:', popup);
+      
       if (!popup) {
         alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
         return;
       }
+      
+      console.log('✅ 팝업 열기 성공');
       
       // 팝업에서 인증 완료 메시지 수신
       window.addEventListener('message', handleVerificationResult);
@@ -966,6 +980,28 @@
         alert('회원가입 중 오류가 발생했습니다: ' + error.message);
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('submitBtn').textContent = '회원가입';
+      }
+    });
+    
+    // ========================================
+    // 페이지 로드 시 초기화
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('✅ 페이지 로드 완료');
+      
+      // 본인인증 버튼에 이벤트 리스너 추가 (백업)
+      const verificationBtn = document.getElementById('startVerificationBtn');
+      if (verificationBtn) {
+        console.log('✅ 본인인증 버튼 찾음:', verificationBtn);
+        
+        // 기존 onclick 외에 addEventListener도 추가
+        verificationBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('🔔 버튼 클릭됨 (addEventListener)');
+          startPhoneVerification();
+        });
+      } else {
+        console.error('❌ 본인인증 버튼을 찾을 수 없음');
       }
     });
   </script>
