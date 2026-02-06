@@ -6,6 +6,57 @@
   <title>회원가입 - 알비</title>
   <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- 전역 스크립트: 모든 버튼 함수들을 미리 정의 -->
+  <script>
+    console.log('🟢 전역 스크립트 로드됨');
+    
+    // 전역 변수
+    var verificationData = null;
+    var selectedUserType = 'jobseeker';
+    var businessRegistrationFile = null;
+    
+    // 소셜 로그인
+    function socialSignup(provider) {
+      console.log('✅ socialSignup 호출:', provider);
+      if (provider === 'kakao') {
+        window.location.href = '/api/auth/kakao';
+      } else if (provider === 'naver') {
+        window.location.href = '/api/auth/naver';
+      } else if (provider === 'google') {
+        window.location.href = '/api/auth/google';
+      }
+    }
+    
+    // 사용자 타입 선택
+    function selectUserType(type) {
+      console.log('✅ selectUserType 호출:', type);
+      selectedUserType = type;
+      
+      document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      const clickedBtn = document.querySelector(`.type-btn[data-type="${type}"]`);
+      if (clickedBtn) clickedBtn.classList.add('active');
+      
+      const businessRegistration = document.getElementById('businessRegistration');
+      if (businessRegistration) {
+        businessRegistration.style.display = type === 'employer' ? 'block' : 'none';
+      }
+    }
+    
+    // 파일 제거
+    function removeFile() {
+      console.log('✅ removeFile 호출');
+      businessRegistrationFile = null;
+      const fileInput = document.getElementById('businessFile');
+      if (fileInput) fileInput.value = '';
+      const preview = document.querySelector('.file-preview');
+      if (preview) preview.style.display = 'none';
+    }
+  </script>
+  
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
@@ -578,7 +629,7 @@
         // 📱 인라인 스크립트: 버튼 바로 아래 배치하여 즉시 로드
         console.log('🔵 인라인 스크립트 로드됨');
         
-        let verificationData = null;
+        // verificationData는 이미 head에서 전역 변수로 선언됨
         
         function openPhoneVerification() {
           console.log('🚀 openPhoneVerification 호출됨!');
@@ -712,34 +763,15 @@
     // ========================================
     // 기존 변수들
     // ========================================
+    // 기존 변수들 (전역으로 이동한 것 제외)
+    // ========================================
     let verificationSent = false;
-    let phoneVerified = false; // Track phone verification status
+    let phoneVerified = false;
     let verificationTimer = null;
-    let timeLeft = 180; // 3분
-    let selectedUserType = 'jobseeker'; // 기본값: 구직자
-    let businessRegistrationFile = null;
+    let timeLeft = 180;
+    // selectedUserType, businessRegistrationFile은 head에서 전역 선언됨
     
-    // 사용자 타입 선택
-    function selectUserType(type) {
-      selectedUserType = type;
-      
-      // 버튼 활성화 상태 변경
-      document.querySelectorAll('.type-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector(`.type-btn[data-type="${type}"]`).classList.add('active');
-      
-      // 구인자 선택 시 사업자등록증 인증 섹션 표시
-      const businessRegistration = document.getElementById('businessRegistration');
-      if (type === 'employer') {
-        businessRegistration.style.display = 'block';
-      } else {
-        businessRegistration.style.display = 'none';
-      }
-      
-      // 폼 유효성 검사 재실행
-      checkFormValidity();
-    }
+    // selectUserType 함수는 head에서 전역 함수로 선언됨
     
     // 파일 업로드 처리
     function handleFileUpload(event) {
@@ -769,15 +801,7 @@
       checkFormValidity();
     }
     
-    // 파일 제거
-    function removeFile() {
-      businessRegistrationFile = null;
-      document.getElementById('businessRegistrationFile').value = '';
-      document.getElementById('filePreview').classList.remove('active');
-      
-      // 폼 유효성 검사 재실행
-      checkFormValidity();
-    }
+    // removeFile 함수는 head에서 전역 함수로 선언됨
     
     // 필수 약관 체크 감지
     document.querySelectorAll('.term-checkbox').forEach(checkbox => {
@@ -885,19 +909,7 @@
       }
     }
     
-    // 소셜 회원가입
-    function socialSignup(provider) {
-      console.log(`${provider} 회원가입/로그인 시도`);
-      
-      // 소셜 로그인 페이지로 리다이렉트
-      if (provider === 'kakao') {
-        window.location.href = '/api/auth/kakao';
-      } else if (provider === 'naver') {
-        window.location.href = '/api/auth/naver';
-      } else if (provider === 'google') {
-        window.location.href = '/api/auth/google';
-      }
-    }
+    // socialSignup 함수는 head에서 전역 함수로 선언됨
     
     // 회원가입 폼 제출
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
