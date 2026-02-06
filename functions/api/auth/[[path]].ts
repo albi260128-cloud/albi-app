@@ -363,4 +363,51 @@ app.get('/google/callback', async (c) => {
   }
 })
 
+// ========================================
+// 🔐 사용자 정보 조회 (세션 인증)
+// ========================================
+app.get('/me', async (c) => {
+  try {
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    
+    if (!token) {
+      return c.json({ success: false, error: '인증 토큰이 없습니다.' }, 401)
+    }
+    
+    // 세션 조회
+    const session = await c.env.DB.prepare(`
+      SELECT s.*, u.*
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = ? AND s.expires_at > datetime('now')
+    `).bind(token).first()
+    
+    if (!session) {
+      return c.json({ success: false, error: '유효하지 않은 세션입니다.' }, 401)
+    }
+    
+    // 사용자 정보 반환
+    return c.json({
+      success: true,
+      user: {
+        id: session.id,
+        name: session.name,
+        email: session.email,
+        phone: session.phone,
+        user_type: session.user_type,
+        is_verified: session.is_verified,
+        kakao_id: session.kakao_id,
+        naver_id: session.naver_id,
+        google_id: session.google_id
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('사용자 정보 조회 오류:', error)
+    return c.json({ success: false, error: '사용자 정보 조회 중 오류가 발생했습니다.' }, 500)
+  }
+})
+
 export const onRequest = handle(app)
