@@ -6,7 +6,8 @@
   <title>알바찾기 - 알비</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_APP_KEY&libraries=services"></script>
+  <!-- 네이버 지도 API -->
+  <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=h46g2mh4yh"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
@@ -393,8 +394,8 @@
 
     // 지도 초기화
     function initMap() {
-      if (!window.kakao || !window.kakao.maps) {
-        console.warn('Kakao Maps API 없음 - 지도 기능 비활성화');
+      if (!window.naver || !window.naver.maps) {
+        console.warn('Naver Maps API 없음 - 지도 기능 비활성화');
         document.getElementById('mapView').innerHTML = 
           '<div class="flex items-center justify-center h-screen"><p class="text-gray-500">지도 서비스를 사용할 수 없습니다</p></div>';
         return;
@@ -402,57 +403,91 @@
 
       const container = document.getElementById('map');
       const options = {
-        center: new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng),
-        level: 5
+        center: new naver.maps.LatLng(currentLocation.lat, currentLocation.lng),
+        zoom: 14,
+        mapTypeControl: false,
+        scaleControl: true,
+        logoControl: false,
+        mapDataControl: false,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: naver.maps.Position.TOP_LEFT
+        }
       };
 
-      map = new kakao.maps.Map(container, options);
+      map = new naver.maps.Map(container, options);
       updateMap();
     }
 
     // 지도 마커 업데이트
     function updateMap() {
-      if (!map || !window.kakao) return;
+      if (!map || !window.naver) return;
 
       markers.forEach(marker => marker.setMap(null));
       markers = [];
 
-      const myPosition = new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
-      const myMarker = new kakao.maps.Marker({
+      // 내 위치 마커
+      const myPosition = new naver.maps.LatLng(currentLocation.lat, currentLocation.lng);
+      const myMarker = new naver.maps.Marker({
         position: myPosition,
-        map: map
+        map: map,
+        icon: {
+          content: '<div style="background: #FF6B35; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+          anchor: new naver.maps.Point(10, 10)
+        },
+        title: '내 위치'
       });
       markers.push(myMarker);
 
+      // 알바 마커들
       allJobs.forEach(job => {
         if (!job.latitude || !job.longitude) return;
 
-        const position = new kakao.maps.LatLng(job.latitude, job.longitude);
-        const marker = new kakao.maps.Marker({
+        const position = new naver.maps.LatLng(job.latitude, job.longitude);
+        const marker = new naver.maps.Marker({
           position: position,
-          map: map
+          map: map,
+          icon: {
+            content: `<div style="background: white; padding: 6px 10px; border-radius: 16px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap;">${job.hourly_wage.toLocaleString()}원</div>`,
+            anchor: new naver.maps.Point(30, 35)
+          },
+          title: job.title
         });
 
-        const infoWindow = new kakao.maps.InfoWindow({
+        // 정보 창 생성
+        const infoWindow = new naver.maps.InfoWindow({
           content: `
-            <div style="padding:10px; min-width:200px; text-align:center;">
-              <div style="font-weight:bold; margin-bottom:5px;">${job.title}</div>
-              <div style="color:#f97316; font-weight:bold; font-size:16px; margin-bottom:5px;">
-                ${job.hourly_wage.toLocaleString()}원
+            <div style="padding:15px; min-width:220px; text-align:center; border-radius: 8px;">
+              <div style="font-weight:bold; margin-bottom:8px; font-size: 14px; color: #333;">${job.title}</div>
+              <div style="color:#f97316; font-weight:bold; font-size:18px; margin-bottom:8px;">
+                시급 ${job.hourly_wage.toLocaleString()}원
               </div>
-              <div style="color:#666; font-size:12px; margin-bottom:8px;">
-                📍 ${job.distance}km
+              <div style="color:#666; font-size:13px; margin-bottom:10px;">
+                📍 ${job.distance}km · ${job.company}
               </div>
               <button onclick="viewJobDetail('${job.id}')" 
-                      style="background:#f97316; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">
+                      style="background:#f97316; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight: 600;">
                 상세보기
               </button>
             </div>
-          `
+          `,
+          borderWidth: 0,
+          backgroundColor: 'transparent',
+          anchorSize: new naver.maps.Size(0, 0),
+          pixelOffset: new naver.maps.Point(0, -10)
         });
 
-        kakao.maps.event.addListener(marker, 'click', () => {
+        // 마커 클릭 이벤트
+        naver.maps.Event.addListener(marker, 'click', () => {
+          // 다른 정보창 닫기
+          markers.forEach(m => {
+            if (m._infoWindow) {
+              m._infoWindow.close();
+            }
+          });
+          
           infoWindow.open(map, marker);
+          marker._infoWindow = infoWindow;
         });
 
         markers.push(marker);
