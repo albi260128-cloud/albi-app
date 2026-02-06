@@ -614,105 +614,152 @@
     
     /* 반응형 */
     @media (max-width: 768px) {
+      /* 네비게이션 */
+      .top-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+      }
+      
+      .nav-container {
+        padding: 0 16px;
+        height: 56px;
+      }
+      
+      .logo {
+        font-size: 20px;
+      }
+      
       .nav-menu, .nav-actions .btn-outline {
         display: none;
       }
       
+      .nav-actions .btn-primary {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      
+      /* 메인 콘텐츠 상단 여백 */
+      body {
+        padding-top: 56px;
+        padding-bottom: 60px;
+      }
+      
+      /* 검색 섹션 */
       .search-section {
-        padding: 40px 16px;
+        padding: 32px 16px 40px;
+        margin-top: 0;
       }
       
       .search-section h1 {
-        font-size: 24px;
-        line-height: 1.3;
+        font-size: 22px;
+        line-height: 1.4;
+        margin-bottom: 12px;
       }
       
       .search-section p {
         font-size: 14px;
+        margin-bottom: 24px;
       }
       
       .search-box {
         flex-direction: column;
-        gap: 10px;
+        gap: 0;
+        border-radius: 12px;
       }
       
       .search-input {
         width: 100%;
-        font-size: 14px;
+        padding: 16px 20px;
+        font-size: 15px;
+        border-bottom: 1px solid #f0f0f0;
       }
       
       .search-btn {
         width: 100%;
-        padding: 14px;
+        padding: 16px;
         font-size: 15px;
+        font-weight: 600;
       }
       
       .quick-tags {
         gap: 8px;
+        justify-content: center;
       }
       
       .tag {
         font-size: 13px;
         padding: 8px 14px;
+        white-space: nowrap;
+      }
+      
+      /* 카테고리 섹션 */
+      .category-section {
+        padding: 32px 16px;
+      }
+      
+      .section-title {
+        font-size: 18px;
+        margin-bottom: 20px;
       }
       
       .category-grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
+        gap: 10px;
       }
       
       .category-card {
-        padding: 16px 8px;
+        padding: 14px 8px;
+        border-radius: 12px;
       }
       
       .category-icon {
-        font-size: 28px;
+        font-size: 24px;
+        margin-bottom: 8px;
       }
       
       .category-name {
-        font-size: 13px;
+        font-size: 12px;
+        font-weight: 600;
       }
       
       .category-count {
-        font-size: 11px;
+        font-size: 10px;
       }
       
-      .mobile-nav {
-        display: block;
-      }
-      
-      body {
-        padding-bottom: 60px;
-      }
-      
+      /* 지도 섹션 */
       .map-section {
-        padding: 40px 16px;
+        padding: 32px 16px;
       }
       
       .section-title {
-        font-size: 20px;
-        margin-bottom: 16px;
+        font-size: 18px;
+        margin-bottom: 12px;
       }
       
       #map {
-        height: 400px !important;
-        border-radius: 8px;
+        height: 350px !important;
+        border-radius: 12px;
       }
       
       .map-controls {
-        top: 10px;
-        right: 10px;
+        top: 12px;
+        right: 12px;
         flex-direction: column;
         gap: 8px;
       }
       
       .map-control-btn {
-        font-size: 11px;
-        padding: 8px 10px;
+        font-size: 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       }
       
       .map-job-list {
-        margin-top: 16px;
+        margin-top: 20px;
+        border-radius: 12px;
       }
       
       .map-job-list-header {
@@ -724,21 +771,43 @@
       }
       
       .map-job-item {
-        padding: 14px 16px;
+        padding: 16px;
       }
       
       .map-job-title {
         font-size: 15px;
+        margin-bottom: 6px;
       }
       
       .map-job-company {
         font-size: 13px;
+        margin-bottom: 8px;
       }
       
       .map-job-info {
         font-size: 12px;
+        gap: 10px;
       }
       
+      /* 특징 섹션 */
+      .features-section {
+        padding: 32px 16px;
+      }
+      
+      /* 모바일 네비게이션 */
+      .mobile-nav {
+        display: flex;
+      }
+      
+      .mobile-nav-item {
+        font-size: 11px;
+      }
+      
+      .mobile-nav-item i {
+        font-size: 20px;
+      }
+      
+      /* 컨테이너 */
       .container {
         padding-left: 16px;
         padding-right: 16px;
