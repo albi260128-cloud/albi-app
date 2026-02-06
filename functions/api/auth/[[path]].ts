@@ -124,12 +124,13 @@ app.get('/kakao/callback', async (c) => {
     
     // 5. 세션 생성
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const sessionToken = sessionId // token과 id를 동일하게 사용
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7일
     
     await c.env.DB.prepare(`
-      INSERT INTO sessions (id, user_id, expires_at, created_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `).bind(sessionId, userId, expiresAt).run()
+      INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).bind(sessionId, userId, sessionToken, expiresAt).run()
     
     // 6. 로그인 완료 페이지로 리다이렉트
     const redirectUrl = `${new URL(c.req.url).origin}/auth-callback.html?session=${sessionId}&provider=kakao&name=${encodeURIComponent(name || '')}`
@@ -230,12 +231,13 @@ app.get('/naver/callback', async (c) => {
     
     // 5. 세션 생성
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const sessionToken = sessionId // token과 id를 동일하게 사용
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     
     await c.env.DB.prepare(`
-      INSERT INTO sessions (id, user_id, expires_at, created_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `).bind(sessionId, userId, expiresAt).run()
+      INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).bind(sessionId, userId, sessionToken, expiresAt).run()
     
     // 6. 로그인 완료 페이지로 리다이렉트
     const redirectUrl = `${new URL(c.req.url).origin}/auth-callback.html?session=${sessionId}&provider=naver&name=${encodeURIComponent(name || '')}`
@@ -342,12 +344,13 @@ app.get('/google/callback', async (c) => {
     
     // 5. 세션 생성
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const sessionToken = sessionId // token과 id를 동일하게 사용
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     
     await c.env.DB.prepare(`
-      INSERT INTO sessions (id, user_id, expires_at, created_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `).bind(sessionId, userId, expiresAt).run()
+      INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).bind(sessionId, userId, sessionToken, expiresAt).run()
     
     // 6. 로그인 완료 페이지로 리다이렉트
     const redirectUrl = `${new URL(c.req.url).origin}/auth-callback.html?session=${sessionId}&provider=google&name=${encodeURIComponent(name || '')}`
