@@ -283,6 +283,7 @@
 
     // 뷰 전환
     function switchView(view) {
+      console.log('🔄 뷰 전환:', view);
       currentView = view;
       const listView = document.getElementById('listView');
       const mapView = document.getElementById('mapView');
@@ -295,13 +296,20 @@
         listTab.className = 'flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition';
         mapTab.className = 'flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent transition hover:text-orange-500';
       } else {
+        console.log('📍 지도 뷰로 전환 시작');
         listView.classList.add('hidden');
         mapView.classList.remove('hidden');
         listTab.className = 'flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent transition hover:text-orange-500';
         mapTab.className = 'flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition';
         
-        if (!map) initMap();
-        else if (map.relayout) map.relayout();
+        console.log('🗺️ 지도 객체 존재:', !!map);
+        if (!map) {
+          console.log('🆕 새 지도 초기화 시작');
+          initMap();
+        } else if (map.relayout) {
+          console.log('🔄 지도 레이아웃 조정');
+          map.relayout();
+        }
       }
     }
     
@@ -494,14 +502,23 @@
 
     // 지도 초기화
     function initMap() {
+      console.log('🗺️ initMap 호출됨');
+      console.log('window.naver:', window.naver);
+      console.log('window.naver.maps:', window.naver?.maps);
+      
       if (!window.naver || !window.naver.maps) {
-        console.warn('Naver Maps API 없음 - 지도 기능 비활성화');
+        console.error('❌ Naver Maps API 로드 실패');
         document.getElementById('mapView').innerHTML = 
-          '<div class="flex items-center justify-center h-screen"><p class="text-gray-500">지도 서비스를 사용할 수 없습니다</p></div>';
+          '<div class="flex items-center justify-center h-screen bg-gray-50"><div class="text-center"><div class="text-6xl mb-4">🗺️</div><p class="text-gray-800 font-bold text-xl mb-2">지도 서비스 로드 실패</p><p class="text-gray-600 text-sm mb-4">네이버 지도 API를 불러올 수 없습니다.</p><p class="text-xs text-gray-500">네이버 클라우드 플랫폼에서 도메인 등록을 확인해주세요.</p></div></div>';
         return;
       }
+      
+      console.log('✅ Naver Maps API 로드 성공');
 
       const container = document.getElementById('map');
+      console.log('📍 지도 컨테이너:', container);
+      console.log('📍 현재 위치:', currentLocation);
+      
       const options = {
         center: new naver.maps.LatLng(currentLocation.lat, currentLocation.lng),
         zoom: 14,
@@ -515,7 +532,9 @@
         }
       };
 
+      console.log('🎯 지도 옵션:', options);
       map = new naver.maps.Map(container, options);
+      console.log('✅ 지도 생성 완료:', map);
       updateMap();
     }
 
