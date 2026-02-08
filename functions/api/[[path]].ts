@@ -1149,9 +1149,9 @@ app.get('/jobs/nearby', async (c) => {
     `;
     const params: (number | string)[] = [lat - latDelta, lat + latDelta, lng - lngDelta, lng + lngDelta];
 
-    // 카테고리 필터 추가
+    // 업종 필터 추가
     if (category !== 'all') {
-      query += ' AND category = ?';
+      query += ' AND job_type = ?';
       params.push(category);
     }
 
