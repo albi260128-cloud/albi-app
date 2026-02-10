@@ -12,7 +12,7 @@
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   
   <!-- Kakao 지도 API -->
-  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0c86c0f6579bb18682f22246d13d5ca5"></script>
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ed88ff95dd20f265c47ece8b56be61f7"></script>
   
   <style>
     /* 실용적인 레이아웃 */
@@ -1411,10 +1411,13 @@
     
     // 페이지 로드 시 지도 초기화
     window.addEventListener('load', () => {
-      if (typeof naver !== 'undefined' && kakao.maps) {
+      console.log('🚀 페이지 로드 완료');
+      if (typeof kakao !== 'undefined' && kakao.maps) {
+        console.log('✅ Kakao Maps API 로드 성공');
         initMap();
       } else {
-        console.error('❌ 네이버 지도 API 로드 실패');
+        console.error('❌ Kakao 지도 API 로드 실패');
+        console.log('kakao 객체:', typeof kakao);
       }
     });
   </script>
