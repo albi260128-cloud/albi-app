@@ -1225,16 +1225,16 @@
       map = new kakao.maps.Map('map', mapOptions);
       console.log('✅ 지도 생성 완료');
       
-      // 사용자 위치 마커 추가
-      userMarker = new kakao.maps.Marker({
+      // 사용자 위치 마커 추가 (CustomOverlay 사용)
+      const userMarkerDiv = document.createElement('div');
+      userMarkerDiv.style.cssText = 'background: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);';
+      
+      userMarker = new kakao.maps.CustomOverlay({
         position: new kakao.maps.LatLng(userLocation.lat, userLocation.lng),
-        map: map,
-        icon: {
-          content: '<div style="background: #FF6B35; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
-          anchor: new kakao.maps.Point(10, 10)
-        },
-        title: '내 위치'
+        content: userMarkerDiv,
+        yAnchor: 0.5
       });
+      userMarker.setMap(map);
       
       // 현재 위치 가져오기
       getUserLocation();
@@ -1260,6 +1260,8 @@
             // 지도 중심 이동
             const newCenter = new kakao.maps.LatLng(userLocation.lat, userLocation.lng);
             map.setCenter(newCenter);
+            
+            // CustomOverlay 위치 업데이트
             userMarker.setPosition(newCenter);
             
             // 주변 알바 다시 로드
@@ -1339,20 +1341,21 @@
         }
       ];
       
-      // 지도에 마커 추가
+      // 지도에 마커 추가 (CustomOverlay 사용)
       mockJobs.forEach(job => {
-        const marker = new kakao.maps.Marker({
+        const markerDiv = document.createElement('div');
+        markerDiv.style.cssText = 'background: white; padding: 8px 12px; border-radius: 20px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap; cursor: pointer;';
+        markerDiv.innerHTML = `${job.hourlyPay.toLocaleString()}원`;
+        
+        const marker = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(job.lat, job.lng),
-          map: map,
-          title: job.company,
-          icon: {
-            content: `<div style="background: white; padding: 8px 12px; border-radius: 20px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap;">${job.hourlyPay.toLocaleString()}원</div>`,
-            anchor: new kakao.maps.Point(30, 40)
-          }
+          content: markerDiv,
+          yAnchor: 1.5
         });
+        marker.setMap(map);
         
         // 마커 클릭 이벤트
-        kakao.maps.Event.addListener(marker, 'click', () => {
+        markerDiv.addEventListener('click', () => {
           showJobDetail(job);
         });
         

@@ -328,13 +328,20 @@
 
     // 현재 위치 가져오기
     function getCurrentLocation() {
+      console.log('📍 현위치 버튼 클릭됨');
       const btn = document.getElementById('locationBtn');
       const status = document.getElementById('locationStatus');
+      
+      if (!btn) {
+        console.error('❌ locationBtn 요소를 찾을 수 없습니다');
+        return;
+      }
       
       btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 확인중...';
       btn.disabled = true;
 
       if (!navigator.geolocation) {
+        console.warn('⚠️ 위치 서비스 미지원 브라우저');
         alert('위치 서비스를 지원하지 않는 브라우저입니다.');
         btn.innerHTML = '<i class="fas fa-location-arrow mr-1"></i> 현위치';
         btn.disabled = false;
@@ -342,6 +349,7 @@
         return;
       }
 
+      console.log('🔍 위치 권한 요청 중...');
       navigator.geolocation.getCurrentPosition(
         (position) => {
           currentLocation = {
@@ -349,19 +357,32 @@
             lng: position.coords.longitude
           };
           
+          console.log('✅ 위치 획득 성공:', currentLocation);
           status.textContent = '반경 3km 내 공고';
           btn.innerHTML = '<i class="fas fa-check-circle mr-1"></i> 현위치';
           btn.className = 'px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold ml-auto whitespace-nowrap';
           btn.disabled = false;
           
+          // 지도 뷰인 경우 지도 중심 이동
+          if (currentView === 'map' && map) {
+            const newCenter = new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
+            map.setCenter(newCenter);
+            console.log('🗺️ 지도 중심 이동:', currentLocation);
+          }
+          
           loadJobs();
         },
         (error) => {
-          console.error('Geolocation error:', error);
+          console.error('❌ 위치 획득 실패:', error.message, error.code);
           status.textContent = '위치 권한이 필요합니다';
           btn.innerHTML = '<i class="fas fa-location-arrow mr-1"></i> 현위치';
           btn.disabled = false;
           loadJobs(); // 기본 위치로 로드
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
     }
