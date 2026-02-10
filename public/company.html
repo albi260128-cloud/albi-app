@@ -4,35 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>회사소개 - 알비</title>
+  <meta name="description" content="알비는 1시간 체험 시스템과 AI 매칭으로 구직자와 구인자를 연결하는 혁신적인 알바 플랫폼입니다.">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
     }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .feature-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
 <body class="bg-gray-50">
   <!-- 네비게이션 -->
   <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
-    <div class="container mx-auto px-4 py-4 flex items-center justify-between max-w-1200px">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between max-w-6xl">
       <a href="/" class="flex items-center space-x-2">
-        <img src="/albi-mascot.svg" alt="알비" style="width: 32px; height: 32px;">
+        <img src="/albi-mascot.svg" alt="알비" class="w-8 h-8">
         <span class="text-2xl font-bold text-orange-500">알비</span>
       </a>
       <a href="/" class="text-gray-600 hover:text-orange-500 transition flex items-center gap-2">
-        <i class="fas fa-arrow-left"></i>
+        <i class="fas fa-home"></i>
         홈으로
       </a>
     </div>
   </nav>
 
   <!-- 히어로 섹션 -->
-  <section class="bg-gradient-to-br from-orange-500 to-orange-600 text-white py-20">
-    <div class="container mx-auto px-4 text-center">
-      <img src="/albi-mascot.svg" alt="알비" class="w-24 h-24 mx-auto mb-6">
-      <h1 class="text-4xl md:text-5xl font-bold mb-4">알비와 함께하는<br>새로운 알바 경험</h1>
-      <p class="text-xl text-orange-100 max-w-2xl mx-auto">
+  <section class="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-24 overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-10"></div>
+    <div class="container mx-auto px-4 text-center relative z-10 max-w-4xl">
+      <div class="inline-block mb-6 p-4 bg-white bg-opacity-20 rounded-2xl backdrop-blur-sm">
+        <img src="/albi-mascot.svg" alt="알비" class="w-20 h-20">
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        알비와 함께하는<br>
+        <span class="text-orange-200">새로운 알바 경험</span>
+      </h1>
+      <p class="text-lg md:text-xl text-orange-100 max-w-2xl mx-auto leading-relaxed">
         1시간 체험 시스템으로 일하기 전에 미리 확인하고,<br>
         AI 매칭으로 나에게 딱 맞는 일자리를 찾아드립니다.
       </p>
@@ -40,12 +63,15 @@
   </section>
 
   <!-- 회사 소개 -->
-  <section class="py-16 bg-white">
-    <div class="container mx-auto px-4 max-w-4xl">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-gray-800 mb-4">알비는 무엇인가요?</h2>
-        <div class="w-20 h-1 bg-orange-500 mx-auto mb-6"></div>
-        <p class="text-lg text-gray-600 leading-relaxed">
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-16">
+        <span class="inline-block px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold mb-4">
+          About ALBI
+        </span>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">알비는 무엇인가요?</h2>
+        <div class="w-20 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto mb-6 rounded-full"></div>
+        <p class="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
           알비는 <strong class="text-orange-500">"일하기 전에 미리 체험"</strong>할 수 있는 혁신적인 알바 플랫폼입니다.<br>
           1시간 동안 직장 분위기를 관찰하고, AI가 추천하는 최적의 일자리에서 일하세요.<br>
           더 이상 면접 부담 없이, 내게 맞는 알바를 쉽게 찾을 수 있습니다.
@@ -53,48 +79,68 @@
       </div>
 
       <div class="grid md:grid-cols-3 gap-8">
-        <div class="text-center p-6 bg-orange-50 rounded-lg">
-          <div class="text-5xl mb-4">👀</div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">1시간 체험</h3>
-          <p class="text-gray-600">일하지 않고 관찰만!<br>직장을 미리 확인하고<br>결정하세요</p>
+        <div class="feature-card text-center p-8 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200">
+          <div class="text-6xl mb-6">👀</div>
+          <h3 class="text-xl font-bold text-gray-800 mb-3">1시간 체험</h3>
+          <p class="text-gray-600 leading-relaxed">
+            일하지 않고 관찰만!<br>
+            직장을 미리 확인하고<br>
+            결정하세요
+          </p>
         </div>
-        <div class="text-center p-6 bg-blue-50 rounded-lg">
-          <div class="text-5xl mb-4">🤖</div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">AI 스마트 매칭</h3>
-          <p class="text-gray-600">성향과 조건을 분석해<br>최적의 일자리를<br>추천해드립니다</p>
+        <div class="feature-card text-center p-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200">
+          <div class="text-6xl mb-6">🤖</div>
+          <h3 class="text-xl font-bold text-gray-800 mb-3">AI 스마트 매칭</h3>
+          <p class="text-gray-600 leading-relaxed">
+            성향과 조건을 분석해<br>
+            최적의 일자리를<br>
+            추천해드립니다
+          </p>
         </div>
-        <div class="text-center p-6 bg-green-50 rounded-lg">
-          <div class="text-5xl mb-4">🎁</div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">알비포인트</h3>
-          <p class="text-gray-600">일하면 포인트 적립!<br>기프티콘으로<br>즉시 교환 가능</p>
+        <div class="feature-card text-center p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200">
+          <div class="text-6xl mb-6">🎁</div>
+          <h3 class="text-xl font-bold text-gray-800 mb-3">알비포인트</h3>
+          <p class="text-gray-600 leading-relaxed">
+            일하면 포인트 적립!<br>
+            기프티콘으로<br>
+            즉시 교환 가능
+          </p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- 비전 & 미션 -->
-  <section class="py-16 bg-gray-50">
-    <div class="container mx-auto px-4 max-w-4xl">
+  <section class="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="container mx-auto px-4 max-w-5xl">
       <div class="grid md:grid-cols-2 gap-8">
-        <div class="bg-white p-8 rounded-lg shadow-sm">
-          <div class="flex items-center gap-3 mb-4">
-            <i class="fas fa-eye text-3xl text-orange-500"></i>
+        <div class="bg-white p-10 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-eye text-3xl text-white"></i>
+            </div>
             <h3 class="text-2xl font-bold text-gray-800">비전</h3>
           </div>
           <p class="text-gray-700 leading-relaxed">
-            <strong>모든 구직자가 안심하고 일할 수 있는 세상</strong>을 만듭니다.<br><br>
-            일자리를 찾는 과정에서 느끼는 불안과 두려움을 없애고,<br>
+            <strong class="text-orange-600">모든 구직자가 안심하고 일할 수 있는 세상</strong>을 만듭니다.
+          </p>
+          <p class="text-gray-600 leading-relaxed mt-4">
+            일자리를 찾는 과정에서 느끼는 불안과 두려움을 없애고,
             누구나 쉽고 편하게 자신에게 맞는 일을 찾을 수 있도록 돕습니다.
           </p>
         </div>
-        <div class="bg-white p-8 rounded-lg shadow-sm">
-          <div class="flex items-center gap-3 mb-4">
-            <i class="fas fa-bullseye text-3xl text-orange-500"></i>
+        <div class="bg-white p-10 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-bullseye text-3xl text-white"></i>
+            </div>
             <h3 class="text-2xl font-bold text-gray-800">미션</h3>
           </div>
           <p class="text-gray-700 leading-relaxed">
-            <strong>신뢰할 수 있는 일자리 매칭 플랫폼</strong>을 제공합니다.<br><br>
-            투명한 정보 공개, 공정한 근로 환경, 그리고 AI 기술을 활용한 스마트 매칭으로<br>
+            <strong class="text-blue-600">신뢰할 수 있는 일자리 매칭 플랫폼</strong>을 제공합니다.
+          </p>
+          <p class="text-gray-600 leading-relaxed mt-4">
+            투명한 정보 공개, 공정한 근로 환경, AI 기술을 활용한 스마트 매칭으로
             구직자와 구인자 모두에게 최고의 경험을 선사합니다.
           </p>
         </div>
@@ -103,36 +149,50 @@
   </section>
 
   <!-- 핵심 가치 -->
-  <section class="py-16 bg-white">
-    <div class="container mx-auto px-4 max-w-4xl">
-      <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">알비의 핵심 가치</h2>
-      <div class="space-y-6">
-        <div class="flex items-start gap-4 p-6 bg-gray-50 rounded-lg">
-          <div class="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">1</div>
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-16">
+        <span class="inline-block px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold mb-4">
+          Core Values
+        </span>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">알비의 핵심 가치</h2>
+        <div class="w-20 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto rounded-full"></div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="flex items-start gap-4 p-6 bg-gradient-to-br from-orange-50 to-white rounded-xl border border-orange-100 hover:shadow-lg transition-shadow">
+          <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-md">
+            1
+          </div>
           <div>
-            <h4 class="text-xl font-bold text-gray-800 mb-2">투명성 (Transparency)</h4>
-            <p class="text-gray-600">모든 정보를 투명하게 공개하고, 숨김 없는 근로 조건을 제공합니다.</p>
+            <h4 class="text-xl font-bold text-gray-800 mb-2">투명성</h4>
+            <p class="text-gray-600 leading-relaxed">모든 정보를 투명하게 공개하고, 숨김 없는 근로 조건을 제공합니다.</p>
           </div>
         </div>
-        <div class="flex items-start gap-4 p-6 bg-gray-50 rounded-lg">
-          <div class="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">2</div>
+        <div class="flex items-start gap-4 p-6 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 hover:shadow-lg transition-shadow">
+          <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-md">
+            2
+          </div>
           <div>
-            <h4 class="text-xl font-bold text-gray-800 mb-2">혁신 (Innovation)</h4>
-            <p class="text-gray-600">1시간 체험, AI 매칭 등 기존에 없던 새로운 방식으로 알바 시장을 혁신합니다.</p>
+            <h4 class="text-xl font-bold text-gray-800 mb-2">혁신</h4>
+            <p class="text-gray-600 leading-relaxed">1시간 체험, AI 매칭 등 기존에 없던 새로운 방식으로 알바 시장을 혁신합니다.</p>
           </div>
         </div>
-        <div class="flex items-start gap-4 p-6 bg-gray-50 rounded-lg">
-          <div class="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">3</div>
+        <div class="flex items-start gap-4 p-6 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-100 hover:shadow-lg transition-shadow">
+          <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-md">
+            3
+          </div>
           <div>
-            <h4 class="text-xl font-bold text-gray-800 mb-2">신뢰 (Trust)</h4>
-            <p class="text-gray-600">전자계약서, 리뷰 시스템 등을 통해 구직자와 구인자 간의 신뢰를 구축합니다.</p>
+            <h4 class="text-xl font-bold text-gray-800 mb-2">신뢰</h4>
+            <p class="text-gray-600 leading-relaxed">전자계약서, 리뷰 시스템 등을 통해 구직자와 구인자 간의 신뢰를 구축합니다.</p>
           </div>
         </div>
-        <div class="flex items-start gap-4 p-6 bg-gray-50 rounded-lg">
-          <div class="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">4</div>
+        <div class="flex items-start gap-4 p-6 bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-100 hover:shadow-lg transition-shadow">
+          <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-md">
+            4
+          </div>
           <div>
-            <h4 class="text-xl font-bold text-gray-800 mb-2">편리함 (Convenience)</h4>
-            <p class="text-gray-600">복잡한 절차 없이 간단하게 일자리를 찾고, 지원하고, 일할 수 있습니다.</p>
+            <h4 class="text-xl font-bold text-gray-800 mb-2">편리함</h4>
+            <p class="text-gray-600 leading-relaxed">복잡한 절차 없이 간단하게 일자리를 찾고, 지원하고, 일할 수 있습니다.</p>
           </div>
         </div>
       </div>
@@ -140,51 +200,96 @@
   </section>
 
   <!-- 회사 정보 -->
-  <section class="py-16 bg-gray-50">
-    <div class="container mx-auto px-4 max-w-4xl">
-      <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">회사 정보</h2>
-      <div class="bg-white rounded-lg shadow-sm p-8">
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="flex items-start gap-3">
-            <i class="fas fa-building text-2xl text-orange-500 mt-1"></i>
+  <section class="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-16">
+        <span class="inline-block px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold mb-4">
+          Company Info
+        </span>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">회사 정보</h2>
+        <div class="w-20 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto rounded-full"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-xl p-10">
+        <div class="grid md:grid-cols-2 gap-8">
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-building text-xl text-orange-600"></i>
+            </div>
             <div>
               <h4 class="font-bold text-gray-800 mb-1">회사명</h4>
-              <p class="text-gray-600">(주)알비</p>
+              <p class="text-gray-600">알비</p>
             </div>
           </div>
-          <div class="flex items-start gap-3">
-            <i class="fas fa-user-tie text-2xl text-orange-500 mt-1"></i>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-user-tie text-xl text-orange-600"></i>
+            </div>
             <div>
-              <h4 class="font-bold text-gray-800 mb-1">대표이사</h4>
-              <p class="text-gray-600">알비팀</p>
+              <h4 class="font-bold text-gray-800 mb-1">대표</h4>
+              <p class="text-gray-600">박지훈</p>
             </div>
           </div>
-          <div class="flex items-start gap-3">
-            <i class="fas fa-id-card text-2xl text-orange-500 mt-1"></i>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-id-card text-xl text-orange-600"></i>
+            </div>
             <div>
               <h4 class="font-bold text-gray-800 mb-1">사업자등록번호</h4>
-              <p class="text-gray-600">000-00-00000</p>
+              <p class="text-gray-600">531-08-03526</p>
             </div>
           </div>
-          <div class="flex items-start gap-3">
-            <i class="fas fa-calendar-alt text-2xl text-orange-500 mt-1"></i>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-receipt text-xl text-orange-600"></i>
+            </div>
             <div>
-              <h4 class="font-bold text-gray-800 mb-1">설립일</h4>
-              <p class="text-gray-600">2025년 1월</p>
+              <h4 class="font-bold text-gray-800 mb-1">통신판매업신고</h4>
+              <p class="text-gray-600">제2026-경남양산-00526호</p>
             </div>
           </div>
-          <div class="flex items-start gap-3">
-            <i class="fas fa-map-marker-alt text-2xl text-orange-500 mt-1"></i>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-calendar-alt text-xl text-orange-600"></i>
+            </div>
             <div>
-              <h4 class="font-bold text-gray-800 mb-1">본사 위치</h4>
-              <p class="text-gray-600">서울특별시 강남구 테헤란로 123</p>
+              <h4 class="font-bold text-gray-800 mb-1">개업일</h4>
+              <p class="text-gray-600">2026년 1월 28일</p>
             </div>
           </div>
-          <div class="flex items-start gap-3">
-            <i class="fas fa-envelope text-2xl text-orange-500 mt-1"></i>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-briefcase text-xl text-orange-600"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800 mb-1">업종</h4>
+              <p class="text-gray-600 text-sm">전자상거래 소매 중개업<br>응용 소프트웨어 개발 및 공급</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors md:col-span-2">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-map-marker-alt text-xl text-orange-600"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800 mb-1">주소</h4>
+              <p class="text-gray-600">경상남도 양산시 동면 사송로 155, 807동 1405호</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-envelope text-xl text-orange-600"></i>
+            </div>
             <div>
               <h4 class="font-bold text-gray-800 mb-1">이메일</h4>
-              <p class="text-gray-600">help@albi.co.kr</p>
+              <p class="text-gray-600">albi260128@gmail.com</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-xl hover:bg-orange-50 transition-colors">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-phone text-xl text-orange-600"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-gray-800 mb-1">고객센터</h4>
+              <p class="text-gray-600">010-4459-4226</p>
             </div>
           </div>
         </div>
@@ -193,16 +298,17 @@
   </section>
 
   <!-- CTA 섹션 -->
-  <section class="py-16 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-    <div class="container mx-auto px-4 text-center">
-      <h2 class="text-3xl font-bold mb-4">알비와 함께 시작하세요!</h2>
-      <p class="text-xl text-orange-100 mb-8">지금 바로 내게 맞는 알바를 찾아보세요</p>
+  <section class="py-20 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-10"></div>
+    <div class="container mx-auto px-4 text-center relative z-10">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">알비와 함께 시작하세요!</h2>
+      <p class="text-xl text-orange-100 mb-10">지금 바로 내게 맞는 알바를 찾아보세요</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="/jobs" class="px-8 py-4 bg-white text-orange-500 rounded-lg font-bold hover:bg-gray-100 transition">
+        <a href="/jobs" class="inline-flex items-center justify-center px-8 py-4 bg-white text-orange-600 rounded-xl font-bold hover:bg-orange-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
           <i class="fas fa-search mr-2"></i>
           알바 찾기
         </a>
-        <a href="/signup.html" class="px-8 py-4 bg-orange-700 text-white rounded-lg font-bold hover:bg-orange-800 transition">
+        <a href="/signup.html" class="inline-flex items-center justify-center px-8 py-4 bg-orange-800 text-white rounded-xl font-bold hover:bg-orange-900 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-orange-700">
           <i class="fas fa-user-plus mr-2"></i>
           회원가입
         </a>
@@ -211,23 +317,25 @@
   </section>
 
   <!-- 푸터 -->
-  <footer class="bg-gray-800 text-gray-400 py-8">
-    <div class="container mx-auto px-4 max-w-4xl">
-      <div class="flex flex-wrap gap-4 justify-center mb-4">
-        <a href="/terms.html" class="hover:text-white transition">이용약관</a>
-        <span>|</span>
-        <a href="/privacy.html" class="hover:text-white transition">개인정보처리방침</a>
-        <span>|</span>
-        <a href="/contract.html" class="hover:text-white transition">전자계약서</a>
-        <span>|</span>
-        <a href="/company.html" class="hover:text-white transition">회사소개</a>
-        <span>|</span>
-        <a href="/contact.html" class="hover:text-white transition">고객센터</a>
+  <footer class="bg-gray-900 text-gray-400 py-12">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="flex flex-wrap gap-4 justify-center mb-8 text-sm">
+        <a href="/terms.html" class="hover:text-orange-400 transition">이용약관</a>
+        <span class="text-gray-600">|</span>
+        <a href="/privacy.html" class="hover:text-orange-400 transition">개인정보처리방침</a>
+        <span class="text-gray-600">|</span>
+        <a href="/contract.html" class="hover:text-orange-400 transition">전자계약서</a>
+        <span class="text-gray-600">|</span>
+        <a href="/company.html" class="hover:text-orange-400 transition">회사소개</a>
+        <span class="text-gray-600">|</span>
+        <a href="/contact.html" class="hover:text-orange-400 transition">고객센터</a>
       </div>
-      <div class="text-center text-sm">
-        <p>(주)알비 | 대표: 알비팀 | 사업자등록번호: 000-00-00000</p>
-        <p>서울특별시 강남구 테헤란로 123 | 전화: 1588-0000 | 이메일: help@albi.co.kr</p>
-        <p class="mt-2">© 2025 ALBI. All rights reserved.</p>
+      <div class="text-center text-sm space-y-2">
+        <p><strong class="text-gray-300">알비</strong> | 대표: 박지훈 | 사업자등록번호: 531-08-03526</p>
+        <p>통신판매업신고: 제2026-경남양산-00526호</p>
+        <p>주소: 경상남도 양산시 동면 사송로 155, 807동 1405호</p>
+        <p>이메일: albi260128@gmail.com | 고객센터: 010-4459-4226</p>
+        <p class="mt-4 text-gray-500">© 2026 ALBI. All rights reserved.</p>
       </div>
     </div>
   </footer>
