@@ -3030,6 +3030,178 @@ app.get('/auth/phone/check-verified/:phoneNumber', async (c) => {
 });
 
 // ========================================
+// 📱 SMS 인증 API
+// ========================================
+
+// POST /api/sms/send - SMS 인증번호 발송
+app.post('/sms/send', async (c) => {
+  try {
+    const { phone, name } = await c.req.json();
+    const { env } = c;
+
+    if (!phone || !name) {
+      return c.json({
+        success: false,
+        error: '전화번호와 이름을 입력해주세요.'
+      }, 400);
+    }
+
+    // 인증번호 생성 (6자리)
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // TODO: 실제 SMS 발송 (Coolsms API)
+    // 현재는 로그만 출력
+    console.log(`📱 SMS 발송: ${phone} / 이름: ${name} / 인증번호: ${verificationCode}`);
+    
+    /* 
+    실제 SMS 발송 코드 예시 (Coolsms):
+    
+    const response = await fetch('https://api.coolsms.co.kr/messages/v4/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.COOLSMS_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: {
+          to: phone,
+          from: env.COOLSMS_SENDER_NUMBER,
+          text: `[알비] 인증번호는 [${verificationCode}]입니다. 3분 이내에 입력해주세요.`
+        }
+      })
+    });
+    */
+
+    // 인증번호를 임시로 저장 (실제로는 Redis 또는 KV 사용 권장)
+    // 여기서는 간단히 응답으로 반환 (개발용)
+    return c.json({
+      success: true,
+      message: 'SMS가 발송되었습니다.',
+      // 개발 환경에서만 인증번호 반환
+      verificationCode: env.ENVIRONMENT === 'development' ? verificationCode : undefined
+    });
+
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    return c.json({
+      success: false,
+      error: 'SMS 발송에 실패했습니다.'
+    }, 500);
+  }
+});
+
+// POST /api/sms/verify - SMS 인증번호 확인
+app.post('/sms/verify', async (c) => {
+  try {
+    const { phone, code } = await c.req.json();
+
+    if (!phone || !code) {
+      return c.json({
+        success: false,
+        error: '전화번호와 인증번호를 입력해주세요.'
+      }, 400);
+    }
+
+    // TODO: 실제 인증번호 검증 (저장된 코드와 비교)
+    // 현재는 항상 성공 (개발용)
+    console.log(`✅ SMS 인증: ${phone} / 코드: ${code}`);
+
+    return c.json({
+      success: true,
+      message: '인증이 완료되었습니다.',
+      verificationToken: `verify_${Date.now()}_${phone}`
+    });
+
+  } catch (error) {
+    console.error('Error verifying SMS:', error);
+    return c.json({
+      success: false,
+      error: '인증 확인에 실패했습니다.'
+    }, 500);
+  }
+});
+
+// ========================================
+// 📄 파일 업로드 API
+// ========================================
+
+// POST /api/upload - 파일 업로드 (사업자등록증 등)
+app.post('/upload', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const type = formData.get('type') as string || 'document';
+
+    if (!file) {
+      return c.json({
+        success: false,
+        error: '파일을 선택해주세요.'
+      }, 400);
+    }
+
+    // 파일 크기 체크 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return c.json({
+        success: false,
+        error: '파일 크기는 5MB 이하만 가능합니다.'
+      }, 400);
+    }
+
+    // 파일 타입 체크
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      return c.json({
+        success: false,
+        error: '이미지 또는 PDF 파일만 업로드 가능합니다.'
+      }, 400);
+    }
+
+    // 파일명 생성 (timestamp + random + 확장자)
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const ext = file.name.split('.').pop();
+    const fileName = `${type}/${timestamp}_${random}.${ext}`;
+
+    // TODO: Cloudflare R2에 업로드
+    // 현재는 로그만 출력
+    console.log(`📄 파일 업로드: ${fileName} / 크기: ${file.size} bytes`);
+
+    /*
+    실제 R2 업로드 코드:
+    
+    const { env } = c;
+    const arrayBuffer = await file.arrayBuffer();
+    
+    await env.UPLOADS.put(fileName, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type
+      }
+    });
+    
+    const fileUrl = `https://uploads.albi.kr/${fileName}`;
+    */
+
+    // 임시 URL 반환 (개발용)
+    const fileUrl = `/uploads/${fileName}`;
+
+    return c.json({
+      success: true,
+      message: '파일이 업로드되었습니다.',
+      fileUrl,
+      fileName: file.name,
+      fileSize: file.size
+    });
+
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    return c.json({
+      success: false,
+      error: '파일 업로드에 실패했습니다.'
+    }, 500);
+  }
+});
+
+// ========================================
 // 404 핸들러
 // ========================================
 

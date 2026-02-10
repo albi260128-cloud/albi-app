@@ -18,6 +18,95 @@
 
 ## ⚙️ 환경 설정
 
+### 📱 SMS 인증 서비스 설정 (권장)
+
+회원가입 시 휴대폰 인증을 위한 SMS 발송 서비스 연동이 필요합니다.
+
+**현재 상태**: 개발 모드 (콘솔에 인증번호 출력)
+
+**실제 서비스 연동 옵션**:
+
+#### 1. Coolsms (https://coolsms.co.kr)
+- 국내 대표 SMS 서비스
+- 건당 15원 (장문 30원)
+- 간편한 API 연동
+
+```typescript
+// functions/api/sms/send.ts에서 Coolsms 연동
+import coolsms from 'coolsms-node-sdk';
+
+const messageService = new coolsms(API_KEY, API_SECRET);
+await messageService.sendOne({
+  to: cleanPhone,
+  from: '발신번호',
+  text: `[알비] 인증번호는 [${verificationCode}] 입니다.`
+});
+```
+
+#### 2. 알리고 (https://smartsms.aligo.in)
+- 저렴한 가격 (건당 9원~)
+- REST API 방식
+
+```typescript
+await fetch('https://apis.aligo.in/send/', {
+  method: 'POST',
+  body: JSON.stringify({
+    key: API_KEY,
+    user_id: USER_ID,
+    sender: '발신번호',
+    receiver: cleanPhone,
+    msg: `[알비] 인증번호는 [${verificationCode}] 입니다.`
+  })
+});
+```
+
+#### 3. NHN Cloud SMS
+- 대기업 수준 안정성
+- 글로벌 발송 지원
+
+**설정 방법**:
+1. SMS 서비스 가입 및 API 키 발급
+2. 발신번호 등록 및 심사
+3. `functions/api/sms/send.ts` 파일에서 실제 API 호출 코드 주석 해제
+4. Cloudflare Workers 환경 변수에 API 키 추가:
+   ```bash
+   npx wrangler secret put SMS_API_KEY
+   npx wrangler secret put SMS_API_SECRET
+   ```
+
+---
+
+### 📁 사업자등록증 업로드 (Cloudflare R2 설정)
+
+구인자 회원가입 시 사업자등록증 업로드를 위한 Cloudflare R2 설정이 필요합니다.
+
+**현재 상태**: 개발 모드 (파일 정보만 DB 저장, 실제 파일 미저장)
+
+**Cloudflare R2 설정 방법**:
+
+1. **R2 버킷 생성**:
+```bash
+npx wrangler r2 bucket create albi-business-files
+```
+
+2. **wrangler.jsonc에 R2 바인딩 추가**:
+```jsonc
+{
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "albi-business-files"
+    }
+  ]
+}
+```
+
+3. **파일 업로드 API 확인**:
+- `functions/api/upload/business-registration.ts`
+- `functions/api/auth/signup.ts`
+
+---
+
 ### 🗺️ Kakao Maps API 설정 (필수)
 
 알바찾기 페이지(/jobs)의 지도 기능을 사용하려면 Kakao Maps JavaScript API 키가 필요합니다.
@@ -38,6 +127,8 @@
 - 사이트 도메인 추가:
   ```
   http://localhost:3000
+  https://albi.kr
+  https://www.albi.kr
   https://albi-app.pages.dev
   https://*.albi-app.pages.dev
   ```
@@ -48,10 +139,101 @@
 <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_JAVASCRIPT_KEY"></script>
 ```
 
+**✅ 현재 상태:**
+- API 키: `b69e30d2c21d6db82408ee9a2091d293` (설정 완료)
+- 도메인: `albi.kr`, `albi-app.pages.dev` 등록 필요
+
+---
+
+### 📱 SMS 본인인증 설정 (필수)
+
+회원가입 시 휴대폰 본인인증을 위해 SMS API가 필요합니다.
+
+**추천 서비스:**
+1. **Coolsms** (https://coolsms.co.kr)
+   - 문자 1건당 8~9원
+   - 최소 충전 10,000원
+   - REST API 제공
+
+2. **NHN Cloud SMS** (https://www.nhncloud.com/kr/service/notification/sms)
+   - 월 100건 무료
+   - 문자 1건당 9원
+   - 대기업 인프라
+
+3. **알리고** (https://smartsms.aligo.in)
+   - 문자 1건당 8원
+   - 최소 충전 5,000원
+
+**설정 방법 (Coolsms 기준):**
+
+1. **회원가입 및 API 키 발급**
+   - https://coolsms.co.kr 회원가입
+   - 발신번호 등록 (사업자등록증 필요)
+   - API Key, API Secret 발급
+
+2. **Cloudflare Secret 등록**
+   ```bash
+   cd /home/user/webapp
+   wrangler secret put COOLSMS_API_KEY
+   wrangler secret put COOLSMS_API_SECRET
+   wrangler secret put COOLSMS_SENDER_NUMBER
+   ```
+
+3. **충전 및 테스트**
+   - 최소 10,000원 충전
+   - 테스트 발송 확인
+
 **⚠️ 현재 상태:**
-- 기본 API 키는 테스트용이며 작동하지 않습니다
-- 프로덕션 배포 전에 반드시 유효한 API 키로 교체 필요
-- API 키 없이는 지도 기능이 비활성화되며 "지도 서비스를 사용할 수 없습니다" 메시지가 표시됩니다
+- SMS 발송 기능: 미구현 (임시 인증번호 `123456` 사용 중)
+- 프로덕션 배포 전에 반드시 실제 SMS API 연동 필요
+
+---
+
+### 📄 파일 업로드 설정 (필수)
+
+구인자 회원가입 시 사업자등록증 업로드를 위해 Cloudflare R2 설정이 필요합니다.
+
+**1. Cloudflare R2 Bucket 생성**
+```bash
+wrangler r2 bucket create albi-uploads
+```
+
+**2. wrangler.jsonc에 R2 바인딩 추가**
+```jsonc
+{
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "albi-uploads"
+    }
+  ]
+}
+```
+
+**3. CORS 설정**
+- Cloudflare Dashboard → R2 → albi-uploads
+- Settings → CORS Policy:
+```json
+[
+  {
+    "AllowedOrigins": ["https://albi.kr", "https://albi-app.pages.dev"],
+    "AllowedMethods": ["GET", "PUT", "POST"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+**⚠️ 현재 상태:**
+- 파일 업로드: 미구현 (파일 선택만 가능, 실제 업로드 안 됨)
+- 프로덕션 배포 전에 R2 버킷 생성 및 API 구현 필요
+
+**💡 파일 업로드 구조:**
+```
+사용자 브라우저 → API (/api/upload) → Cloudflare R2
+                                    ↓
+                              URL 반환 → DB 저장
+```
 
 ## 🎯 최근 업데이트 (2026-02-04)
 

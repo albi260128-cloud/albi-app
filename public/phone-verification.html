@@ -357,13 +357,59 @@
       
       console.log('🚀 인증 시작:', { name, carrier, phone, birthDate, gender, method: selectedMethod });
       
-      // Mock 인증 (개발 모드)
-      // 실제 서비스에서는 NICE API 또는 PortOne API 호출
-      showMockVerification(name, phone, carrier, birthDate, gender);
+      // SMS 인증 (개발 모드 + 실제 SMS)
+      // 실제 API 호출
+      sendSMSCode(name, phone, carrier, birthDate, gender);
+    }
+    
+    async function sendSMSCode(name, phone, carrier, birthDate, gender) {
+      try {
+        // API 호출하여 SMS 발송
+        const response = await fetch('/api/sms/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            phone
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // SMS 발송 성공
+          const mockCode = data.verificationCode || '123456'; // 개발 환경에서만 코드 표시
+          document.getElementById('mockCode').textContent = mockCode;
+          
+          // SMS 인증 화면 표시
+          document.getElementById('verificationOptions').style.display = 'none';
+          document.getElementById('mockVerification').style.display = 'block';
+          
+          // 데이터 저장
+          verificationToken = `sms_token_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+          
+          // 실제 환경에서는 사용자가 직접 입력
+          // 개발 환경에서는 자동 완료 (2초 후)
+          if (data.verificationCode) {
+            setTimeout(() => {
+              completeMockVerification(name, phone, carrier, birthDate, gender);
+            }, 2000);
+          }
+        } else {
+          alert('SMS 발송에 실패했습니다: ' + data.error);
+          document.getElementById('verificationOptions').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('SMS 발송 오류:', error);
+        alert('SMS 발송 중 오류가 발생했습니다.');
+        document.getElementById('verificationOptions').style.display = 'block';
+      }
     }
     
     function showMockVerification(name, phone, carrier, birthDate, gender) {
-      // Mock 인증번호 생성
+      // Mock 인증번호 생성 (개발용 백업)
       const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
       document.getElementById('mockCode').textContent = mockCode;
       
