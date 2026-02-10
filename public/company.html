@@ -27,6 +27,118 @@
       transform: translateY(-8px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     }
+    
+    /* 모바일 최적화 */
+    @media (max-width: 768px) {
+      .hero-section {
+        padding: 3rem 1rem !important;
+      }
+      
+      .section-padding {
+        padding: 2.5rem 1rem !important;
+      }
+      
+      .hero-logo {
+        width: 3.5rem !important;
+        height: 3.5rem !important;
+        padding: 0.75rem !important;
+        margin-bottom: 1rem !important;
+      }
+      
+      .hero-title {
+        font-size: 1.75rem !important;
+        margin-bottom: 1rem !important;
+      }
+      
+      .hero-description {
+        font-size: 0.95rem !important;
+        line-height: 1.5 !important;
+      }
+      
+      .section-title {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+      
+      .section-subtitle {
+        font-size: 0.875rem !important;
+        margin-bottom: 1.5rem !important;
+      }
+      
+      .feature-card {
+        padding: 1.25rem !important;
+      }
+      
+      .feature-emoji {
+        font-size: 2.5rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+      
+      .feature-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      
+      .feature-description {
+        font-size: 0.875rem !important;
+      }
+      
+      .value-card {
+        padding: 1rem !important;
+      }
+      
+      .value-number {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+        font-size: 1rem !important;
+      }
+      
+      .value-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      
+      .value-description {
+        font-size: 0.875rem !important;
+      }
+      
+      .info-card {
+        padding: 1.5rem !important;
+      }
+      
+      .info-item {
+        padding: 0.75rem !important;
+        gap: 0.75rem !important;
+      }
+      
+      .info-icon {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+      }
+      
+      .info-icon i {
+        font-size: 1rem !important;
+      }
+      
+      .cta-section {
+        padding: 2.5rem 1rem !important;
+      }
+      
+      .cta-title {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.75rem !important;
+      }
+      
+      .cta-description {
+        font-size: 1rem !important;
+        margin-bottom: 1.5rem !important;
+      }
+      
+      .cta-button {
+        padding: 0.75rem 1.5rem !important;
+        font-size: 0.875rem !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -45,65 +157,61 @@
   </nav>
 
   <!-- 히어로 섹션 -->
-  <section class="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-24 overflow-hidden">
+  <section class="hero-section relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white py-24 overflow-hidden">
     <div class="absolute inset-0 bg-black opacity-10"></div>
     <div class="container mx-auto px-4 text-center relative z-10 max-w-4xl">
-      <div class="inline-block mb-6 p-4 bg-white bg-opacity-20 rounded-2xl backdrop-blur-sm">
+      <div class="hero-logo inline-block mb-6 p-4 bg-white bg-opacity-20 rounded-2xl backdrop-blur-sm">
         <img src="/albi-mascot.svg" alt="알비" class="w-20 h-20">
       </div>
-      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+      <h1 class="hero-title text-4xl md:text-5xl font-bold mb-6 leading-tight">
         알비와 함께하는<br>
         <span class="text-orange-200">새로운 알바 경험</span>
       </h1>
-      <p class="text-lg md:text-xl text-orange-100 max-w-2xl mx-auto leading-relaxed">
-        1시간 체험 시스템으로 일하기 전에 미리 확인하고,<br>
+      <p class="hero-description text-lg md:text-xl text-orange-100 max-w-2xl mx-auto leading-relaxed">
+        1시간 체험 시스템으로 일하기 전에 미리 확인하고,<br class="hidden md:block">
         AI 매칭으로 나에게 딱 맞는 일자리를 찾아드립니다.
       </p>
     </div>
   </section>
 
   <!-- 회사 소개 -->
-  <section class="py-20 bg-white">
+  <section class="section-padding py-20 bg-white">
     <div class="container mx-auto px-4 max-w-5xl">
       <div class="text-center mb-16">
         <span class="inline-block px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold mb-4">
           About ALBI
         </span>
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">알비는 무엇인가요?</h2>
+        <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-4">알비는 무엇인가요?</h2>
         <div class="w-20 h-1 bg-gradient-to-r from-orange-500 to-orange-600 mx-auto mb-6 rounded-full"></div>
-        <p class="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
-          알비는 <strong class="text-orange-500">"일하기 전에 미리 체험"</strong>할 수 있는 혁신적인 알바 플랫폼입니다.<br>
-          1시간 동안 직장 분위기를 관찰하고, AI가 추천하는 최적의 일자리에서 일하세요.<br>
-          더 이상 면접 부담 없이, 내게 맞는 알바를 쉽게 찾을 수 있습니다.
+        <p class="section-subtitle text-base md:text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
+          알비는 <strong class="text-orange-500">"일하기 전에 미리 체험"</strong>할 수 있는 혁신적인 알바 플랫폼입니다.<br class="hidden md:block">
+          1시간 동안 직장 분위기를 관찰하고, AI가 추천하는 최적의 일자리에서 일하세요.
         </p>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-8">
+      <div class="grid md:grid-cols-3 gap-4 md:gap-8">
         <div class="feature-card text-center p-8 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200">
-          <div class="text-6xl mb-6">👀</div>
-          <h3 class="text-xl font-bold text-gray-800 mb-3">1시간 체험</h3>
-          <p class="text-gray-600 leading-relaxed">
+          <div class="feature-emoji text-6xl mb-6">👀</div>
+          <h3 class="feature-title text-xl font-bold text-gray-800 mb-3">1시간 체험</h3>
+          <p class="feature-description text-gray-600 leading-relaxed text-sm md:text-base">
             일하지 않고 관찰만!<br>
-            직장을 미리 확인하고<br>
-            결정하세요
+            직장을 미리 확인하고 결정하세요
           </p>
         </div>
         <div class="feature-card text-center p-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200">
-          <div class="text-6xl mb-6">🤖</div>
-          <h3 class="text-xl font-bold text-gray-800 mb-3">AI 스마트 매칭</h3>
-          <p class="text-gray-600 leading-relaxed">
+          <div class="feature-emoji text-6xl mb-6">🤖</div>
+          <h3 class="feature-title text-xl font-bold text-gray-800 mb-3">AI 스마트 매칭</h3>
+          <p class="feature-description text-gray-600 leading-relaxed text-sm md:text-base">
             성향과 조건을 분석해<br>
-            최적의 일자리를<br>
-            추천해드립니다
+            최적의 일자리를 추천해드립니다
           </p>
         </div>
         <div class="feature-card text-center p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200">
-          <div class="text-6xl mb-6">🎁</div>
-          <h3 class="text-xl font-bold text-gray-800 mb-3">알비포인트</h3>
-          <p class="text-gray-600 leading-relaxed">
+          <div class="feature-emoji text-6xl mb-6">🎁</div>
+          <h3 class="feature-title text-xl font-bold text-gray-800 mb-3">알비포인트</h3>
+          <p class="feature-description text-gray-600 leading-relaxed text-sm md:text-base">
             일하면 포인트 적립!<br>
-            기프티콘으로<br>
-            즉시 교환 가능
+            기프티콘으로 즉시 교환 가능
           </p>
         </div>
       </div>
@@ -111,35 +219,35 @@
   </section>
 
   <!-- 비전 & 미션 -->
-  <section class="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
+  <section class="section-padding py-20 bg-gradient-to-br from-gray-50 to-gray-100">
     <div class="container mx-auto px-4 max-w-5xl">
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="bg-white p-10 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-          <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
-              <i class="fas fa-eye text-3xl text-white"></i>
+      <div class="grid md:grid-cols-2 gap-4 md:gap-8">
+        <div class="value-card bg-white p-6 md:p-10 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <div class="flex items-center gap-4 mb-4 md:mb-6">
+            <div class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-eye text-2xl md:text-3xl text-white"></i>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800">비전</h3>
+            <h3 class="value-title text-xl md:text-2xl font-bold text-gray-800">비전</h3>
           </div>
-          <p class="text-gray-700 leading-relaxed">
+          <p class="value-description text-sm md:text-base text-gray-700 leading-relaxed">
             <strong class="text-orange-600">모든 구직자가 안심하고 일할 수 있는 세상</strong>을 만듭니다.
           </p>
-          <p class="text-gray-600 leading-relaxed mt-4">
+          <p class="value-description text-sm md:text-base text-gray-600 leading-relaxed mt-3 md:mt-4">
             일자리를 찾는 과정에서 느끼는 불안과 두려움을 없애고,
             누구나 쉽고 편하게 자신에게 맞는 일을 찾을 수 있도록 돕습니다.
           </p>
         </div>
-        <div class="bg-white p-10 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-          <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
-              <i class="fas fa-bullseye text-3xl text-white"></i>
+        <div class="value-card bg-white p-6 md:p-10 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+          <div class="flex items-center gap-4 mb-4 md:mb-6">
+            <div class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+              <i class="fas fa-bullseye text-2xl md:text-3xl text-white"></i>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800">미션</h3>
+            <h3 class="value-title text-xl md:text-2xl font-bold text-gray-800">미션</h3>
           </div>
-          <p class="text-gray-700 leading-relaxed">
+          <p class="value-description text-sm md:text-base text-gray-700 leading-relaxed">
             <strong class="text-blue-600">신뢰할 수 있는 일자리 매칭 플랫폼</strong>을 제공합니다.
           </p>
-          <p class="text-gray-600 leading-relaxed mt-4">
+          <p class="value-description text-sm md:text-base text-gray-600 leading-relaxed mt-3 md:mt-4">
             투명한 정보 공개, 공정한 근로 환경, AI 기술을 활용한 스마트 매칭으로
             구직자와 구인자 모두에게 최고의 경험을 선사합니다.
           </p>
