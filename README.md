@@ -9,12 +9,49 @@
   3. **알비포인트** - 포인트 적립 및 기프티콘 교환
 
 ## 📌 주요 URL
-- **Production**: https://3000-is6fz7wmwyawlr7nfbeuf-5c13a017.sandbox.novita.ai
-- **GitHub**: (업로드 대기 - setup_github_environment 필요)
+- **Production**: https://albi-app.pages.dev
+- **GitHub**: https://github.com/albi260128-cloud/albi-app
 - **AI 면접**: /chat.html
 - **알바 찾기**: /jobs.html
 - **커뮤니티**: /community.html
 - **기프티콘 스토어**: /store.html
+
+## ⚙️ 환경 설정
+
+### 🗺️ Kakao Maps API 설정 (필수)
+
+알바찾기 페이지(/jobs)의 지도 기능을 사용하려면 Kakao Maps JavaScript API 키가 필요합니다.
+
+**1. Kakao Developers 가입 및 앱 생성**
+- https://developers.kakao.com 접속
+- "내 애플리케이션" → "애플리케이션 추가하기"
+- 앱 이름 입력 및 생성
+
+**2. JavaScript 키 발급**
+- 생성한 앱 선택
+- "앱 키" 메뉴
+- **JavaScript 키** 복사
+
+**3. 플랫폼 설정**
+- "플랫폼" 메뉴
+- "Web 플랫폼 등록"
+- 사이트 도메인 추가:
+  ```
+  http://localhost:3000
+  https://albi-app.pages.dev
+  https://*.albi-app.pages.dev
+  ```
+
+**4. 코드에 API 키 적용**
+```bash
+# public/jobs.html 파일 10번 줄 수정:
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_JAVASCRIPT_KEY"></script>
+```
+
+**⚠️ 현재 상태:**
+- 기본 API 키는 테스트용이며 작동하지 않습니다
+- 프로덕션 배포 전에 반드시 유효한 API 키로 교체 필요
+- API 키 없이는 지도 기능이 비활성화되며 "지도 서비스를 사용할 수 없습니다" 메시지가 표시됩니다
 
 ## 🎯 최근 업데이트 (2026-02-04)
 
