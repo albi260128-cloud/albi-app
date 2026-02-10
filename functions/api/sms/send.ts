@@ -21,6 +21,9 @@
 
 interface Env {
   DB: D1Database;
+  COOLSMS_API_KEY?: string;
+  COOLSMS_API_SECRET?: string;
+  COOLSMS_FROM_NUMBER?: string;
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
@@ -69,44 +72,63 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     });
 
     // ============================================================
-    // 실제 프로덕션에서는 여기에 SMS 발송 API 호출 추가
+    // Coolsms REST API를 통한 실제 SMS 발송
     // ============================================================
-    // 
-    // 예시 1: Coolsms (https://coolsms.co.kr)
-    // const coolsms = require('coolsms-node-sdk').default;
-    // const messageService = new coolsms(API_KEY, API_SECRET);
-    // await messageService.sendOne({
-    //   to: cleanPhone,
-    //   from: '발신번호',
-    //   text: `[알비] 인증번호는 [${verificationCode}] 입니다.`
-    // });
-    //
-    // 예시 2: Aligo (https://smartsms.aligo.in)
-    // await fetch('https://apis.aligo.in/send/', {
-    //   method: 'POST',
-    //   body: JSON.stringify({
-    //     key: API_KEY,
-    //     user_id: USER_ID,
-    //     sender: '발신번호',
-    //     receiver: cleanPhone,
-    //     msg: `[알비] 인증번호는 [${verificationCode}] 입니다.`,
-    //     testmode_yn: 'N'
-    //   })
-    // });
-    //
-    // 예시 3: NHN Cloud SMS
-    // await fetch(`https://api-sms.cloud.toast.com/sms/v3.0/appKeys/${APP_KEY}/sender/sms`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'X-Secret-Key': SECRET_KEY
-    //   },
-    //   body: JSON.stringify({
-    //     body: `[알비] 인증번호는 [${verificationCode}] 입니다.`,
-    //     sendNo: '발신번호',
-    //     recipientList: [{ recipientNo: cleanPhone }]
-    //   })
-    // });
+    let smsSuccess = false;
+    let smsError = null;
+
+    if (env.COOLSMS_API_KEY && env.COOLSMS_API_SECRET && env.COOLSMS_FROM_NUMBER) {
+      try {
+        console.log('📱 Coolsms API 호출 시작...');
+
+        // Coolsms REST API v4 - 단순 메시지 발송 (Simple Send)
+        // 문서: https://docs.coolsms.co.kr/api-reference/messages/sendsimplemessage
+        const salt = Date.now().toString();
+        const date = new Date().toISOString();
+        const signature = await getHmacSignature(env.COOLSMS_API_SECRET, date, salt);
+        
+        const authHeader = `HMAC-SHA256 apiKey=${env.COOLSMS_API_KEY}, date=${date}, salt=${salt}, signature=${signature}`;
+        
+        console.log('🔐 인증 헤더:', authHeader);
+
+        const requestBody = {
+          message: {
+            to: cleanPhone,
+            from: env.COOLSMS_FROM_NUMBER.replace(/-/g, ''),
+            text: `[알비] 인증번호는 [${verificationCode}] 입니다. 5분 내에 입력해주세요.`,
+            type: 'SMS'
+          }
+        };
+        
+        console.log('📤 요청 본문:', JSON.stringify(requestBody, null, 2));
+
+        const smsResponse = await fetch('https://api.coolsms.co.kr/messages/v4/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const smsData = await smsResponse.json() as any;
+        
+        console.log('📥 응답 데이터:', JSON.stringify(smsData, null, 2));
+
+        if (smsResponse.ok && (smsData.statusCode === '2000' || smsData.groupId)) {
+          smsSuccess = true;
+          console.log('✅ Coolsms 발송 성공:', smsData);
+        } else {
+          smsError = smsData;
+          console.error('❌ Coolsms 발송 실패:', smsData);
+        }
+      } catch (error) {
+        smsError = error;
+        console.error('❌ Coolsms API 호출 오류:', error);
+      }
+    } else {
+      console.log('⚠️ Coolsms API 키가 설정되지 않았습니다. 개발 모드로 작동합니다.');
+    }
 
     // 개발 환경: 콘솔 로그 출력
     console.log('========================================');
@@ -129,14 +151,18 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       // DB 저장 실패해도 인증번호는 반환
     }
 
-    // 개발 환경에서는 인증번호를 응답에 포함 (실제 환경에서는 제거)
-    const isDevelopment = true; // 실제 프로덕션에서는 false로 변경
+    // SMS 발송 여부에 따라 응답 메시지 결정
+    const isDevelopment = !smsSuccess; // SMS 발송 성공 시 개발 모드 비활성화
 
     return new Response(
       JSON.stringify({
         success: true,
         verificationCode: isDevelopment ? verificationCode : undefined,
-        message: '인증번호가 발송되었습니다. (개발 모드: 위 코드를 입력하세요)'
+        message: smsSuccess 
+          ? '인증번호가 발송되었습니다. 휴대폰으로 받은 인증번호를 입력하세요.'
+          : '인증번호가 발송되었습니다. (개발 모드: 위 코드를 입력하세요)',
+        smsDelivered: smsSuccess,
+        smsError: isDevelopment && smsError ? String(smsError) : undefined
       }),
       {
         status: 200,
@@ -156,4 +182,28 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       }
     );
   }
+}
+
+/**
+ * Coolsms HMAC-SHA256 서명 생성
+ */
+async function getHmacSignature(secret: string, date: string, salt: string): Promise<string> {
+  const message = date + salt;
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(message);
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+  const hashArray = Array.from(new Uint8Array(signature));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex;
 }
