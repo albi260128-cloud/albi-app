@@ -274,17 +274,47 @@
       <p style="margin-top: 8px;"><i class="fas fa-shield-alt"></i> 입력하신 정보는 안전하게 보호됩니다.</p>
     </div>
     
-    <!-- Mock 인증 (개발 모드) -->
-    <div id="mockVerification" style="display: none;">
-      <div class="mock-code-box">
-        <div class="mock-code-title">
-          <i class="fas fa-code"></i> 개발 모드 - Mock 인증
+    <!-- SMS 인증번호 입력 -->
+    <div id="smsVerification" style="display: none;">
+      <div style="background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 20px; margin-top: 20px;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <i class="fas fa-comment-dots" style="font-size: 32px; color: #3b82f6;"></i>
+          <h3 style="font-size: 18px; font-weight: 600; color: #1e40af; margin-top: 12px; margin-bottom: 8px;">
+            인증번호가 발송되었습니다
+          </h3>
+          <p style="font-size: 14px; color: #1e40af; margin: 0;">
+            휴대폰으로 받은 6자리 인증번호를 입력하세요
+          </p>
+          <p id="phoneDisplay" style="font-size: 14px; color: #3b82f6; font-weight: 600; margin-top: 8px;"></p>
         </div>
-        <div class="mock-code" id="mockCode">------</div>
-        <div class="mock-code-desc">위 코드를 복사하여 입력하세요</div>
-        <button type="button" class="btn btn-secondary" onclick="completeMockVerification()" style="margin-top: 16px; width: auto; padding: 10px 24px;">
-          <i class="fas fa-check"></i> 인증 완료
-        </button>
+        
+        <div class="form-group">
+          <label class="form-label" style="color: #1e40af;">인증번호 (6자리)</label>
+          <input type="text" class="form-input" id="verificationCode" placeholder="000000" maxlength="6" pattern="[0-9]{6}" style="font-size: 20px; text-align: center; letter-spacing: 8px; font-weight: 600;">
+          <div id="codeError" style="color: #dc2626; font-size: 13px; margin-top: 8px; display: none;"></div>
+        </div>
+        
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn btn-primary" onclick="verifyCode()" id="verifyBtn" style="flex: 1;">
+            <i class="fas fa-check"></i> 인증 확인
+          </button>
+          <button type="button" class="btn" onclick="resendCode()" style="flex: 1; background: #6b7280; color: white;">
+            <i class="fas fa-redo"></i> 재발송
+          </button>
+        </div>
+        
+        <div id="timerDisplay" style="text-align: center; margin-top: 12px; font-size: 14px; color: #dc2626; font-weight: 600;"></div>
+      </div>
+      
+      <!-- 개발 모드 힌트 (SMS 발송 실패 시에만 표시) -->
+      <div id="devModeHint" style="display: none; background: #fef3c7; border: 2px dashed #f59e0b; border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center;">
+        <div style="font-size: 14px; color: #92400e; font-weight: 600; margin-bottom: 8px;">
+          <i class="fas fa-code"></i> 개발 모드 (SMS 미발송)
+        </div>
+        <div id="mockCode" style="font-size: 32px; font-weight: 700; color: #f59e0b; letter-spacing: 8px; margin: 12px 0;">------</div>
+        <div style="font-size: 12px; color: #92400e;">
+          위 코드를 복사하여 입력하세요
+        </div>
       </div>
     </div>
   </div>
@@ -362,8 +392,25 @@
       sendSMSCode(name, phone, carrier, birthDate, gender);
     }
     
+    let timerInterval = null;
+    let timeLeft = 300; // 5분 = 300초
+    let currentPhone = '';
+    let currentName = '';
+    let currentCarrier = '';
+    let currentBirthDate = '';
+    let currentGender = '';
+    
     async function sendSMSCode(name, phone, carrier, birthDate, gender) {
       try {
+        // 현재 정보 저장
+        currentPhone = phone;
+        currentName = name;
+        currentCarrier = carrier;
+        currentBirthDate = birthDate;
+        currentGender = gender;
+        
+        console.log('📱 SMS 발송 요청:', { name, phone });
+        
         // API 호출하여 SMS 발송
         const response = await fetch('/api/sms/send', {
           method: 'POST',
@@ -377,85 +424,184 @@
         });
         
         const data = await response.json();
+        console.log('📥 SMS 발송 응답:', data);
         
         if (data.success) {
-          // SMS 발송 성공
-          const mockCode = data.verificationCode || '123456'; // 개발 환경에서만 코드 표시
-          document.getElementById('mockCode').textContent = mockCode;
-          
           // SMS 인증 화면 표시
           document.getElementById('verificationOptions').style.display = 'none';
-          document.getElementById('mockVerification').style.display = 'block';
+          document.getElementById('smsVerification').style.display = 'block';
           
-          // 데이터 저장
-          verificationToken = `sms_token_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+          // 전화번호 표시
+          document.getElementById('phoneDisplay').textContent = `📱 ${phone}`;
           
-          // 실제 환경에서는 사용자가 직접 입력
-          // 개발 환경에서는 자동 완료 (2초 후)
-          if (data.verificationCode) {
-            setTimeout(() => {
-              completeMockVerification(name, phone, carrier, birthDate, gender);
-            }, 2000);
+          // 개발 모드 힌트 (SMS 미발송 시에만 표시)
+          if (!data.smsDelivered && data.verificationCode) {
+            document.getElementById('devModeHint').style.display = 'block';
+            document.getElementById('mockCode').textContent = data.verificationCode;
+          } else {
+            document.getElementById('devModeHint').style.display = 'none';
           }
+          
+          // 타이머 시작
+          startTimer();
+          
+          // 입력창 포커스
+          document.getElementById('verificationCode').focus();
         } else {
           alert('SMS 발송에 실패했습니다: ' + data.error);
           document.getElementById('verificationOptions').style.display = 'block';
         }
       } catch (error) {
-        console.error('SMS 발송 오류:', error);
+        console.error('❌ SMS 발송 오류:', error);
         alert('SMS 발송 중 오류가 발생했습니다.');
         document.getElementById('verificationOptions').style.display = 'block';
       }
     }
     
-    function showMockVerification(name, phone, carrier, birthDate, gender) {
-      // Mock 인증번호 생성 (개발용 백업)
-      const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
-      document.getElementById('mockCode').textContent = mockCode;
+    function startTimer() {
+      timeLeft = 300; // 5분 초기화
+      updateTimerDisplay();
       
-      // Mock 인증 화면 표시
-      document.getElementById('verificationOptions').style.display = 'none';
-      document.getElementById('mockVerification').style.display = 'block';
+      // 기존 타이머 제거
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
       
-      // 데이터 저장
-      verificationToken = `mock_token_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      
-      // 자동으로 부모 창에 결과 전송 (3초 후)
-      setTimeout(() => {
-        completeMockVerification(name, phone, carrier, birthDate, gender);
-      }, 2000);
+      // 새 타이머 시작
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          alert('인증 시간이 만료되었습니다. 다시 시도해주세요.');
+          window.location.reload();
+        }
+      }, 1000);
     }
     
-    function completeMockVerification(name, phone, carrier, birthDate, gender) {
-      // 현재 입력값 가져오기
-      if (!name) {
-        name = document.getElementById('name').value;
-        phone = document.getElementById('phone').value.replace(/-/g, '');
-        carrier = document.getElementById('carrier').value;
-        birthDate = document.getElementById('birthDate').value;
-        gender = document.getElementById('gender').value;
-      }
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      document.getElementById('timerDisplay').textContent = `⏱️ 남은 시간: ${display}`;
       
-      // 부모 창에 인증 완료 메시지 전송
-      if (window.opener) {
-        window.opener.postMessage({
-          type: 'PHONE_VERIFICATION_SUCCESS',
-          name: name,
-          phone: phone,
-          carrier: carrier,
-          birthDate: birthDate,
-          gender: gender,
-          verificationToken: verificationToken
-        }, '*');
-        
-        // 팝업 닫기
-        setTimeout(() => {
-          window.close();
-        }, 500);
-      } else {
-        alert('부모 창을 찾을 수 없습니다.');
+      // 1분 이하면 빨간색
+      if (timeLeft <= 60) {
+        document.getElementById('timerDisplay').style.color = '#dc2626';
       }
     }
+    
+    async function verifyCode() {
+      const code = document.getElementById('verificationCode').value.trim();
+      const codeError = document.getElementById('codeError');
+      const verifyBtn = document.getElementById('verifyBtn');
+      
+      // 입력값 검증
+      if (!code) {
+        codeError.textContent = '⚠️ 인증번호를 입력해주세요.';
+        codeError.style.display = 'block';
+        return;
+      }
+      
+      if (!/^[0-9]{6}$/.test(code)) {
+        codeError.textContent = '⚠️ 6자리 숫자를 입력해주세요.';
+        codeError.style.display = 'block';
+        return;
+      }
+      
+      // 버튼 비활성화
+      verifyBtn.disabled = true;
+      verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...';
+      codeError.style.display = 'none';
+      
+      try {
+        console.log('🔍 인증번호 확인:', { phone: currentPhone, code });
+        
+        // 인증번호 확인 API 호출
+        const response = await fetch('/api/sms/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            phone: currentPhone,
+            code: code
+          })
+        });
+        
+        const data = await response.json();
+        console.log('📥 인증 확인 응답:', data);
+        
+        if (data.success) {
+          // 인증 성공
+          clearInterval(timerInterval);
+          
+          // 부모 창에 인증 완료 메시지 전송
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'PHONE_VERIFICATION_SUCCESS',
+              name: currentName,
+              phone: currentPhone,
+              carrier: currentCarrier,
+              birthDate: currentBirthDate,
+              gender: currentGender,
+              verificationToken: data.verificationToken
+            }, '*');
+            
+            // 성공 메시지 표시 후 팝업 닫기
+            alert('✅ 인증이 완료되었습니다!');
+            setTimeout(() => {
+              window.close();
+            }, 500);
+          } else {
+            alert('✅ 인증이 완료되었습니다!');
+          }
+        } else {
+          // 인증 실패
+          codeError.textContent = '❌ ' + (data.error || '인증번호가 일치하지 않습니다.');
+          codeError.style.display = 'block';
+          verifyBtn.disabled = false;
+          verifyBtn.innerHTML = '<i class="fas fa-check"></i> 인증 확인';
+        }
+      } catch (error) {
+        console.error('❌ 인증 확인 오류:', error);
+        codeError.textContent = '❌ 인증 확인 중 오류가 발생했습니다.';
+        codeError.style.display = 'block';
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<i class="fas fa-check"></i> 인증 확인';
+      }
+    }
+    
+    async function resendCode() {
+      if (!confirm('인증번호를 재발송하시겠습니까?')) {
+        return;
+      }
+      
+      // SMS 재발송
+      await sendSMSCode(currentName, currentPhone, currentCarrier, currentBirthDate, currentGender);
+      
+      // 입력창 초기화
+      document.getElementById('verificationCode').value = '';
+      document.getElementById('codeError').style.display = 'none';
+    }
+    
+    // Enter 키로 인증 확인
+    document.addEventListener('DOMContentLoaded', () => {
+      const codeInput = document.getElementById('verificationCode');
+      if (codeInput) {
+        codeInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            verifyCode();
+          }
+        });
+        
+        // 숫자만 입력 가능
+        codeInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+      }
+    });
   </script>
 </body>
 </html>
