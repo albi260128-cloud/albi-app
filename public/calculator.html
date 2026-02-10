@@ -110,12 +110,12 @@
             <input 
               type="number" 
               id="hourlyWage" 
-              value="10030" 
-              min="10030"
+              value="10320" 
+              min="10320"
               step="10"
               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition"
             >
-            <p class="text-xs text-gray-500 mt-1">💡 2025년 최저시급: 10,030원</p>
+            <p class="text-xs text-gray-500 mt-1">💡 2026년 최저시급: 10,320원</p>
           </div>
 
           <!-- 주간 근무시간 입력 -->
@@ -244,8 +244,8 @@
       const weeklyHours = parseFloat(document.getElementById('weeklyHours').value) || 0;
 
       // 클라이언트 측 검증
-      if (hourlyWage < 10030 && hourlyWage > 0) {
-        showError('최저시급(10,030원) 이상으로 입력해주세요.');
+      if (hourlyWage < 10320 && hourlyWage > 0) {
+        showError('최저시급(10,320원) 이상으로 입력해주세요.');
         return;
       }
 

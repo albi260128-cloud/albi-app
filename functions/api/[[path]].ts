@@ -499,10 +499,10 @@ app.post('/calculator/wage', async (c) => {
       }, 400);
     }
 
-    if (wage < 10030 && wage > 0) {
+    if (wage < 10320 && wage > 0) {
       return c.json<ApiResponse>({
         success: false,
-        error: '2025년 최저시급(10,030원) 이상으로 입력해주세요.'
+        error: '2026년 최저시급(10,320원) 이상으로 입력해주세요.'
       }, 400);
     }
 
@@ -1248,10 +1248,10 @@ app.post('/jobs', async (c) => {
       }, 400);
     }
 
-    if (hourlyWage < 10030) {
+    if (hourlyWage < 10320) {
       return c.json<ApiResponse>({ 
         success: false, 
-        error: '최저시급(10,030원) 이상으로 입력해주세요.' 
+        error: '최저시급(10,320원) 이상으로 입력해주세요.' 
       }, 400);
     }
 
