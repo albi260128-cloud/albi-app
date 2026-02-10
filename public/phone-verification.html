@@ -387,9 +387,14 @@
       
       console.log('🚀 인증 시작:', { name, carrier, phone, birthDate, gender, method: selectedMethod });
       
-      // SMS 인증 (개발 모드 + 실제 SMS)
-      // 실제 API 호출
-      sendSMSCode(name, phone, carrier, birthDate, gender);
+      // 선택한 인증 방법에 따라 처리
+      if (selectedMethod === 'PASS') {
+        // PASS 앱 인증
+        startPASSVerification(name, phone, carrier, birthDate, gender);
+      } else {
+        // SMS 인증
+        sendSMSCode(name, phone, carrier, birthDate, gender);
+      }
     }
     
     let timerInterval = null;
@@ -399,6 +404,96 @@
     let currentCarrier = '';
     let currentBirthDate = '';
     let currentGender = '';
+    
+    // PASS 앱 인증
+    async function startPASSVerification(name, phone, carrier, birthDate, gender) {
+      try {
+        // 현재 정보 저장
+        currentPhone = phone;
+        currentName = name;
+        currentCarrier = carrier;
+        currentBirthDate = birthDate;
+        currentGender = gender;
+        
+        console.log('🔐 PASS 인증 요청:', { name, phone, carrier, birthDate, gender });
+        
+        // 로딩 메시지 표시
+        document.getElementById('verificationOptions').style.display = 'none';
+        const container = document.querySelector('.container');
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'passLoading';
+        loadingDiv.style.cssText = 'text-align: center; padding: 40px;';
+        loadingDiv.innerHTML = `
+          <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
+          <h3 style="font-size: 18px; font-weight: 600; color: #FF6B35; margin-bottom: 12px;">
+            PASS 앱을 실행해주세요
+          </h3>
+          <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+            PASS 앱에서 본인인증을 진행해주세요
+          </p>
+          <div style="display: inline-block; padding: 12px 24px; background: #f0f0f0; border-radius: 8px; font-size: 14px; color: #666;">
+            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+            인증 대기 중...
+          </div>
+        `;
+        container.appendChild(loadingDiv);
+        
+        // PASS 인증 API 호출
+        const response = await fetch('/api/auth/pass-verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            phone,
+            carrier,
+            birthDate,
+            gender
+          })
+        });
+        
+        const data = await response.json();
+        console.log('📥 PASS 인증 응답:', data);
+        
+        // 로딩 메시지 제거
+        const loading = document.getElementById('passLoading');
+        if (loading) loading.remove();
+        
+        if (data.success) {
+          // 인증 성공 - 부모 창에 메시지 전송
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'PHONE_VERIFICATION_SUCCESS',
+              name: data.name,
+              phone: data.phone,
+              carrier: data.carrier,
+              birthDate: data.birthDate,
+              gender: data.gender,
+              verificationToken: data.verificationToken
+            }, '*');
+            
+            // 성공 메시지 표시 후 팝업 닫기
+            alert('✅ PASS 인증이 완료되었습니다!');
+            setTimeout(() => {
+              window.close();
+            }, 500);
+          } else {
+            alert('✅ PASS 인증이 완료되었습니다!');
+          }
+        } else {
+          // 인증 실패
+          alert('❌ PASS 인증에 실패했습니다: ' + data.error);
+          document.getElementById('verificationOptions').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('❌ PASS 인증 오류:', error);
+        const loading = document.getElementById('passLoading');
+        if (loading) loading.remove();
+        alert('PASS 인증 중 오류가 발생했습니다.');
+        document.getElementById('verificationOptions').style.display = 'block';
+      }
+    }
     
     async function sendSMSCode(name, phone, carrier, birthDate, gender) {
       try {
