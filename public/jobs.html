@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <!-- Kakao 지도 API -->
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ed88ff95dd20f265c47ece8b56be61f7"></script>
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ed88ff95dd20f265c47ece8b56be61f7&autoload=false"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
@@ -525,14 +525,32 @@
       console.log('🗺️ initMap 호출됨');
       console.log('window.kakao:', window.kakao);
       
+      // Kakao Maps API 로드 대기
       if (!window.kakao || !window.kakao.maps) {
-        console.error('❌ Kakao Maps API 로드 실패');
-        document.getElementById('mapView').innerHTML = 
-          '<div class="flex items-center justify-center h-screen bg-gray-50"><div class="text-center"><div class="text-6xl mb-4">🗺️</div><p class="text-gray-800 font-bold text-xl mb-2">지도 서비스 로드 실패</p><p class="text-gray-600 text-sm mb-4">Kakao 지도 API를 불러올 수 없습니다.</p></div></div>';
+        console.log('⏳ Kakao Maps API 로딩 중...');
+        
+        // kakao.maps.load()를 사용하여 SDK 로드
+        if (window.kakao) {
+          kakao.maps.load(() => {
+            console.log('✅ Kakao Maps API 로드 완료');
+            initMapInternal();
+          });
+        } else {
+          // kakao 객체 자체가 없으면 에러
+          console.error('❌ Kakao SDK 로드 실패');
+          document.getElementById('mapView').innerHTML = 
+            '<div class="flex items-center justify-center h-screen bg-gray-50"><div class="text-center"><div class="text-6xl mb-4">🗺️</div><p class="text-gray-800 font-bold text-xl mb-2">지도 서비스 로드 실패</p><p class="text-gray-600 text-sm mb-4">Kakao 지도 API를 불러올 수 없습니다.</p><button onclick="location.reload()" class="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">새로고침</button></div></div>';
+        }
         return;
       }
       
-      console.log('✅ Kakao Maps API 로드 성공');
+      // 이미 로드된 경우 바로 초기화
+      initMapInternal();
+    }
+    
+    // 실제 지도 초기화 로직
+    function initMapInternal() {
+      console.log('✅ Kakao Maps API 사용 가능');
 
       const container = document.getElementById('map');
       console.log('📍 지도 컨테이너:', container);
