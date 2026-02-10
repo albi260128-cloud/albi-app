@@ -141,7 +141,25 @@ npx wrangler r2 bucket create albi-business-files
 
 **✅ 현재 상태:**
 - API 키: `b69e30d2c21d6db82408ee9a2091d293` (설정 완료)
-- 도메인: `albi.kr`, `albi-app.pages.dev` 등록 필요
+- ⚠️ **중요**: 아래 도메인을 Kakao Developers 플랫폼 설정에 등록해야 지도가 정상 작동합니다!
+
+**필수 등록 도메인 목록** (Kakao Developers → 내 애플리케이션 → 플랫폼 → Web 플랫폼 등록):
+```
+http://localhost:3000
+https://albi.kr
+https://www.albi.kr
+https://albi-app.pages.dev
+https://*.albi-app.pages.dev
+```
+
+**등록 방법**:
+1. https://developers.kakao.com 접속
+2. 내 애플리케이션 → 해당 앱 선택
+3. 좌측 메뉴 "플랫폼" 클릭
+4. "Web 플랫폼 등록" 버튼 클릭
+5. 위 도메인들을 각각 추가
+
+**⚠️ 주의**: 도메인을 등록하지 않으면 해당 도메인에서 지도 API 호출 시 CORS 에러가 발생하여 지도가 표시되지 않습니다!
 
 ---
 
