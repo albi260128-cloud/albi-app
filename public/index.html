@@ -11,8 +11,8 @@
   <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   
-  <!-- 네이버 지도 API -->
-  <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=h46g2mh4yh&submodules=geocoder"></script>
+  <!-- Kakao 지도 API -->
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0c86c0f6579bb18682f22246d13d5ca5"></script>
   
   <style>
     /* 실용적인 레이아웃 */
@@ -1210,28 +1210,28 @@
       console.log('🗺️ 지도 초기화 시작');
       
       const mapOptions = {
-        center: new naver.maps.LatLng(userLocation.lat, userLocation.lng),
-        zoom: 15,
+        center: new kakao.maps.LatLng(userLocation.lat, userLocation.lng),
+        level: 5,
         mapTypeControl: false,
         scaleControl: true,
         logoControl: false,
         mapDataControl: false,
         zoomControl: true,
         zoomControlOptions: {
-          position: naver.maps.Position.TOP_LEFT
+          position: kakao.maps.Position.TOP_LEFT
         }
       };
       
-      map = new naver.maps.Map('map', mapOptions);
+      map = new kakao.maps.Map('map', mapOptions);
       console.log('✅ 지도 생성 완료');
       
       // 사용자 위치 마커 추가
-      userMarker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(userLocation.lat, userLocation.lng),
+      userMarker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(userLocation.lat, userLocation.lng),
         map: map,
         icon: {
           content: '<div style="background: #FF6B35; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
-          anchor: new naver.maps.Point(10, 10)
+          anchor: new kakao.maps.Point(10, 10)
         },
         title: '내 위치'
       });
@@ -1258,7 +1258,7 @@
             console.log('✅ 위치 정보 획득:', userLocation);
             
             // 지도 중심 이동
-            const newCenter = new naver.maps.LatLng(userLocation.lat, userLocation.lng);
+            const newCenter = new kakao.maps.LatLng(userLocation.lat, userLocation.lng);
             map.setCenter(newCenter);
             userMarker.setPosition(newCenter);
             
@@ -1341,18 +1341,18 @@
       
       // 지도에 마커 추가
       mockJobs.forEach(job => {
-        const marker = new naver.maps.Marker({
-          position: new naver.maps.LatLng(job.lat, job.lng),
+        const marker = new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(job.lat, job.lng),
           map: map,
           title: job.company,
           icon: {
             content: `<div style="background: white; padding: 8px 12px; border-radius: 20px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap;">${job.hourlyPay.toLocaleString()}원</div>`,
-            anchor: new naver.maps.Point(30, 40)
+            anchor: new kakao.maps.Point(30, 40)
           }
         });
         
         // 마커 클릭 이벤트
-        naver.maps.Event.addListener(marker, 'click', () => {
+        kakao.maps.Event.addListener(marker, 'click', () => {
           showJobDetail(job);
         });
         
@@ -1386,7 +1386,7 @@
     
     // 지도에서 알바 포커스
     function focusJobOnMap(jobId, lat, lng) {
-      const position = new naver.maps.LatLng(lat, lng);
+      const position = new kakao.maps.LatLng(lat, lng);
       map.setCenter(position);
       map.setZoom(17);
     }
@@ -1408,7 +1408,7 @@
     
     // 페이지 로드 시 지도 초기화
     window.addEventListener('load', () => {
-      if (typeof naver !== 'undefined' && naver.maps) {
+      if (typeof naver !== 'undefined' && kakao.maps) {
         initMap();
       } else {
         console.error('❌ 네이버 지도 API 로드 실패');

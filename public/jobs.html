@@ -6,8 +6,8 @@
   <title>알바찾기 - 알비</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-  <!-- 네이버 지도 API -->
-  <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=h46g2mh4yh&submodules=geocoder"></script>
+  <!-- Kakao 지도 API -->
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0c86c0f6579bb18682f22246d13d5ca5"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
@@ -500,61 +500,56 @@
       `).join('');
     }
 
-    // 지도 초기화
+    // 지도 초기화 (Kakao Maps)
     function initMap() {
       console.log('🗺️ initMap 호출됨');
-      console.log('window.naver:', window.naver);
-      console.log('window.naver.maps:', window.naver?.maps);
+      console.log('window.kakao:', window.kakao);
       
-      if (!window.naver || !window.naver.maps) {
-        console.error('❌ Naver Maps API 로드 실패');
+      if (!window.kakao || !window.kakao.maps) {
+        console.error('❌ Kakao Maps API 로드 실패');
         document.getElementById('mapView').innerHTML = 
-          '<div class="flex items-center justify-center h-screen bg-gray-50"><div class="text-center"><div class="text-6xl mb-4">🗺️</div><p class="text-gray-800 font-bold text-xl mb-2">지도 서비스 로드 실패</p><p class="text-gray-600 text-sm mb-4">네이버 지도 API를 불러올 수 없습니다.</p><p class="text-xs text-gray-500">네이버 클라우드 플랫폼에서 도메인 등록을 확인해주세요.</p></div></div>';
+          '<div class="flex items-center justify-center h-screen bg-gray-50"><div class="text-center"><div class="text-6xl mb-4">🗺️</div><p class="text-gray-800 font-bold text-xl mb-2">지도 서비스 로드 실패</p><p class="text-gray-600 text-sm mb-4">Kakao 지도 API를 불러올 수 없습니다.</p></div></div>';
         return;
       }
       
-      console.log('✅ Naver Maps API 로드 성공');
+      console.log('✅ Kakao Maps API 로드 성공');
 
       const container = document.getElementById('map');
       console.log('📍 지도 컨테이너:', container);
       console.log('📍 현재 위치:', currentLocation);
       
       const options = {
-        center: new naver.maps.LatLng(currentLocation.lat, currentLocation.lng),
-        zoom: 14,
-        mapTypeControl: false,
-        scaleControl: true,
-        logoControl: false,
-        mapDataControl: false,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: naver.maps.Position.TOP_LEFT
-        }
+        center: new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng),
+        level: 5
       };
 
       console.log('🎯 지도 옵션:', options);
-      map = new naver.maps.Map(container, options);
+      map = new kakao.maps.Map(container, options);
+      
+      // 줌 컨트롤 추가
+      const zoomControl = new kakao.maps.ZoomControl();
+      map.addControl(zoomControl, kakao.maps.ControlPosition.LEFT);
+      
       console.log('✅ 지도 생성 완료:', map);
       updateMap();
     }
 
-    // 지도 마커 업데이트
+    // 지도 마커 업데이트 (Kakao Maps)
     function updateMap() {
-      if (!map || !window.naver) return;
+      if (!map || !window.kakao) return;
 
       markers.forEach(marker => marker.setMap(null));
       markers = [];
 
       // 내 위치 마커
-      const myPosition = new naver.maps.LatLng(currentLocation.lat, currentLocation.lng);
-      const myMarker = new naver.maps.Marker({
+      const myPosition = new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng);
+      const myMarker = new kakao.maps.Marker({
         position: myPosition,
         map: map,
-        icon: {
-          content: '<div style="background: #FF6B35; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
-          anchor: new naver.maps.Point(10, 10)
-        },
-        title: '내 위치'
+        image: new kakao.maps.MarkerImage(
+          'data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8" fill="%233B82F6" stroke="white" stroke-width="3"/></svg>',
+          new kakao.maps.Size(20, 20)
+        )
       });
       markers.push(myMarker);
 
@@ -562,54 +557,55 @@
       allJobs.forEach(job => {
         if (!job.latitude || !job.longitude) return;
 
-        const position = new naver.maps.LatLng(job.latitude, job.longitude);
-        const marker = new naver.maps.Marker({
+        const position = new kakao.maps.LatLng(job.latitude, job.longitude);
+        
+        // 커스텀 오버레이로 시급 표시
+        const content = `<div style="background: white; padding: 6px 10px; border-radius: 16px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap; cursor: pointer;">${job.hourly_wage.toLocaleString()}원</div>`;
+        
+        const customOverlay = new kakao.maps.CustomOverlay({
           position: position,
-          map: map,
-          icon: {
-            content: `<div style="background: white; padding: 6px 10px; border-radius: 16px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap;">${job.hourly_wage.toLocaleString()}원</div>`,
-            anchor: new naver.maps.Point(30, 35)
-          },
-          title: job.title
+          content: content,
+          yAnchor: 1.5
         });
+        customOverlay.setMap(map);
+        markers.push(customOverlay);
 
         // 정보 창 생성
-        const infoWindow = new naver.maps.InfoWindow({
-          content: `
-            <div style="padding:15px; min-width:220px; text-align:center; border-radius: 8px;">
-              <div style="font-weight:bold; margin-bottom:8px; font-size: 14px; color: #333;">${job.title}</div>
-              <div style="color:#f97316; font-weight:bold; font-size:18px; margin-bottom:8px;">
-                시급 ${job.hourly_wage.toLocaleString()}원
-              </div>
-              <div style="color:#666; font-size:13px; margin-bottom:10px;">
-                📍 ${job.distance}km · ${job.company}
-              </div>
-              <button onclick="viewJobDetail('${job.id}')" 
-                      style="background:#f97316; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight: 600;">
-                상세보기
-              </button>
+        const infoContent = `
+          <div style="padding:15px; min-width:220px; text-align:center; background:white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <div style="font-weight:bold; margin-bottom:8px; font-size: 14px; color: #333;">${job.title}</div>
+            <div style="color:#f97316; font-weight:bold; font-size:18px; margin-bottom:8px;">
+              시급 ${job.hourly_wage.toLocaleString()}원
             </div>
-          `,
-          borderWidth: 0,
-          backgroundColor: 'transparent',
-          anchorSize: new naver.maps.Size(0, 0),
-          pixelOffset: new naver.maps.Point(0, -10)
+            <div style="color:#666; font-size:13px; margin-bottom:10px;">
+              📍 ${job.distance}km · ${job.company_name || job.company}
+            </div>
+            <button onclick="viewJobDetail('${job.id}')" 
+                    style="background:#f97316; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight: 600;">
+              상세보기
+            </button>
+          </div>
+        `;
+        
+        const infoOverlay = new kakao.maps.CustomOverlay({
+          content: infoContent,
+          position: position,
+          yAnchor: 2.5
         });
 
         // 마커 클릭 이벤트
-        naver.maps.Event.addListener(marker, 'click', () => {
+        customOverlay.getContent().addEventListener('click', () => {
           // 다른 정보창 닫기
           markers.forEach(m => {
-            if (m._infoWindow) {
-              m._infoWindow.close();
+            if (m._isInfoWindow) {
+              m.setMap(null);
             }
           });
           
-          infoWindow.open(map, marker);
-          marker._infoWindow = infoWindow;
+          infoOverlay._isInfoWindow = true;
+          infoOverlay.setMap(map);
+          markers.push(infoOverlay);
         });
-
-        markers.push(marker);
       });
     }
 
