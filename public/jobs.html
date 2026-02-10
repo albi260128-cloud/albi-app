@@ -559,42 +559,51 @@
 
         const position = new kakao.maps.LatLng(job.latitude, job.longitude);
         
-        // 커스텀 오버레이로 시급 표시
-        const content = `<div style="background: white; padding: 6px 10px; border-radius: 16px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap; cursor: pointer;">${job.hourly_wage.toLocaleString()}원</div>`;
+        // 커스텀 오버레이로 시급 표시 (DOM 요소 생성)
+        const markerDiv = document.createElement('div');
+        markerDiv.style.cssText = 'background: white; padding: 6px 10px; border-radius: 16px; border: 2px solid #FF6B35; font-size: 12px; font-weight: 600; color: #FF6B35; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap; cursor: pointer;';
+        markerDiv.innerHTML = `${job.hourly_wage.toLocaleString()}원`;
         
         const customOverlay = new kakao.maps.CustomOverlay({
           position: position,
-          content: content,
+          content: markerDiv,
           yAnchor: 1.5
         });
         customOverlay.setMap(map);
         markers.push(customOverlay);
 
-        // 정보 창 생성
-        const infoContent = `
-          <div style="padding:15px; min-width:220px; text-align:center; background:white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-            <div style="font-weight:bold; margin-bottom:8px; font-size: 14px; color: #333;">${job.title}</div>
-            <div style="color:#f97316; font-weight:bold; font-size:18px; margin-bottom:8px;">
-              시급 ${job.hourly_wage.toLocaleString()}원
-            </div>
-            <div style="color:#666; font-size:13px; margin-bottom:10px;">
-              📍 ${job.distance}km · ${job.company_name || job.company}
-            </div>
-            <button onclick="viewJobDetail('${job.id}')" 
-                    style="background:#f97316; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight: 600;">
-              상세보기
-            </button>
+        // 정보 창 생성 (DOM 요소 생성)
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'padding:15px; min-width:220px; text-align:center; background:white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        infoDiv.innerHTML = `
+          <div style="font-weight:bold; margin-bottom:8px; font-size: 14px; color: #333;">${job.title}</div>
+          <div style="color:#f97316; font-weight:bold; font-size:18px; margin-bottom:8px;">
+            시급 ${job.hourly_wage.toLocaleString()}원
           </div>
+          <div style="color:#666; font-size:13px; margin-bottom:10px;">
+            📍 ${job.distance}km · ${job.company_name || job.company}
+          </div>
+          <button data-job-id="${job.id}" class="job-detail-btn"
+                  style="background:#f97316; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight: 600;">
+            상세보기
+          </button>
         `;
         
         const infoOverlay = new kakao.maps.CustomOverlay({
-          content: infoContent,
+          content: infoDiv,
           position: position,
           yAnchor: 2.5
         });
 
+        // 상세보기 버튼 이벤트
+        const detailBtn = infoDiv.querySelector('.job-detail-btn');
+        detailBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          viewJobDetail(job.id);
+        });
+
         // 마커 클릭 이벤트
-        customOverlay.getContent().addEventListener('click', () => {
+        markerDiv.addEventListener('click', () => {
           // 다른 정보창 닫기
           markers.forEach(m => {
             if (m._isInfoWindow) {
