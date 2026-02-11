@@ -610,13 +610,6 @@
       
       <div class="form-group">
         <label class="form-label">
-          이름 <span class="required">*</span>
-        </label>
-        <input type="text" class="form-input" id="name" placeholder="홍길동" required>
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">
           휴대폰 본인인증 <span class="required">*</span>
         </label>
         <div class="verification-box" style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 2px dashed #ddd;">
@@ -629,6 +622,7 @@
               <i class="fas fa-mobile-alt"></i> 휴대폰 본인인증 시작
             </button>
             <p style="color: #999; font-size: 12px; margin-top: 12px;">PASS 인증 또는 문자 인증을 선택할 수 있습니다</p>
+            <p style="color: #10B981; font-size: 12px; margin-top: 8px; font-weight: 600;">✅ 본인인증 시 이름이 자동으로 등록됩니다</p>
           </div>
           
           <div id="verificationComplete" style="display: none; text-align: center;">
@@ -650,23 +644,14 @@
         function openPhoneVerification() {
           console.log('🚀 openPhoneVerification 호출됨!');
           
-          const nameInput = document.getElementById('name');
-          const name = nameInput ? nameInput.value.trim() : '';
-          
-          if (!name) {
-            alert('이름을 먼저 입력해주세요.');
-            if (nameInput) nameInput.focus();
-            return;
-          }
-          
-          // 팝업 열기
+          // 팝업 열기 (name 파라미터 제거)
           const width = 450;
           const height = 600;
           const left = (screen.width - width) / 2;
           const top = (screen.height - height) / 2;
           
           const popup = window.open(
-            '/phone-verification.html?name=' + encodeURIComponent(name),
+            '/phone-verification.html',
             'phoneVerification',
             'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes'
           );
@@ -695,13 +680,11 @@
               document.getElementById('phone').value = phone;
               document.getElementById('carrier').value = carrier;
               
-              // 이름 필드 자동 채우기 및 비활성화
-              if (nameInput) {
-                nameInput.value = name;
-                nameInput.disabled = true;
-              }
+              console.log('✅ 본인인증 완료 (이름 자동 사용):', verificationData);
               
-              console.log('✅ 본인인증 완료:', verificationData);
+              // 폼 유효성 재검사
+              phoneVerified = true;
+              checkFormValidity();
               
               window.removeEventListener('message', handleMessage);
             }
@@ -790,7 +773,7 @@
     // selectUserType 함수는 head에서 전역 함수로 선언됨
     
     // 파일 업로드 처리
-    function handleFileUpload(event) {
+    async function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
       
@@ -811,25 +794,72 @@
       
       businessRegistrationFile = file;
       
-      // 업로드 버튼 스타일 변경 (성공 표시)
+      // 업로드 버튼 스타일 변경 (로딩 표시)
       const uploadBtn = document.querySelector('.file-upload-btn');
-      uploadBtn.style.borderColor = '#10B981';
-      uploadBtn.style.backgroundColor = '#F0FDF4';
+      uploadBtn.style.borderColor = '#FF6B35';
+      uploadBtn.style.backgroundColor = '#FFF5F2';
       uploadBtn.innerHTML = `
-        <i class="fas fa-check-circle" style="color: #10B981;"></i>
-        <div style="margin-top: 12px; font-weight: 600; color: #10B981;">파일 업로드 완료!</div>
-        <div style="margin-top: 4px; font-size: 12px; color: #059669;">${file.name} (${(file.size / 1024).toFixed(1)}KB)</div>
-        <div style="margin-top: 8px; font-size: 11px; color: #666;">다른 파일로 변경하려면 다시 클릭하세요</div>
+        <i class="fas fa-spinner fa-spin" style="color: #FF6B35;"></i>
+        <div style="margin-top: 12px; font-weight: 600; color: #FF6B35;">사업자등록증 인식 중...</div>
+        <div style="margin-top: 4px; font-size: 12px; color: #E55A2B;">잠시만 기다려주세요</div>
       `;
       
-      // 파일 미리보기 표시 (기존 코드 유지)
-      document.getElementById('fileName').textContent = file.name;
-      document.getElementById('filePreview').style.display = 'block';
+      // OCR API 호출
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/ocr/business-registration', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        console.log('📥 OCR 응답:', data);
+        
+        if (data.success) {
+          // 사업자등록번호와 상호명 자동 입력
+          document.getElementById('businessNumber').value = data.businessNumber;
+          document.getElementById('businessName').value = data.businessName;
+          
+          // 성공 표시
+          uploadBtn.style.borderColor = '#10B981';
+          uploadBtn.style.backgroundColor = '#F0FDF4';
+          uploadBtn.innerHTML = `
+            <i class="fas fa-check-circle" style="color: #10B981;"></i>
+            <div style="margin-top: 12px; font-weight: 600; color: #10B981;">✅ 사업자정보 인식 완료!</div>
+            <div style="margin-top: 4px; font-size: 12px; color: #059669;">${file.name} (${(file.size / 1024).toFixed(1)}KB)</div>
+            <div style="margin-top: 8px; font-size: 12px; color: #059669;">📋 ${data.businessName} (${data.businessNumber})</div>
+            <div style="margin-top: 8px; font-size: 11px; color: #666;">다른 파일로 변경하려면 다시 클릭하세요</div>
+          `;
+          
+          // 파일 미리보기 표시
+          document.getElementById('fileName').textContent = file.name;
+          document.getElementById('filePreview').style.display = 'block';
+          
+          console.log('✅ 사업자등록증 OCR 성공:', data.businessNumber, data.businessName);
+        } else {
+          throw new Error(data.error || 'OCR 인식 실패');
+        }
+      } catch (error) {
+        console.error('❌ OCR 오류:', error);
+        
+        // 오류 표시 (하지만 파일은 유지)
+        uploadBtn.style.borderColor = '#F59E0B';
+        uploadBtn.style.backgroundColor = '#FEF3C7';
+        uploadBtn.innerHTML = `
+          <i class="fas fa-exclamation-triangle" style="color: #F59E0B;"></i>
+          <div style="margin-top: 12px; font-weight: 600; color: #D97706;">⚠️ 자동 인식 실패</div>
+          <div style="margin-top: 4px; font-size: 12px; color: #92400E;">${file.name} (${(file.size / 1024).toFixed(1)}KB)</div>
+          <div style="margin-top: 8px; font-size: 12px; color: #92400E;">사업자등록번호와 상호명을 직접 입력해주세요</div>
+          <div style="margin-top: 8px; font-size: 11px; color: #666;">다른 파일로 변경하려면 다시 클릭하세요</div>
+        `;
+        
+        alert('사업자등록증 자동 인식에 실패했습니다.\n사업자등록번호와 상호명을 직접 입력해주세요.');
+      }
       
       // 폼 유효성 검사 재실행
       checkFormValidity();
-      
-      console.log('✅ 사업자등록증 파일 선택됨:', file.name, file.size, 'bytes');
     }
     
     // removeFile 함수는 head에서 전역 함수로 선언됨
@@ -840,14 +870,12 @@
     });
     
     document.getElementById('phone').addEventListener('input', checkFormValidity);
-    document.getElementById('name').addEventListener('input', checkFormValidity);
     document.getElementById('password').addEventListener('input', checkFormValidity);
     document.getElementById('passwordConfirm').addEventListener('input', checkFormValidity);
     document.getElementById('businessNumber').addEventListener('input', checkFormValidity);
     document.getElementById('businessName').addEventListener('input', checkFormValidity);
     
     function checkFormValidity() {
-      const name = document.getElementById('name').value;
       const phone = document.getElementById('phone').value;
       const password = document.getElementById('password').value;
       const passwordConfirm = document.getElementById('passwordConfirm').value;
@@ -855,7 +883,8 @@
       const agreePrivacy = document.getElementById('agreePrivacy').checked;
       
       // Check if phone is verified (required for signup)
-      let isValid = name && phone && phoneVerified && password && passwordConfirm && 
+      // 이름은 본인인증에서 자동으로 받음
+      let isValid = phone && phoneVerified && password && passwordConfirm && 
                       password === passwordConfirm && 
                       agreeTerms && agreePrivacy;
       

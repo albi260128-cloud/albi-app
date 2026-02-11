@@ -206,8 +206,8 @@
     
     <form id="verificationForm">
       <div class="form-group">
-        <label class="form-label">이름</label>
-        <input type="text" class="form-input" id="name" readonly>
+        <label class="form-label">이름 <span style="color: #dc2626;">*</span></label>
+        <input type="text" class="form-input" id="name" placeholder="홍길동" required>
       </div>
       
       <div class="form-group">
@@ -323,18 +323,17 @@
     let selectedMethod = 'PASS';
     let verificationToken = null;
     
-    // URL에서 이름 가져오기
-    const urlParams = new URLSearchParams(window.location.search);
-    const userName = urlParams.get('name');
-    if (userName) {
-      document.getElementById('name').value = decodeURIComponent(userName);
-    }
-    
     function showVerificationOptions() {
+      const name = document.getElementById('name').value;
       const carrier = document.getElementById('carrier').value;
       const phone = document.getElementById('phone').value;
       const birthDate = document.getElementById('birthDate').value;
       const gender = document.getElementById('gender').value;
+      
+      if (!name) {
+        alert('이름을 입력해주세요.');
+        return;
+      }
       
       if (!carrier) {
         alert('통신사를 선택해주세요.');
