@@ -172,6 +172,66 @@
 
   <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
   <script>
+    // 페이지 로드 시 사업자 인증 확인
+    window.addEventListener('DOMContentLoaded', async function() {
+      const sessionToken = localStorage.getItem('albi_session_token');
+      
+      if (!sessionToken) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      try {
+        // 사용자 정보 확인
+        const userResponse = await axios.get('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        if (!userResponse.data.success) {
+          alert('로그인이 필요합니다.');
+          window.location.href = '/login.html';
+          return;
+        }
+        
+        const user = userResponse.data.data;
+        
+        // 사업자 인증 확인
+        if (!user.business_registration_verified) {
+          // 인증 상태 확인
+          const verificationResponse = await axios.get('/api/employer/verification-status', {
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`
+            }
+          });
+          
+          const status = verificationResponse.data.status;
+          
+          if (status === 'pending') {
+            alert('사업자 인증 심사가 진행 중입니다.\n심사 완료 후 공고를 작성할 수 있습니다.\n\n마이페이지 > 구인자 인증에서 상태를 확인하세요.');
+            window.location.href = '/mypage.html';
+            return;
+          } else if (status === 'rejected') {
+            alert('사업자 인증이 거절되었습니다.\n다시 신청하려면 마이페이지에서 신청해주세요.');
+            window.location.href = '/mypage.html';
+            return;
+          } else {
+            alert('공고를 작성하려면 사업자 인증이 필요합니다.\n\n마이페이지 > 구인자 인증에서 인증을 진행해주세요.');
+            window.location.href = '/mypage.html';
+            return;
+          }
+        }
+        
+        console.log('✅ 사업자 인증 완료 - 공고 작성 가능');
+      } catch (error) {
+        console.error('사업자 인증 확인 오류:', error);
+        alert('사업자 인증 확인 중 오류가 발생했습니다.');
+        window.location.href = '/';
+      }
+    });
+    
     async function submitJob() {
       const category = document.querySelector('input[name="category"]:checked')?.value;
       const workDays = Array.from(document.querySelectorAll('input[name="workDay"]:checked'))

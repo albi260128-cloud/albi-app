@@ -6,6 +6,7 @@
   <title>마이페이지 - 알비</title>
   <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
@@ -391,6 +392,10 @@
               <i class="fas fa-user-edit"></i>
               <span>프로필 수정</span>
             </div>
+            <div class="nav-item" onclick="showTab('employer')">
+              <i class="fas fa-building"></i>
+              <span>구인자 인증</span>
+            </div>
             <div class="nav-item" onclick="showTab('password')">
               <i class="fas fa-key"></i>
               <span>비밀번호 변경</span>
@@ -471,6 +476,81 @@
                 비밀번호 변경
               </button>
             </form>
+          </div>
+        </div>
+        
+        <!-- 구인자 인증 탭 -->
+        <div id="tabEmployer" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-title">
+              <i class="fas fa-building"></i>
+              구인자 인증
+            </div>
+            
+            <!-- 인증 상태 -->
+            <div id="employerStatus" style="margin-bottom: 24px;">
+              <!-- 인증 상태가 여기에 표시됩니다 -->
+            </div>
+            
+            <!-- 인증 신청 폼 -->
+            <div id="employerVerificationForm" style="display: none;">
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">
+                  사업자등록번호
+                </label>
+                <input 
+                  type="text" 
+                  id="verifyBusinessNumber" 
+                  placeholder="123-45-67890"
+                  style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+                />
+              </div>
+              
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">
+                  사업자명 (상호명)
+                </label>
+                <input 
+                  type="text" 
+                  id="verifyBusinessName" 
+                  placeholder="주식회사 알비"
+                  style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+                />
+              </div>
+              
+              <div style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">
+                  사업자등록증 업로드
+                </label>
+                <input 
+                  type="file" 
+                  id="verifyBusinessFile" 
+                  accept="image/jpeg,image/jpg,image/png"
+                  style="display: none;"
+                  onchange="handleVerificationFileUpload(event)"
+                />
+                <button 
+                  id="uploadVerificationButton"
+                  onclick="document.getElementById('verifyBusinessFile').click()"
+                  style="width: 100%; padding: 12px; background: #f3f4f6; border: 2px dashed #d1d5db; border-radius: 8px; color: #6b7280; cursor: pointer; font-size: 14px; transition: all 0.2s;"
+                >
+                  <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i>
+                  파일 선택 (JPG, PNG만 가능)
+                </button>
+                <div id="verificationFilePreview" style="margin-top: 12px; display: none;">
+                  <!-- 파일 미리보기가 여기에 표시됩니다 -->
+                </div>
+              </div>
+              
+              <button 
+                id="submitVerificationButton"
+                onclick="submitEmployerVerification()"
+                style="width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;"
+                disabled
+              >
+                인증 신청하기
+              </button>
+            </div>
           </div>
         </div>
         
@@ -1106,6 +1186,11 @@
       if (tabName === 'matching') {
         loadMatchingHistory();
       }
+      
+      // 구인자 인증 탭이 선택되면 상태 로드
+      if (tabName === 'employer') {
+        loadEmployerVerificationStatus();
+      }
     }
     
     // 프로필 수정 폼 제출
@@ -1203,6 +1288,385 @@
       } catch (error) {
         console.error('Logout error:', error);
       } finally {
+        localStorage.removeItem('albi_user_id');
+        localStorage.removeItem('albi_user_name');
+        localStorage.removeItem('albi_user_type');
+        localStorage.removeItem('albi_session_token');
+        localStorage.removeItem('albi_session_user_id');
+        localStorage.removeItem('albi_remember');
+        
+        window.location.href = '/login.html';
+      }
+    }
+    
+    // ==========================================
+    // 구인자 인증 관련 함수들
+    // ==========================================
+    
+    let verificationBusinessFile = null;
+    
+    // 구인자 인증 상태 로드
+    async function loadEmployerVerificationStatus() {
+      try {
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/employer/verification-status', {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        const data = await response.json();
+        const statusDiv = document.getElementById('employerStatus');
+        const formDiv = document.getElementById('employerVerificationForm');
+        
+        if (data.success && data.status) {
+          const status = data.status;
+          
+          // 이미 인증된 경우
+          if (status === 'approved' || currentUser?.business_registration_verified) {
+            statusDiv.innerHTML = `
+              <div style="padding: 16px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                  <i class="fas fa-check-circle" style="color: #10b981; font-size: 24px;"></i>
+                  <div>
+                    <div style="font-weight: 600; color: #065f46; margin-bottom: 4px;">
+                      구인자 인증 완료
+                    </div>
+                    <div style="font-size: 14px; color: #047857;">
+                      사업자등록증이 인증되었습니다. 이제 공고를 작성할 수 있습니다.
+                    </div>
+                  </div>
+                </div>
+                ${currentUser?.business_registration_number ? `
+                  <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #a7f3d0;">
+                    <div style="font-size: 13px; color: #065f46;">
+                      <strong>사업자등록번호:</strong> ${currentUser.business_registration_number}
+                    </div>
+                    ${currentUser?.business_name ? `
+                      <div style="font-size: 13px; color: #065f46; margin-top: 4px;">
+                        <strong>사업자명:</strong> ${currentUser.business_name}
+                      </div>
+                    ` : ''}
+                  </div>
+                ` : ''}
+              </div>
+            `;
+            formDiv.style.display = 'none';
+          }
+          // 심사 대기 중
+          else if (status === 'pending') {
+            statusDiv.innerHTML = `
+              <div style="padding: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <i class="fas fa-clock" style="color: #f59e0b; font-size: 24px;"></i>
+                  <div>
+                    <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">
+                      인증 심사 대기 중
+                    </div>
+                    <div style="font-size: 14px; color: #b45309;">
+                      사업자등록증 심사가 진행 중입니다. 최대 1-2일 정도 소요될 수 있습니다.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+            formDiv.style.display = 'none';
+          }
+          // 거절됨
+          else if (status === 'rejected') {
+            const rejectionReason = data.rejection_reason || '사업자등록증 정보가 일치하지 않습니다.';
+            statusDiv.innerHTML = `
+              <div style="padding: 16px; background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                  <i class="fas fa-times-circle" style="color: #ef4444; font-size: 24px;"></i>
+                  <div>
+                    <div style="font-weight: 600; color: #991b1b; margin-bottom: 4px;">
+                      인증이 거절되었습니다
+                    </div>
+                    <div style="font-size: 14px; color: #dc2626;">
+                      ${rejectionReason}
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-top: 12px;">
+                  <button 
+                    onclick="document.getElementById('employerVerificationForm').style.display='block'; document.getElementById('employerStatus').innerHTML='';"
+                    style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer;"
+                  >
+                    다시 신청하기
+                  </button>
+                </div>
+              </div>
+            `;
+            formDiv.style.display = 'none';
+          }
+          // 아직 신청 안함
+          else {
+            statusDiv.innerHTML = `
+              <div style="padding: 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <i class="fas fa-info-circle" style="color: #6b7280; font-size: 24px;"></i>
+                  <div>
+                    <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">
+                      구인자 인증이 필요합니다
+                    </div>
+                    <div style="font-size: 14px; color: #6b7280;">
+                      공고를 작성하려면 사업자등록증 인증이 필요합니다.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+            formDiv.style.display = 'block';
+          }
+        } else {
+          // 기본 상태
+          statusDiv.innerHTML = `
+            <div style="padding: 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-info-circle" style="color: #6b7280; font-size: 24px;"></i>
+                <div>
+                  <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">
+                    구인자 인증이 필요합니다
+                  </div>
+                  <div style="font-size: 14px; color: #6b7280;">
+                    공고를 작성하려면 사업자등록증 인증이 필요합니다.
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          formDiv.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('구인자 인증 상태 로드 실패:', error);
+      }
+    }
+    
+    // 파일 업로드 처리
+    async function handleVerificationFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      
+      if (file.size > maxSize) {
+        alert('파일 크기는 5MB를 초과할 수 없습니다.');
+        event.target.value = '';
+        return;
+      }
+      
+      if (!allowedTypes.includes(file.type)) {
+        alert('JPG, PNG 파일만 업로드 가능합니다.');
+        event.target.value = '';
+        return;
+      }
+      
+      verificationBusinessFile = file;
+      
+      // 업로드 버튼 변경
+      const uploadButton = document.getElementById('uploadVerificationButton');
+      uploadButton.innerHTML = `
+        <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+        OCR 인식 중...
+      `;
+      uploadButton.style.background = '#fbbf24';
+      uploadButton.disabled = true;
+      
+      // OCR 인식
+      try {
+        console.log('📄 사업자등록증 OCR 인식 시작...');
+        console.log('📤 Tesseract.js 초기화 중...');
+        
+        const { createWorker } = Tesseract;
+        const worker = await createWorker('kor+eng', 1, {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              const progress = Math.round(m.progress * 100);
+              uploadButton.innerHTML = `
+                <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                OCR 인식 중... ${progress}%
+              `;
+            }
+          }
+        });
+        
+        console.log('🔍 이미지에서 텍스트 추출 중...');
+        const { data: { text } } = await worker.recognize(file);
+        await worker.terminate();
+        
+        console.log('📝 추출된 텍스트:', text);
+        
+        // 사업자등록번호 추출 (XXX-XX-XXXXX 형식)
+        const businessNumberMatch = text.match(/\d{3}[-\s]?\d{2}[-\s]?\d{5}/);
+        if (businessNumberMatch) {
+          const number = businessNumberMatch[0].replace(/\s/g, '').replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
+          document.getElementById('verifyBusinessNumber').value = number;
+          console.log('✅ 사업자등록번호 인식:', number);
+        } else {
+          console.log('⚠️ 사업자등록번호를 찾을 수 없습니다.');
+        }
+        
+        // 상호명 추출 (상호, 법인명, 회사명 키워드 근처)
+        const namePatterns = [
+          /(?:상호|법인명|회사명)[\s:：]*([가-힣a-zA-Z0-9\(\)\s]+)/,
+          /([가-힣]{2,}(?:주식회사|유한회사|합자회사|합명회사|기업|회사|상사))/,
+          /(?:주식회사|유한회사|합자회사|합명회사|기업|회사|상사)[\s]*([가-힣a-zA-Z0-9]+)/
+        ];
+        
+        for (const pattern of namePatterns) {
+          const match = text.match(pattern);
+          if (match) {
+            const name = match[1].trim();
+            document.getElementById('verifyBusinessName').value = name;
+            console.log('✅ 상호명 인식:', name);
+            break;
+          }
+        }
+        
+        // 성공 상태
+        uploadButton.innerHTML = `
+          <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+          ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+        `;
+        uploadButton.style.background = '#10b981';
+        uploadButton.style.color = 'white';
+        uploadButton.disabled = false;
+        
+        // 파일 미리보기
+        const preview = document.getElementById('verificationFilePreview');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.innerHTML = `
+            <div style="position: relative; max-width: 200px;">
+              <img src="${e.target.result}" style="width: 100%; border-radius: 8px; border: 1px solid #d1d5db;" />
+              <button 
+                onclick="removeVerificationFile()"
+                style="position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+        
+        console.log('✅ OCR 인식 완료');
+      } catch (error) {
+        console.error('❌ OCR 실패:', error);
+        uploadButton.innerHTML = `
+          <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+          인식 실패 - 수동 입력 필요
+        `;
+        uploadButton.style.background = '#f59e0b';
+        uploadButton.disabled = false;
+        alert('⚠️ OCR 인식에 실패했습니다.\n사업자등록번호와 상호명을 직접 입력해주세요.');
+      }
+      
+      checkVerificationFormValidity();
+    }
+    
+    // 파일 제거
+    function removeVerificationFile() {
+      verificationBusinessFile = null;
+      document.getElementById('verifyBusinessFile').value = '';
+      document.getElementById('verificationFilePreview').style.display = 'none';
+      
+      const uploadButton = document.getElementById('uploadVerificationButton');
+      uploadButton.innerHTML = `
+        <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i>
+        파일 선택 (JPG, PNG만 가능)
+      `;
+      uploadButton.style.background = '#f3f4f6';
+      uploadButton.style.color = '#6b7280';
+      uploadButton.disabled = false;
+      
+      checkVerificationFormValidity();
+    }
+    
+    // 폼 유효성 검사
+    function checkVerificationFormValidity() {
+      const businessNumber = document.getElementById('verifyBusinessNumber')?.value.trim();
+      const businessName = document.getElementById('verifyBusinessName')?.value.trim();
+      const submitButton = document.getElementById('submitVerificationButton');
+      
+      if (submitButton && businessNumber && businessName && verificationBusinessFile) {
+        submitButton.disabled = false;
+        submitButton.style.opacity = '1';
+      } else if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.style.opacity = '0.5';
+      }
+    }
+    
+    // 구인자 인증 신청
+    async function submitEmployerVerification() {
+      const businessNumber = document.getElementById('verifyBusinessNumber').value.trim();
+      const businessName = document.getElementById('verifyBusinessName').value.trim();
+      
+      if (!businessNumber || !businessName || !verificationBusinessFile) {
+        alert('모든 정보를 입력해주세요.');
+        return;
+      }
+      
+      const submitButton = document.getElementById('submitVerificationButton');
+      submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 신청 중...';
+      submitButton.disabled = true;
+      
+      try {
+        const formData = new FormData();
+        formData.append('business_registration_number', businessNumber);
+        formData.append('business_name', businessName);
+        formData.append('business_registration_file', verificationBusinessFile);
+        
+        const sessionToken = localStorage.getItem('albi_session_token');
+        const response = await fetch('/api/employer/request-verification', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          alert('✅ 구인자 인증 신청이 완료되었습니다!\n심사는 최대 1-2일 정도 소요될 수 있습니다.');
+          
+          // 폼 초기화
+          document.getElementById('verifyBusinessNumber').value = '';
+          document.getElementById('verifyBusinessName').value = '';
+          removeVerificationFile();
+          
+          // 상태 다시 로드
+          loadEmployerVerificationStatus();
+        } else {
+          alert('❌ 신청 실패: ' + (data.error || '알 수 없는 오류가 발생했습니다.'));
+          submitButton.innerHTML = '인증 신청하기';
+          submitButton.disabled = false;
+        }
+      } catch (error) {
+        console.error('구인자 인증 신청 실패:', error);
+        alert('❌ 인증 신청 중 오류가 발생했습니다.');
+        submitButton.innerHTML = '인증 신청하기';
+        submitButton.disabled = false;
+      }
+    }
+    
+    // 입력 필드 이벤트 리스너 (페이지 로드 후)
+    window.addEventListener('DOMContentLoaded', () => {
+      const businessNumberInput = document.getElementById('verifyBusinessNumber');
+      const businessNameInput = document.getElementById('verifyBusinessName');
+      
+      if (businessNumberInput) {
+        businessNumberInput.addEventListener('input', checkVerificationFormValidity);
+      }
+      if (businessNameInput) {
+        businessNameInput.addEventListener('input', checkVerificationFormValidity);
+      }
+    });
         localStorage.removeItem('albi_user_id');
         localStorage.removeItem('albi_user_name');
         localStorage.removeItem('albi_user_type');
