@@ -922,65 +922,6 @@
     // ========================================
     // 인증번호 발송 (제거됨 - 팝업 방식으로 대체)
     // ========================================
-      
-      if (!code) {
-        alert('인증번호를 입력해주세요.');
-        return;
-      }
-      
-      if (!cleanPhone) {
-        alert('먼저 인증번호를 발송해주세요.');
-        return;
-      }
-      
-      // Disable inputs during verification
-      const verifyBtn = document.querySelector('#verifyCodeGroup button');
-      verifyBtn.disabled = true;
-      verifyBtn.textContent = '확인 중...';
-      
-      try {
-        const response = await fetch('/api/auth/phone/verify-code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            phoneNumber: cleanPhone,
-            code: code 
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          alert('✅ ' + data.message);
-          phoneVerified = true;
-          
-          // Clear timer and hide verification input
-          clearInterval(verificationTimer);
-          document.getElementById('verifyCodeGroup').style.display = 'none';
-          
-          // Disable phone input and send button
-          phoneInput.disabled = true;
-          phoneInput.style.backgroundColor = '#f0f0f0';
-          document.getElementById('sendVerifyBtn').disabled = true;
-          document.getElementById('sendVerifyBtn').textContent = '✓ 인증완료';
-          
-          // Enable signup button
-          checkFormValidity();
-        } else {
-          alert('❌ ' + (data.error || '인증번호가 일치하지 않습니다.'));
-          if (data.remainingAttempts !== undefined) {
-            alert(`남은 시도 횟수: ${data.remainingAttempts}회`);
-          }
-          verifyBtn.textContent = '확인';
-          verifyBtn.disabled = false;
-        }
-      } catch (error) {
-        console.error('Error verifying code:', error);
-        alert('인증 확인에 실패했습니다. 다시 시도해주세요.');
-        verifyBtn.textContent = '확인';
-        verifyBtn.disabled = false;
-      }
-    }
     
     // socialSignup 함수는 head에서 전역 함수로 선언됨
     
