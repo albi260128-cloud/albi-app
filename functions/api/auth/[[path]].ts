@@ -391,16 +391,19 @@ app.get('/me', async (c) => {
     // 사용자 정보 반환
     return c.json({
       success: true,
-      user: {
+      data: {
         id: session.id,
         name: session.name,
         email: session.email,
         phone: session.phone,
         user_type: session.user_type,
         is_verified: session.is_verified,
-        kakao_id: session.kakao_id,
-        naver_id: session.naver_id,
-        google_id: session.google_id
+        social_provider: session.social_provider,
+        social_id: session.social_id,
+        business_registration_number: session.business_registration_number,
+        business_name: session.business_name,
+        business_registration_verified: session.business_registration_verified,
+        password_hash: session.password_hash // 비밀번호 설정 여부 확인용 (해시값만)
       }
     })
     
