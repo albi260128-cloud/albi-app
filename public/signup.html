@@ -902,6 +902,7 @@
       const agreeAll = document.getElementById('agreeAll').checked;
       console.log('🔄 전체 동의 토글:', agreeAll);
       
+      // 모든 개별 약관 체크박스 업데이트
       document.querySelectorAll('.term-checkbox').forEach(checkbox => {
         checkbox.checked = agreeAll;
         console.log('  ✓ 체크박스 업데이트:', checkbox.id, '=', checkbox.checked);
