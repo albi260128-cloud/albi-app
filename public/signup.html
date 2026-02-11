@@ -50,7 +50,7 @@
     function removeFile() {
       console.log('✅ removeFile 호출');
       businessRegistrationFile = null;
-      const fileInput = document.getElementById('businessFile');
+      const fileInput = document.getElementById('businessRegistrationFile');
       if (fileInput) fileInput.value = '';
       
       // 업로드 버튼을 초기 상태로 되돌리기
@@ -866,7 +866,7 @@
     
     // 필수 약관 체크 감지
     document.querySelectorAll('.term-checkbox').forEach(checkbox => {
-      checkbox.addEventListener('change', checkFormValidity);
+      checkbox.addEventListener('change', updateAgreeAllState);
     });
     
     document.getElementById('phone').addEventListener('input', checkFormValidity);
@@ -900,9 +900,21 @@
     
     function toggleAllTerms() {
       const agreeAll = document.getElementById('agreeAll').checked;
+      console.log('🔄 전체 동의 토글:', agreeAll);
+      
       document.querySelectorAll('.term-checkbox').forEach(checkbox => {
         checkbox.checked = agreeAll;
+        console.log('  ✓ 체크박스 업데이트:', checkbox.id, '=', checkbox.checked);
       });
+      
+      checkFormValidity();
+    }
+    
+    // 개별 약관 체크 시 전체 동의 상태 업데이트
+    function updateAgreeAllState() {
+      const termCheckboxes = document.querySelectorAll('.term-checkbox');
+      const allChecked = Array.from(termCheckboxes).every(cb => cb.checked);
+      document.getElementById('agreeAll').checked = allChecked;
       checkFormValidity();
     }
     
