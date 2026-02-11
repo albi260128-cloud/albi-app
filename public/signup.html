@@ -52,6 +52,19 @@
       businessRegistrationFile = null;
       const fileInput = document.getElementById('businessFile');
       if (fileInput) fileInput.value = '';
+      
+      // 업로드 버튼을 초기 상태로 되돌리기
+      const uploadBtn = document.querySelector('.file-upload-btn');
+      if (uploadBtn) {
+        uploadBtn.style.borderColor = '';
+        uploadBtn.style.backgroundColor = '';
+        uploadBtn.innerHTML = `
+          <i class="fas fa-upload"></i>
+          <div style="margin-top: 12px; font-weight: 600; color: #333;">사업자등록증 파일 업로드</div>
+          <div style="margin-top: 4px; font-size: 12px; color: #999;">이미지 또는 PDF 파일 (최대 5MB)</div>
+        `;
+      }
+      
       const preview = document.querySelector('.file-preview');
       if (preview) preview.style.display = 'none';
     }
@@ -784,6 +797,7 @@
       // 파일 크기 체크 (5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('파일 크기는 5MB 이하만 가능합니다.');
+        event.target.value = ''; // 파일 입력 초기화
         return;
       }
       
@@ -791,17 +805,31 @@
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
         alert('이미지 또는 PDF 파일만 업로드 가능합니다.');
+        event.target.value = ''; // 파일 입력 초기화
         return;
       }
       
       businessRegistrationFile = file;
       
-      // 파일 미리보기 표시
+      // 업로드 버튼 스타일 변경 (성공 표시)
+      const uploadBtn = document.querySelector('.file-upload-btn');
+      uploadBtn.style.borderColor = '#10B981';
+      uploadBtn.style.backgroundColor = '#F0FDF4';
+      uploadBtn.innerHTML = `
+        <i class="fas fa-check-circle" style="color: #10B981;"></i>
+        <div style="margin-top: 12px; font-weight: 600; color: #10B981;">파일 업로드 완료!</div>
+        <div style="margin-top: 4px; font-size: 12px; color: #059669;">${file.name} (${(file.size / 1024).toFixed(1)}KB)</div>
+        <div style="margin-top: 8px; font-size: 11px; color: #666;">다른 파일로 변경하려면 다시 클릭하세요</div>
+      `;
+      
+      // 파일 미리보기 표시 (기존 코드 유지)
       document.getElementById('fileName').textContent = file.name;
-      document.getElementById('filePreview').classList.add('active');
+      document.getElementById('filePreview').style.display = 'block';
       
       // 폼 유효성 검사 재실행
       checkFormValidity();
+      
+      console.log('✅ 사업자등록증 파일 선택됨:', file.name, file.size, 'bytes');
     }
     
     // removeFile 함수는 head에서 전역 함수로 선언됨
