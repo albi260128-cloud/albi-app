@@ -242,32 +242,12 @@
         </select>
       </div>
       
-      <button type="button" class="btn btn-primary" onclick="showVerificationOptions()">
-        <i class="fas fa-arrow-right"></i> 다음
+      <button type="button" class="btn btn-primary" onclick="startSMSVerification()">
+        <i class="fas fa-comment-dots"></i> 인증번호 받기
       </button>
     </form>
     
-    <div class="verification-options" id="verificationOptions">
-      <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">인증 방법 선택</h3>
-      
-      <div class="option-card" onclick="selectVerificationMethod('PASS')">
-        <div class="option-title">
-          <i class="fas fa-mobile-alt" style="color: #FF6B35;"></i> PASS 앱 인증 (권장)
-        </div>
-        <div class="option-desc">PASS 앱을 통한 빠르고 안전한 인증</div>
-      </div>
-      
-      <div class="option-card" onclick="selectVerificationMethod('SMS')">
-        <div class="option-title">
-          <i class="fas fa-comment-dots" style="color: #10B981;"></i> 문자(SMS) 인증
-        </div>
-        <div class="option-desc">인증번호를 문자로 받아 입력</div>
-      </div>
-      
-      <button type="button" class="btn btn-secondary" onclick="startVerification()" style="margin-top: 20px;">
-        <i class="fas fa-check"></i> 인증 시작
-      </button>
-    </div>
+    <!-- 인증 방법 선택 제거: SMS 인증만 사용 -->
     
     <div class="info-box">
       <p><i class="fas fa-info-circle"></i> 본인명의 휴대폰으로만 인증 가능합니다.</p>
@@ -320,10 +300,16 @@
   </div>
 
   <script>
-    let selectedMethod = 'PASS';
-    let verificationToken = null;
+    let timerInterval = null;
+    let timeLeft = 300; // 5분 = 300초
+    let currentPhone = '';
+    let currentName = '';
+    let currentCarrier = '';
+    let currentBirthDate = '';
+    let currentGender = '';
     
-    function showVerificationOptions() {
+    // SMS 인증 시작
+    async function startSMSVerification() {
       const name = document.getElementById('name').value;
       const carrier = document.getElementById('carrier').value;
       const phone = document.getElementById('phone').value;
@@ -362,136 +348,8 @@
         return;
       }
       
-      // 인증 방법 선택 화면 표시
-      document.getElementById('verificationForm').style.display = 'none';
-      document.getElementById('verificationOptions').style.display = 'block';
-    }
-    
-    function selectVerificationMethod(method) {
-      selectedMethod = method;
-      
-      // 선택 표시
-      document.querySelectorAll('.option-card').forEach(card => {
-        card.classList.remove('selected');
-      });
-      event.target.closest('.option-card').classList.add('selected');
-    }
-    
-    async function startVerification() {
-      const name = document.getElementById('name').value;
-      const carrier = document.getElementById('carrier').value;
-      const phone = document.getElementById('phone').value.replace(/-/g, '');
-      const birthDate = document.getElementById('birthDate').value;
-      const gender = document.getElementById('gender').value;
-      
-      console.log('🚀 인증 시작:', { name, carrier, phone, birthDate, gender, method: selectedMethod });
-      
-      // 선택한 인증 방법에 따라 처리
-      if (selectedMethod === 'PASS') {
-        // PASS 앱 인증
-        startPASSVerification(name, phone, carrier, birthDate, gender);
-      } else {
-        // SMS 인증
-        sendSMSCode(name, phone, carrier, birthDate, gender);
-      }
-    }
-    
-    let timerInterval = null;
-    let timeLeft = 300; // 5분 = 300초
-    let currentPhone = '';
-    let currentName = '';
-    let currentCarrier = '';
-    let currentBirthDate = '';
-    let currentGender = '';
-    
-    // PASS 앱 인증
-    async function startPASSVerification(name, phone, carrier, birthDate, gender) {
-      try {
-        // 현재 정보 저장
-        currentPhone = phone;
-        currentName = name;
-        currentCarrier = carrier;
-        currentBirthDate = birthDate;
-        currentGender = gender;
-        
-        console.log('🔐 PASS 인증 요청:', { name, phone, carrier, birthDate, gender });
-        
-        // 로딩 메시지 표시
-        document.getElementById('verificationOptions').style.display = 'none';
-        const container = document.querySelector('.container');
-        const loadingDiv = document.createElement('div');
-        loadingDiv.id = 'passLoading';
-        loadingDiv.style.cssText = 'text-align: center; padding: 40px;';
-        loadingDiv.innerHTML = `
-          <div style="font-size: 48px; margin-bottom: 16px;">📱</div>
-          <h3 style="font-size: 18px; font-weight: 600; color: #FF6B35; margin-bottom: 12px;">
-            PASS 앱을 실행해주세요
-          </h3>
-          <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-            PASS 앱에서 본인인증을 진행해주세요
-          </p>
-          <div style="display: inline-block; padding: 12px 24px; background: #f0f0f0; border-radius: 8px; font-size: 14px; color: #666;">
-            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-            인증 대기 중...
-          </div>
-        `;
-        container.appendChild(loadingDiv);
-        
-        // PASS 인증 API 호출
-        const response = await fetch('/api/auth/pass-verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name,
-            phone,
-            carrier,
-            birthDate,
-            gender
-          })
-        });
-        
-        const data = await response.json();
-        console.log('📥 PASS 인증 응답:', data);
-        
-        // 로딩 메시지 제거
-        const loading = document.getElementById('passLoading');
-        if (loading) loading.remove();
-        
-        if (data.success) {
-          // 인증 성공 - 부모 창에 메시지 전송
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'PHONE_VERIFICATION_SUCCESS',
-              name: data.name,
-              phone: data.phone,
-              carrier: data.carrier,
-              birthDate: data.birthDate,
-              gender: data.gender,
-              verificationToken: data.verificationToken
-            }, '*');
-            
-            // 성공 메시지 표시 후 팝업 닫기
-            alert('✅ PASS 인증이 완료되었습니다!');
-            setTimeout(() => {
-              window.close();
-            }, 500);
-          } else {
-            alert('✅ PASS 인증이 완료되었습니다!');
-          }
-        } else {
-          // 인증 실패
-          alert('❌ PASS 인증에 실패했습니다: ' + data.error);
-          document.getElementById('verificationOptions').style.display = 'block';
-        }
-      } catch (error) {
-        console.error('❌ PASS 인증 오류:', error);
-        const loading = document.getElementById('passLoading');
-        if (loading) loading.remove();
-        alert('PASS 인증 중 오류가 발생했습니다.');
-        document.getElementById('verificationOptions').style.display = 'block';
-      }
+      // SMS 발송
+      await sendSMSCode(name, cleanPhone, carrier, birthDate, gender);
     }
     
     async function sendSMSCode(name, phone, carrier, birthDate, gender) {
@@ -522,7 +380,7 @@
         
         if (data.success) {
           // SMS 인증 화면 표시
-          document.getElementById('verificationOptions').style.display = 'none';
+          document.getElementById('verificationForm').style.display = 'none';
           document.getElementById('smsVerification').style.display = 'block';
           
           // 전화번호 표시
@@ -537,6 +395,17 @@
           }
           
           // 타이머 시작
+          startTimer();
+          
+          alert('✅ 인증번호가 발송되었습니다.');
+        } else {
+          alert('❌ SMS 발송 실패: ' + (data.error || '알 수 없는 오류'));
+        }
+      } catch (error) {
+        console.error('❌ SMS 발송 오류:', error);
+        alert('SMS 발송 중 오류가 발생했습니다.');
+      }
+    }
           startTimer();
           
           // 입력창 포커스
