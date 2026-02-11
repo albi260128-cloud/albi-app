@@ -406,20 +406,6 @@
         alert('SMS 발송 중 오류가 발생했습니다.');
       }
     }
-          startTimer();
-          
-          // 입력창 포커스
-          document.getElementById('verificationCode').focus();
-        } else {
-          alert('SMS 발송에 실패했습니다: ' + data.error);
-          document.getElementById('verificationOptions').style.display = 'block';
-        }
-      } catch (error) {
-        console.error('❌ SMS 발송 오류:', error);
-        alert('SMS 발송 중 오류가 발생했습니다.');
-        document.getElementById('verificationOptions').style.display = 'block';
-      }
-    }
     
     function startTimer() {
       timeLeft = 300; // 5분 초기화
