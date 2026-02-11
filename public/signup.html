@@ -7,6 +7,9 @@
   <link href="/styles.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   
+  <!-- Tesseract.js for OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  
   <!-- 전역 스크립트: 모든 버튼 함수들을 미리 정의 -->
   <script>
     console.log('🟢 전역 스크립트 로드됨');
@@ -582,11 +585,11 @@
         <h4><i class="fas fa-file-alt"></i> 사업자등록증 인증 (필수)</h4>
         
         <div class="file-upload-wrapper">
-          <input type="file" id="businessRegistrationFile" class="file-upload-input" accept="image/*,.pdf" onchange="handleFileUpload(event)">
+          <input type="file" id="businessRegistrationFile" class="file-upload-input" accept="image/jpeg,image/jpg,image/png" onchange="handleFileUpload(event)">
           <label for="businessRegistrationFile" class="file-upload-btn">
             <i class="fas fa-upload"></i>
             <div style="margin-top: 12px; font-weight: 600; color: #333;">사업자등록증 파일 업로드</div>
-            <div style="margin-top: 4px; font-size: 12px; color: #999;">이미지 또는 PDF 파일 (최대 5MB)</div>
+            <div style="margin-top: 4px; font-size: 12px; color: #999;">JPG 또는 PNG 이미지 파일 (최대 5MB)</div>
           </label>
         </div>
         
@@ -772,7 +775,7 @@
     
     // selectUserType 함수는 head에서 전역 함수로 선언됨
     
-    // 파일 업로드 처리
+    // 파일 업로드 처리 (Tesseract.js로 클라이언트 사이드 OCR)
     async function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -780,15 +783,15 @@
       // 파일 크기 체크 (5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('파일 크기는 5MB 이하만 가능합니다.');
-        event.target.value = ''; // 파일 입력 초기화
+        event.target.value = '';
         return;
       }
       
-      // 파일 타입 체크
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+      // 파일 타입 체크 (PDF는 Tesseract.js가 지원 안함, 이미지만 가능)
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedTypes.includes(file.type)) {
-        alert('이미지 또는 PDF 파일만 업로드 가능합니다.');
-        event.target.value = ''; // 파일 입력 초기화
+        alert('JPG 또는 PNG 이미지 파일만 업로드 가능합니다.');
+        event.target.value = '';
         return;
       }
       
@@ -801,26 +804,72 @@
       uploadBtn.innerHTML = `
         <i class="fas fa-spinner fa-spin" style="color: #FF6B35;"></i>
         <div style="margin-top: 12px; font-weight: 600; color: #FF6B35;">사업자등록증 인식 중...</div>
-        <div style="margin-top: 4px; font-size: 12px; color: #E55A2B;">잠시만 기다려주세요</div>
+        <div style="margin-top: 4px; font-size: 12px; color: #E55A2B;">잠시만 기다려주세요 (최대 10초)</div>
       `;
       
-      // OCR API 호출
       try {
-        const formData = new FormData();
-        formData.append('file', file);
+        console.log('🔍 Tesseract.js OCR 시작:', file.name);
         
-        const response = await fetch('/api/ocr/business-registration', {
-          method: 'POST',
-          body: formData
-        });
+        // Tesseract.js로 이미지에서 텍스트 추출
+        const { data: { text } } = await Tesseract.recognize(
+          file,
+          'kor+eng', // 한글 + 영어 인식
+          {
+            logger: m => {
+              // 진행 상황 로깅
+              if (m.status === 'recognizing text') {
+                const progress = Math.round(m.progress * 100);
+                uploadBtn.innerHTML = `
+                  <i class="fas fa-spinner fa-spin" style="color: #FF6B35;"></i>
+                  <div style="margin-top: 12px; font-weight: 600; color: #FF6B35;">인식 중... ${progress}%</div>
+                  <div style="margin-top: 4px; font-size: 12px; color: #E55A2B;">잠시만 기다려주세요</div>
+                `;
+              }
+            }
+          }
+        );
         
-        const data = await response.json();
-        console.log('📥 OCR 응답:', data);
+        console.log('📄 인식된 텍스트:', text);
         
-        if (data.success) {
-          // 사업자등록번호와 상호명 자동 입력
-          document.getElementById('businessNumber').value = data.businessNumber;
-          document.getElementById('businessName').value = data.businessName;
+        // 사업자등록번호 추출 (XXX-XX-XXXXX)
+        const businessNumberPattern = /(\d{3}[-\s]?\d{2}[-\s]?\d{5})/;
+        const businessNumberMatch = text.match(businessNumberPattern);
+        let businessNumber = '';
+        if (businessNumberMatch) {
+          businessNumber = businessNumberMatch[1].replace(/\s/g, '-');
+          // 하이픈이 없으면 추가
+          if (!businessNumber.includes('-')) {
+            businessNumber = businessNumber.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
+          }
+        }
+        
+        // 상호명 추출
+        const businessNamePatterns = [
+          /(상\s*호|상호명)\s*[:：]?\s*([^\n]{2,30})/,
+          /(법\s*인\s*명)\s*[:：]?\s*([^\n]{2,30})/,
+          /(회\s*사\s*명)\s*[:：]?\s*([^\n]{2,30})/
+        ];
+        
+        let businessName = '';
+        for (const pattern of businessNamePatterns) {
+          const match = text.match(pattern);
+          if (match && match[2]) {
+            businessName = match[2].trim();
+            // 특수문자 제거 (괄호, 따옴표 등)
+            businessName = businessName.replace(/[()""'']/g, '').trim();
+            break;
+          }
+        }
+        
+        // 인식 성공 여부 확인
+        if (businessNumber || businessName) {
+          // 자동 입력
+          if (businessNumber) {
+            document.getElementById('businessNumber').value = businessNumber;
+          }
+          if (businessName) {
+            document.getElementById('businessName').value = businessName;
+          }
           
           // 성공 표시
           uploadBtn.style.borderColor = '#10B981';
@@ -829,18 +878,19 @@
             <i class="fas fa-check-circle" style="color: #10B981;"></i>
             <div style="margin-top: 12px; font-weight: 600; color: #10B981;">✅ 사업자정보 인식 완료!</div>
             <div style="margin-top: 4px; font-size: 12px; color: #059669;">${file.name} (${(file.size / 1024).toFixed(1)}KB)</div>
-            <div style="margin-top: 8px; font-size: 12px; color: #059669;">📋 ${data.businessName} (${data.businessNumber})</div>
-            <div style="margin-top: 8px; font-size: 11px; color: #666;">다른 파일로 변경하려면 다시 클릭하세요</div>
+            ${businessNumber || businessName ? `<div style="margin-top: 8px; font-size: 12px; color: #059669;">📋 ${businessName || '상호명 미인식'} ${businessNumber ? '(' + businessNumber + ')' : ''}</div>` : ''}
+            <div style="margin-top: 8px; font-size: 11px; color: #666;">인식되지 않은 정보는 직접 입력해주세요</div>
           `;
           
-          // 파일 미리보기 표시
-          document.getElementById('fileName').textContent = file.name;
-          document.getElementById('filePreview').style.display = 'block';
-          
-          console.log('✅ 사업자등록증 OCR 성공:', data.businessNumber, data.businessName);
+          console.log('✅ OCR 성공:', { businessNumber, businessName });
         } else {
-          throw new Error(data.error || 'OCR 인식 실패');
+          throw new Error('사업자등록번호와 상호명을 인식하지 못했습니다.');
         }
+        
+        // 파일 미리보기 표시
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('filePreview').style.display = 'block';
+        
       } catch (error) {
         console.error('❌ OCR 오류:', error);
         
