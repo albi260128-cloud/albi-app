@@ -98,12 +98,12 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // ============================================================
     
     // Option 1: Google Vision API
-    if (env.GOOGLE_VISION_API_KEY && false) { // TODO: 활성화 시 false 제거
+    if (env.GOOGLE_VISION_API_KEY) {
       try {
+        console.log('🔍 Google Cloud Vision API 호출 시작...');
+        
         const fileBuffer = await file.arrayBuffer();
-        const base64Image = btoa(
-          String.fromCharCode(...new Uint8Array(fileBuffer))
-        );
+        const base64Image = Buffer.from(fileBuffer).toString('base64');
 
         const visionResponse = await fetch(
           `https://vision.googleapis.com/v1/images:annotate?key=${env.GOOGLE_VISION_API_KEY}`,
@@ -120,26 +120,49 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
                   },
                   features: [
                     {
-                      type: 'TEXT_DETECTION',
-                      maxResults: 10
+                      type: 'DOCUMENT_TEXT_DETECTION', // 문서 OCR에 최적화
+                      maxResults: 1
                     }
-                  ]
+                  ],
+                  imageContext: {
+                    languageHints: ['ko', 'en'] // 한국어와 영어 힌트
+                  }
                 }
               ]
             })
           }
         );
 
-        const visionData = await visionResponse.json();
-        console.log('📥 Google Vision 응답:', visionData);
-
-        if (visionData.responses && visionData.responses[0].textAnnotations) {
-          const text = visionData.responses[0].textAnnotations[0].description;
-          ocrResult = extractBusinessInfo(text);
-          console.log('✅ Google Vision OCR 성공:', ocrResult);
+        if (!visionResponse.ok) {
+          throw new Error(`Vision API error: ${visionResponse.status} ${visionResponse.statusText}`);
         }
-      } catch (error) {
-        console.error('❌ Google Vision OCR 오류:', error);
+
+        const visionData = await visionResponse.json();
+        console.log('📥 Google Vision 응답 수신');
+
+        if (visionData.responses && visionData.responses[0]) {
+          const response = visionData.responses[0];
+          
+          // 에러 체크
+          if (response.error) {
+            throw new Error(`Vision API error: ${response.error.message}`);
+          }
+          
+          // textAnnotations 또는 fullTextAnnotation 사용
+          const text = response.fullTextAnnotation?.text || 
+                       response.textAnnotations?.[0]?.description || '';
+          
+          if (text) {
+            console.log('📝 추출된 텍스트 길이:', text.length);
+            ocrResult = extractBusinessInfo(text);
+            console.log('✅ Google Vision OCR 성공:', ocrResult);
+          } else {
+            console.log('⚠️ 텍스트를 찾을 수 없음');
+          }
+        }
+      } catch (error: any) {
+        console.error('❌ Google Vision OCR 오류:', error.message || error);
+        // OCR 실패 시 Mock 데이터로 폴백
       }
     }
 
@@ -237,28 +260,77 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
  * 텍스트에서 사업자등록번호와 상호명 추출
  */
 function extractBusinessInfo(text: string): OCRResult {
-  // 사업자등록번호 패턴: XXX-XX-XXXXX
-  const businessNumberPattern = /(\d{3}[-\s]?\d{2}[-\s]?\d{5})/;
-  const businessNumberMatch = text.match(businessNumberPattern);
+  console.log('🔍 텍스트 분석 시작...');
   
-  let businessNumber = '000-00-00000';
-  if (businessNumberMatch) {
-    businessNumber = businessNumberMatch[1].replace(/\s/g, '-');
+  // 사업자등록번호 패턴: XXX-XX-XXXXX 또는 XXXXXXXXXX
+  const businessNumberPatterns = [
+    /등록번호\s*[:：]?\s*(\d{3}[-\s]?\d{2}[-\s]?\d{5})/i,
+    /사업자\s*등록\s*번호\s*[:：]?\s*(\d{3}[-\s]?\d{2}[-\s]?\d{5})/i,
+    /(\d{3}[-\s]\d{2}[-\s]\d{5})/,
+    /(\d{10})/
+  ];
+  
+  let businessNumber = '';
+  for (const pattern of businessNumberPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const rawNumber = match[1].replace(/[-\s]/g, '');
+      if (rawNumber.length === 10) {
+        businessNumber = `${rawNumber.substring(0, 3)}-${rawNumber.substring(3, 5)}-${rawNumber.substring(5)}`;
+        console.log('✅ 사업자등록번호 발견:', businessNumber);
+        break;
+      }
+    }
+  }
+  
+  if (!businessNumber) {
+    console.log('⚠️ 사업자등록번호를 찾을 수 없음');
+    businessNumber = '000-00-00000';
   }
 
-  // 상호명 추출 (간단한 패턴 매칭)
-  // "상호", "법인명", "회사명" 등의 키워드 근처에서 찾기
-  const businessNamePattern = /(상호|법인명|회사명|상\s*호)\s*[:：]?\s*([^\n]{2,30})/;
-  const businessNameMatch = text.match(businessNamePattern);
+  // 상호명 추출 (개선된 패턴)
+  const businessNamePatterns = [
+    /상\s*호\s*[:：]\s*([^\n\r]{2,50})/i,
+    /법인명\s*[:：]\s*([^\n\r]{2,50})/i,
+    /회사명\s*[:：]\s*([^\n\r]{2,50})/i,
+    /상\s*호\s*\(?\s*법인명\s*\)?\s*[:：]?\s*([^\n\r]{2,50})/i,
+    /(주식회사|유한회사|합자회사|합명회사)\s*([가-힣a-zA-Z0-9\s]{2,30})/,
+    /([가-힣a-zA-Z0-9\s]{2,30})\s*(주식회사|유한회사|합자회사|합명회사)/
+  ];
   
-  let businessName = '알비';
-  if (businessNameMatch) {
-    businessName = businessNameMatch[2].trim();
+  let businessName = '';
+  for (const pattern of businessNamePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      // 첫 번째 그룹 또는 두 번째 그룹에서 상호명 추출
+      businessName = (match[1] || match[2] || '').trim();
+      // 불필요한 공백 제거
+      businessName = businessName.replace(/\s+/g, ' ');
+      
+      if (businessName.length >= 2) {
+        console.log('✅ 상호명 발견:', businessName);
+        break;
+      }
+    }
+  }
+  
+  if (!businessName) {
+    console.log('⚠️ 상호명을 찾을 수 없음');
+    businessName = '알비';
   }
 
-  return {
+  // 신뢰도 계산
+  let confidence = 0.7;
+  if (businessNumber !== '000-00-00000') confidence += 0.15;
+  if (businessName !== '알비') confidence += 0.15;
+  
+  const result = {
     businessNumber,
     businessName,
-    confidence: 0.85
+    confidence: Math.min(confidence, 0.99)
   };
+  
+  console.log('📊 최종 추출 결과:', result);
+  
+  return result;
 }
